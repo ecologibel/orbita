@@ -1585,8 +1585,9 @@
   }
 
   // Use the shared date token markup so dates are clickable everywhere.
-  function decorate(html) {
-    return ToolkitDates.decorate(html, current && current.updated);
+  function decorate(html, anchor) {
+    return ToolkitDates.decorate(html,
+      anchor || (current && current.updated));
   }
 
   function highlightR(text) {
@@ -3067,7 +3068,7 @@
     } else {
       c.contentEditable = "true";
       c.spellcheck = true;
-      c.innerHTML = decorate(b.html);
+      c.innerHTML = decorate(b.html, b.anchorAt || current.updated);
     }
     el.appendChild(c);
 
@@ -3641,7 +3642,7 @@
     if (!/[@#]/.test(b.html) && !c.querySelector(".date-token, .tag-token")) {
       return;
     }
-    const want = decorate(b.html);
+    const want = decorate(b.html, b.anchorAt || current.updated);
     if (c.innerHTML === want) return;
     const before = textBefore(c);
     if (before === null) return;
