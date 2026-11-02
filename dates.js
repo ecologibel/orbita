@@ -319,6 +319,222 @@
       .replace(/>/g, "&gt;");
   }
 
+  function dateAnchorValue(anchor) {
+    const value = anchor instanceof Date ? anchor.getTime() : Number(anchor);
+    return Number.isFinite(value) ? String(value) : "";
+  }
+
+  function setDateTokenAttributes(span, text, start, anchor) {
+    span.classList.add("date-token");
+    span.setAttribute("role", "button");
+    span.tabIndex = 0;
+    span.title = "Click to confirm or change date";
+    span.setAttribute("aria-label", "Choose date for " + text);
+    span.dataset.dateStart = String(start);
+    span.dataset.dateEnd = String(start + text.length);
+    const anchorValue = dateAnchorValue(anchor);
+    if (anchorValue) span.dataset.dateAnchor = anchorValue;
+  }
+
+  function dateTokenHtml(text, start, anchor) {
+    const span = document.createElement("span");
+    setDateTokenAttributes(span, text, start, anchor);
+    span.textContent = text;
+    return '<span class="date-token" role="button" tabindex="0" '
+      + 'title="Click to confirm or change date" '
+      + 'aria-label="' + escapeHtml("Choose date for " + text) + '" '
+      + 'data-date-start="' + start + '" data-date-end="'
+      + (start + text.length) + '"'
+      + (dateAnchorValue(anchor)
+        ? ' data-date-anchor="' + dateAnchorValue(anchor) + '"' : "")
+      + '>' + escapeHtml(text) + '</span>';
+  }
+
+  function replaceTextRange(text, start, end, replacement) {
+    const value = String(text || "");
+    start = Number(start);
+    end = Number(end);
+    if (!Number.isInteger(start) || !Number.isInteger(end)
+        || start < 0 || end < start || end > value.length) return value;
+    return value.slice(0, start) + replacement + value.slice(end);
+  }
+
+  // Replace a range in HTML using offsets from its visible, trimmed text.
+  function replaceHtmlRange(html, start, end, replacement) {
+    const template = document.createElement("template");
+    template.innerHTML = String(html || "");
+    const points = [];
+    let visible = "";
+    const walker = document.createTreeWalker(template.content, NodeFilter.SHOW_ALL);
+    while (walker.nextNode()) {
+      const node = walker.currentNode;
+      if (node.nodeType === Node.TEXT_NODE) {
+        points.push({ node, start: visible.length, end: visible.length + node.data.length });
+        visible += node.data;
+      } else if (node.nodeType === Node.ELEMENT_NODE
+          && node.tagName === "BR") {
+        visible += " ";
+      }
+    }
+    const leading = visible.length - visible.trimStart().length;
+    start = Number(start) + leading;
+    end = Number(end) + leading;
+    const pointAt = pos => {
+      for (const point of points) {
+        if (pos >= point.start && pos <= point.end) {
+          return [point.node, pos - point.start];
+        }
+      }
+      return null;
+    };
+    const a = pointAt(start), z = pointAt(end);
+    if (!a || !z) return null;
+    const range = document.createRange();
+    range.setStart(a[0], a[1]);
+    range.setEnd(z[0], z[1]);
+    range.deleteContents();
+    range.insertNode(document.createTextNode(replacement));
+    return template.innerHTML;
+  }
+
+  function ensureDatePickerStyles() {
+    if (document.getElementById("orbita-date-picker-style")) return;
+    const style = document.createElement("style");
+    style.id = "orbita-date-picker-style";
+    style.textContent = `
+      .date-token { cursor: pointer; text-decoration: underline dotted;
+        text-underline-offset: 2px; }
+      .date-token:focus-visible { border-radius: 2px;
+        outline: 2px solid var(--accent, #7fdbca); outline-offset: 2px; }
+      dialog.orbita-date-picker {
+        background: #01111f; border: 1px solid #1e3a52; border-radius: 8px;
+        color: #d6deeb; font: 14px/1.4 'Segoe UI', sans-serif;
+        margin: auto; max-width: calc(100vw - 32px); padding: 18px;
+        width: 300px;
+      }
+      dialog.orbita-date-picker::backdrop { background: rgba(1, 22, 39, .56); }
+      .orbita-date-picker h2 { font-size: 16px; margin: 0 0 14px; }
+      .orbita-date-picker .date-fields { display: grid; gap: 10px; }
+      .orbita-date-picker label { display: grid; gap: 4px; }
+      .orbita-date-picker input[type="date"] {
+        background: #011627; border: 1px solid #1e3a52; border-radius: 4px;
+        color: #d6deeb; font: inherit; min-height: 36px; padding: 5px 8px;
+        width: 100%;
+      }
+      .orbita-date-picker .date-actions {
+        display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px;
+      }
+      .orbita-date-picker button {
+        background: transparent; border: 1px solid #426078; border-radius: 4px;
+        color: inherit; cursor: pointer; font: inherit; padding: 6px 10px;
+      }
+      .orbita-date-picker button.primary {
+        background: #7fdbca; border-color: #7fdbca; color: #011627;
+      }
+      :where(.t-light) dialog.orbita-date-picker {
+        background: #fff; border-color: #d7e0e8; color: #233044;
+      }
+      :where(.t-light) .orbita-date-picker input[type="date"] {
+        background: #fff; border-color: #d7e0e8; color: #233044;
+      }
+      :where(.t-light) .orbita-date-picker button.primary {
+        background: #147d70; border-color: #147d70; color: #fff;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function pickerDate(value) {
+    if (value instanceof Date) return dayStart(value);
+    const m = String(value || "").match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);
+    if (!m) return null;
+    const d = new Date(+m[1], +m[2] - 1, +m[3]);
+    return d.getFullYear() === +m[1] && d.getMonth() === +m[2] - 1
+      && d.getDate() === +m[3] ? d : null;
+  }
+
+  function showDatePicker(start, end, rangeMode, onChange) {
+    const from = pickerDate(start), to = pickerDate(end);
+    if (!from || !to || typeof onChange !== "function") return false;
+    ensureDatePickerStyles();
+    const dialog = document.createElement("dialog");
+    dialog.className = "orbita-date-picker";
+    dialog.setAttribute("aria-label", rangeMode ? "Choose date range" : "Choose date");
+    const form = document.createElement("form");
+    form.method = "dialog";
+    const heading = document.createElement("h2");
+    heading.textContent = rangeMode ? "Confirm or change date range" : "Confirm or change date";
+    const fields = document.createElement("div");
+    fields.className = "date-fields";
+    const makeField = (labelText, value) => {
+      const label = document.createElement("label");
+      label.appendChild(document.createTextNode(labelText));
+      const input = document.createElement("input");
+      input.type = "date";
+      input.value = localDateKey(value);
+      label.appendChild(input);
+      fields.appendChild(label);
+      return input;
+    };
+    const startInput = makeField(rangeMode ? "start date" : "date", from);
+    const endInput = rangeMode ? makeField("end date", to) : null;
+    const actions = document.createElement("div");
+    actions.className = "date-actions";
+    const cancel = document.createElement("button");
+    cancel.type = "button";
+    cancel.textContent = "cancel";
+    cancel.addEventListener("click", () => dialog.close());
+    const apply = document.createElement("button");
+    apply.type = "button";
+    apply.className = "primary";
+    apply.textContent = "apply";
+    apply.addEventListener("click", () => {
+      const first = startInput.value;
+      const last = endInput ? endInput.value : first;
+      if (!first || !last || last < first) {
+        (endInput || startInput).setCustomValidity("Choose a valid date range.");
+        (endInput || startInput).reportValidity();
+        return;
+      }
+      (endInput || startInput).setCustomValidity("");
+      onChange("@" + first + (last !== first ? " to " + last : ""));
+      dialog.close();
+    });
+    actions.append(cancel, apply);
+    form.append(heading, fields, actions);
+    dialog.appendChild(form);
+    dialog.addEventListener("close", () => dialog.remove(), { once: true });
+    document.body.appendChild(dialog);
+    try { dialog.showModal(); } catch { dialog.setAttribute("open", ""); }
+    try { startInput.showPicker(); } catch {}
+    return true;
+  }
+
+  function openDatePicker(token, onChange) {
+    const anchorValue = Number(token && token.dataset.dateAnchor);
+    const anchor = Number.isFinite(anchorValue)
+      ? dayStart(new Date(anchorValue)) : dayStart(new Date());
+    const range = parseSpec(String(token && token.textContent || "").replace(/^@/, ""), anchor);
+    if (!range) return false;
+    return showDatePicker(range.start, range.end,
+      range.start.getTime() !== range.end.getTime(), onChange);
+  }
+
+  function openDatePickerValue(value, onChange) {
+    const date = pickerDate(value);
+    return date ? showDatePicker(date, date, false, iso => onChange(iso.slice(1)))
+      : false;
+  }
+
+  if (typeof document !== "undefined") {
+    document.addEventListener("keydown", e => {
+      const token = e.target && e.target.closest
+        ? e.target.closest(".date-token[role='button']") : null;
+      if (!token || (e.key !== "Enter" && e.key !== " ")) return;
+      e.preventDefault();
+      token.click();
+    });
+  }
   function highlightTags(seg) {
     let out = "", last = 0, m;
     MARK_PATTERN.lastIndex = 0;
@@ -336,12 +552,12 @@
   }
 
   // Task text as html with dates, tags and names coloured
-  function highlight(text) {
+  function highlight(text, anchor) {
     let out = "", last = 0, m;
     DATE_PATTERN.lastIndex = 0;
     while ((m = DATE_PATTERN.exec(text || ""))) {
       out += highlightTags(text.slice(last, m.index))
-        + '<span class="date-token">' + escapeHtml(m[0]) + "</span>";
+        + dateTokenHtml(m[0], m.index, anchor);
       last = m.index + m[0].length;
     }
     return out + highlightTags((text || "").slice(last));
@@ -350,7 +566,7 @@
   // A note's html with @dates and #tags wrapped in coloured spans, as
   // the notes show them; code and links are left alone
   const TAG_PATTERN = /(^|\s)(#[^\s#]+)/g;
-  function decorate(html) {
+  function decorate(html, anchor) {
     if (!/[@#]/.test(html)) return html;
     const t = document.createElement("template");
     t.innerHTML = html;
@@ -365,21 +581,21 @@
       let m;
       DATE_PATTERN.lastIndex = 0;
       while ((m = DATE_PATTERN.exec(text))) {
-        marks.push([m.index, m.index + m[0].length, "date-token"]);
+        marks.push([m.index, m.index + m[0].length, "date-token", true]);
       }
       TAG_PATTERN.lastIndex = 0;
       while ((m = TAG_PATTERN.exec(text))) {
         const tag = m[2].replace(/[.,;:!?)\]]+$/, "");
         const start = m.index + m[1].length, end = start + tag.length;
         if (tag.length > 1 && !marks.some(x => start < x[1] && end > x[0])) {
-          marks.push([start, end, "tag-token"]);
+          marks.push([start, end, "tag-token", false]);
         }
       }
       if (!marks.length) return;
       marks.sort((a, b) => a[0] - b[0]);
       const frag = document.createDocumentFragment();
       let last = 0;
-      marks.forEach(([a, z, cls]) => {
+      marks.forEach(([a, z, cls, isDate]) => {
         if (a < last) return;
         if (a > last) {
           frag.appendChild(document.createTextNode(text.slice(last, a)));
@@ -387,6 +603,7 @@
         const span = document.createElement("span");
         span.className = cls;
         span.textContent = text.slice(a, z);
+        if (isDate) setDateTokenAttributes(span, text.slice(a, z), a, anchor);
         frag.appendChild(span);
         last = z;
       });
@@ -399,9 +616,11 @@
   }
 
   window.ToolkitDates = {
-    addDays, dateKey, datePattern, dayStart, decorate, firstToken, highlight,
-    keyToDate, migrateStoredTodoKeys, monthRange, oneDay, parseDay, parseSpec,
-    stampAnchor, taskRange, textRange, weekStart
+    addDays, dateKey, datePattern, dateTokenHtml, dayStart, decorate,
+    firstToken, highlight, keyToDate, migrateStoredTodoKeys, monthRange, oneDay,
+    openDatePicker, openDatePickerValue, parseDay, parseSpec,
+    replaceHtmlRange, replaceTextRange, stampAnchor, taskRange, textRange,
+    weekStart
   };
 
 })();
