@@ -122,6 +122,10 @@
   .size-m { --task-fs: 18px; }
   .size-l { --task-fs: 21px; }
   section[hidden] { display: none; }
+  #focus.picking #panel,
+  #focus.picking #minutes,
+  #focus.picking #c-btns { display: none; }
+  #picker { margin-top: 30px; }
 
   /* Entrance */
   @keyframes rise {
@@ -595,19 +599,6 @@
   </button>
 
   <main>
-    <section id="picker" hidden>
-      <div class="pick-title"><svg viewBox="0 0 24 24" fill="none"
-        stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
-        stroke-linejoin="round" aria-hidden="true">
-        <circle cx="10.5" cy="13.5" r="8"/><circle cx="10.5" cy="13.5" r="4"/>
-        <path d="M10.5 13.5L20 4M16.5 3.5h4v4"/>
-        </svg>what are you focusing on?</div>
-      <input id="pick-input" autocomplete="off"
-        placeholder="search your to dos, or type a new one">
-      <div class="pick-label" id="pick-label"></div>
-      <div id="pick-list"></div>
-    </section>
-
     <section id="focus" hidden>
       <div class="timer">
         <div id="ring">
@@ -650,6 +641,19 @@
           <input id="add-sub" autocomplete="off" placeholder="break it down?">
         </div>
       </div>
+    </section>
+
+    <section id="picker" hidden>
+      <div class="pick-title"><svg viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+        stroke-linejoin="round" aria-hidden="true">
+        <circle cx="10.5" cy="13.5" r="8"/><circle cx="10.5" cy="13.5" r="4"/>
+        <path d="M10.5 13.5L20 4M16.5 3.5h4v4"/>
+        </svg>what are you focusing on?</div>
+      <input id="pick-input" autocomplete="off"
+        placeholder="search your to dos, or type a new one">
+      <div class="pick-label" id="pick-label"></div>
+      <div id="pick-list"></div>
     </section>
   </main>
 
@@ -1070,7 +1074,8 @@
     firstRender = false;
     const picking = !loc;
     $("picker").hidden = !picking;
-    $("focus").hidden = picking;
+    $("focus").hidden = false;
+    $("focus").classList.toggle("picking", picking);
     if (picking) $("switch").hidden = true;
     if (picking) {
       if (s.task) F.set({ state: "idle" });
@@ -1080,6 +1085,8 @@
         void $("picker").offsetWidth;
         $("picker").classList.add("rise");
       }
+      renderClock(s, true);
+      $("switch").hidden = true;
       renderPicker();
       $("pick-input").focus();
       ToolkitSidebar.title("focus");
