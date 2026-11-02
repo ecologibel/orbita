@@ -24,10 +24,12 @@
   const DATE_CORE = '(?:'
     + '(?:today|tomorrow|yesterday)(?![a-z])'
     + '|(?:this|next)\\s+(?:week|month)(?![a-z])'
-    + '|(?:next\\s+)?' + WEEKDAY_RE
+    + '|(?:this|last|next)\\s+' + WEEKDAY_RE
+    + '|' + WEEKDAY_RE
+    + '(?:\\s+\\d{1,2}\\s+' + MONTH_RE + '(?:,?\\s+\\d{4})?)?'
     + '|\\d{1,2}\\s+' + MONTH_RE + '(?:,?\\s+\\d{4})?'
     + '|' + MONTH_RE + '\\s+\\d{1,2}(?!\\d)(?:,?\\s*\\d{4})?'
-    + '|\\d{1,2}[\\/\\-]\\d{1,2}(?:[\\/\\-]\\d{2,4})?'
+    + '|\\d{4}-\\d{2}-\\d{2}'
     + '|' + MONTH_RE + '(?:\\s+\\d{4})?'
     + ')';
 
@@ -186,42 +188,61 @@
         anchor.getFullYear(), anchor.getMonth() + (next ? 1 : 0)
       );
     }
-    if ((m = s.match(new RegExp('^(next )?' + WEEKDAY_RE + '$')))) {
-      const wd = WEEKDAYS.indexOf(s.replace("next ", "").slice(0, 3));
-      if (m[1]) {
-        const start = addDays(weekStart(anchor), 7);
-        return oneDay(addDays(start, (wd + 6) % 7));
+    if ((m = s.match(new RegExp(
+      '^((?:this|last|next) )?' + WEEKDAY_RE + '$'
+    )))) {
+      const qualifier = m[1] || "";
+      const name = s.replace(/^(this|last|next) /, "").slice(0, 3);
+      const wd = WEEKDAYS.indexOf(name);
+      const coming = (wd - anchor.getDay() + 7) % 7;
+      if (qualifier === "last") {
+        const previous = (anchor.getDay() - wd + 7) % 7 || 7;
+        return oneDay(addDays(anchor, -previous));
       }
-      return oneDay(addDays(anchor, (wd - anchor.getDay() + 7) % 7));
+      return oneDay(addDays(anchor, coming + (qualifier === "next" ? 7 : 0)));
     }
 
-    let day, month, year;
-    if ((m = s.match(new RegExp(
-      '^(\\d{1,2}) ' + MONTH_RE + '(?:,? (\\d{4}))?$')))) {
+    let weekday = null;
+    let dateText = s;
+    const weekdayDate = s.match(new RegExp('^(' + WEEKDAY_RE + ') (.+)$'));
+    if (weekdayDate) {
+      weekday = WEEKDAYS.indexOf(weekdayDate[1].slice(0, 3));
+      dateText = weekdayDate[2];
+    }    let day, month, year;
+    if ((m = dateText.match(/^(\\d{4})-(\\d{2})-(\\d{2})$/))) {
+      [year, month, day] = [m[1], +m[2] - 1, +m[3]];
+    } else if ((m = dateText.match(new RegExp(
+      '^(\\d{1,2}) ' + MONTH_RE + '(?:,? (\\d{4}))?$'
+    )))) {
       [day, month, year] = [+m[1], mon(m[2]), m[3]];
-    } else if ((m = s.match(new RegExp(
-      '^' + MONTH_RE + ' (\\d{1,2})(?:,? ?(\\d{4}))?$')))) {
+    } else if ((m = dateText.match(new RegExp(
+      '^' + MONTH_RE + ' (\\d{1,2})(?:,? ?(\\d{4}))?$'
+    )))) {
       [day, month, year] = [+m[2], mon(m[1]), m[3]];
-    } else if ((m = s.match(/^(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?$/))) {
-      [day, month, year] = [+m[1], +m[2] - 1, m[3]];
-    } else if ((m = s.match(new RegExp('^' + MONTH_RE + '(?: (\\d{4}))?$')))) {
+    } else if ((m = dateText.match(new RegExp('^' + MONTH_RE + '(?: (\\d{4}))?$')))) {
       const y = m[2] ? +m[2] : anchor.getFullYear();
       let r = monthRange(y, mon(m[1]));
       if (!m[2] && r.end < anchor) r = monthRange(y + 1, mon(m[1]));
       return r;
     } else {
       return null;
-    }
-    let y = year ? +year : anchor.getFullYear();
+    }    let y = year ? +year : anchor.getFullYear();
     if (y < 100) y += 2000;
     let d = new Date(y, month, day);
     if (d.getMonth() !== month || d.getDate() !== day) return null;
     if (!year && d < addDays(anchor, -31)) d = new Date(y + 1, month, day);
+    if (weekday !== null && d.getDay() !== weekday) return null;
     return oneDay(d);
   }
 
-  // A date, period, or "A to B" range as a day range
-  function parseSpec(str, anchor) {
+  // Parse one day with the same grammar used for task dates.
+  function parseDay(str, anchor) {
+    const parsed = parseOne(String(str || "").replace(/^@/, ""), dayStart(anchor));
+    return parsed && parsed.start.getTime() === parsed.end.getTime()
+      ? parsed.start : null;
+  }
+
+  // A date, period, or "A to B" range as a day range  function parseSpec(str, anchor) {
     const one = parseOne(str, anchor);
     if (one) return one;
     const join = (left, right) => {
@@ -375,7 +396,7 @@
 
   window.ToolkitDates = {
     addDays, dateKey, datePattern, dayStart, decorate, firstToken, highlight,
-    keyToDate, migrateStoredTodoKeys, monthRange, oneDay, parseSpec,
+    keyToDate, migrateStoredTodoKeys, monthRange, oneDay, parseDay, parseSpec,
     stampAnchor, taskRange, textRange, weekStart
   };
 
