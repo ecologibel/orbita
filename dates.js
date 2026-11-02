@@ -336,13 +336,17 @@
   // Same token rollover for a note block's visible text; callers use the
   // returned offsets to replace the token without flattening its formatting.
   function refreshRelativeText(text, anchorAt) {
-    const task = { anchorAt, text: String(text || "") };
+    const source = String(text || "");
+    DATE_PATTERN.lastIndex = 0;
+    const match = DATE_PATTERN.exec(source);
+    if (!match) return null;
+    const task = { anchorAt, text: source };
     if (!refreshRelativeTask(task)) return null;
-    const token = firstToken(task.text);
-    const previous = firstToken(String(text || ""));
-    const start = String(text || "").indexOf(previous);
-    return { anchorAt: task.anchorAt, end: start + token.length,
-      start, text: task.text, token };
+    const token = task.text.slice(match.index,
+      task.text.indexOf(" ", match.index) < 0
+        ? task.text.length : task.text.indexOf(" ", match.index));
+    return { anchorAt: task.anchorAt, end: match.index + token.length,
+      start: match.index, text: task.text, token };
   }
 
   function datePattern() {
