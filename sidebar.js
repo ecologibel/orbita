@@ -99,6 +99,11 @@
         + '<path d="M12 3.5a8.5 8.5 0 1 1-8.5 8.5"/>')
     },
     {
+      id: "timekeeper", label: "timekeeper", page: "timekeeper/index.html",
+      icon: svg('<circle cx="12" cy="12" r="9"/>'
+        + dim('<path d="M12 7v5l3.5 2"/>'))
+    },
+    {
       id: "help", label: "help", page: "help/index.html",
       icon: svg('<circle cx="12" cy="12" r="9"/>'
         + '<path d="M9.7 9a2.4 2.4 0 1 1 3.8 1.9c-1 .7-1.5 1.1-1.5 2.6"/>'
