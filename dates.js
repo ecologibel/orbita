@@ -446,7 +446,7 @@
 
   function pickerDate(value) {
     if (value instanceof Date) return dayStart(value);
-    const m = String(value || "").match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);
+    const m = String(value || "").match(/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/);
     if (!m) return null;
     const d = new Date(+m[1], +m[2] - 1, +m[3]);
     return d.getFullYear() === +m[1] && d.getMonth() === +m[2] - 1
@@ -584,31 +584,38 @@
     const t = document.createElement("template");
     t.innerHTML = html;
     const nodes = [];
-    const walker = document.createTreeWalker(t.content, NodeFilter.SHOW_TEXT);
+    let visibleOffset = 0;
+    const walker = document.createTreeWalker(t.content, NodeFilter.SHOW_ALL);
     while (walker.nextNode()) {
-      const p = walker.currentNode.parentElement;
-      if (!p || !p.closest("code, a")) nodes.push(walker.currentNode);
+      const node = walker.currentNode;
+      if (node.nodeType === Node.TEXT_NODE) {
+        const p = node.parentElement;
+        if (!p || !p.closest("code, a")) nodes.push({ node, offset: visibleOffset });
+        visibleOffset += node.data.length;
+      } else if (node.nodeType === Node.ELEMENT_NODE && node.tagName === "BR") {
+        visibleOffset += 1;
+      }
     }
-    nodes.forEach(node => {
+    nodes.forEach(({ node, offset }) => {
       const text = node.data, marks = [];
       let m;
       DATE_PATTERN.lastIndex = 0;
       while ((m = DATE_PATTERN.exec(text))) {
-        marks.push([m.index, m.index + m[0].length, "date-token", true]);
+        marks.push([m.index, m.index + m[0].length, "date-token", true, offset]);
       }
       TAG_PATTERN.lastIndex = 0;
       while ((m = TAG_PATTERN.exec(text))) {
         const tag = m[2].replace(/[.,;:!?)\]]+$/, "");
         const start = m.index + m[1].length, end = start + tag.length;
         if (tag.length > 1 && !marks.some(x => start < x[1] && end > x[0])) {
-          marks.push([start, end, "tag-token", false]);
+          marks.push([start, end, "tag-token", false, offset]);
         }
       }
       if (!marks.length) return;
       marks.sort((a, b) => a[0] - b[0]);
       const frag = document.createDocumentFragment();
       let last = 0;
-      marks.forEach(([a, z, cls, isDate]) => {
+      marks.forEach(([a, z, cls, isDate, offset]) => {
         if (a < last) return;
         if (a > last) {
           frag.appendChild(document.createTextNode(text.slice(last, a)));
@@ -616,7 +623,7 @@
         const span = document.createElement("span");
         span.className = cls;
         span.textContent = text.slice(a, z);
-        if (isDate) setDateTokenAttributes(span, text.slice(a, z), a, anchor);
+        if (isDate) setDateTokenAttributes(span, text.slice(a, z), offset + a, anchor);
         frag.appendChild(span);
         last = z;
       });
