@@ -1732,7 +1732,9 @@
       result += highlightTags(
         text.slice(lastIdx, match.index)
       );
-      result += DATES.dateTokenHtml(match[0], match.index, anchor);
+      result += DATES.isValidToken(match[0], anchor)
+        ? DATES.dateTokenHtml(match[0], match.index, anchor)
+        : escapeHtml(match[0]);
       lastIdx = match.index + match[0].length;
     }
     result += highlightTags(text.slice(lastIdx));
