@@ -1584,72 +1584,10 @@
     return m ? m[0].toLowerCase() : "";
   }
 
-  // Wrap @dates and #tags in a block's html in coloured spans
+  // Use the shared date token markup so dates are clickable everywhere.
   function decorate(html) {
-    if (!/[@#]/.test(html)) return html;
-    const t = document.createElement("template");
-    t.innerHTML = html;
-    const nodes = [];
-    const walker = document.createTreeWalker(t.content, NodeFilter.SHOW_TEXT);
-    while (walker.nextNode()) {
-      if (!walker.currentNode.parentElement
-        || !walker.currentNode.parentElement.closest("code, a")) {
-        nodes.push(walker.currentNode);
-      }
-    }
-    nodes.forEach(node => {
-      const text = node.data, marks = [];
-      let m;
-      DATE_PATTERN.lastIndex = 0;
-      while ((m = DATE_PATTERN.exec(text))) {
-        marks.push([m.index, m.index + m[0].length, "date-token"]);
-      }
-      TAG_PATTERN.lastIndex = 0;
-      while ((m = TAG_PATTERN.exec(text))) {
-        const tag = m[2].replace(/[.,;:!?)\]]+$/, "");
-        const start = m.index + m[1].length;
-        const end = start + tag.length;
-        if (tag.length > 1 && !marks.some(x => start < x[1] && end > x[0])) {
-          marks.push([start, end, "tag-token"]);
-        }
-      }
-      if (!marks.length) return;
-      marks.sort((a, b) => a[0] - b[0]);
-      const frag = document.createDocumentFragment();
-      let last = 0;
-      marks.forEach(([a, z, cls]) => {
-        if (a < last) return;
-        if (a > last) {
-          frag.appendChild(document.createTextNode(text.slice(last, a)));
-        }
-        const span = document.createElement("span");
-        span.className = cls;
-        span.textContent = text.slice(a, z);
-        frag.appendChild(span);
-        last = z;
-      });
-      if (last < text.length) {
-        frag.appendChild(document.createTextNode(text.slice(last)));
-      }
-      node.replaceWith(frag);
-    });
-    return t.innerHTML;
+    return ToolkitDates.decorate(html, current && current.updated);
   }
-
-  // ---- R highlighting for code blocks ----
-
-  const R_KEYWORDS = new Set(["if", "else", "repeat", "while", "function",
-    "for", "in", "next", "break", "return", "switch"]);
-  const R_CONSTS = new Set(["TRUE", "FALSE", "NULL", "NA", "NA_integer_",
-    "NA_real_", "NA_character_", "Inf", "NaN", "T", "F"]);
-  const R_TOKEN = new RegExp([
-    '(#[^\\n]*)',
-    '("(?:[^"\\\\]|\\\\.)*"?|\'(?:[^\'\\\\]|\\\\.)*\'?|`[^`\\n]*`?)',
-    '(\\d+\\.?\\d*(?:[eE][+-]?\\d+)?L?|\\.\\d+(?:[eE][+-]?\\d+)?)',
-    '([A-Za-z.][\\w.]*)',
-    '(<<-|->>|<-|->|%[^%\\n]*%|\\|>|==|!=|<=|>=|&&|\\|\\||[-+*/^~!&|<>=$@:?])',
-    '([()\\[\\]{}])'
-  ].join("|"), "g");
 
   function highlightR(text) {
     let out = "", last = 0, depth = 0, m;
@@ -4583,52 +4521,29 @@
     }
   });
 
-  // Click the date to type a new one
-  dateEl.addEventListener("click", () => {
-    if (dateEl.isContentEditable) return;
-    dateEl.contentEditable = "true";
-    dateEl.focus();
-    const r = document.createRange();
-    r.selectNodeContents(dateEl);
-    getSelection().removeAllRanges();
-    getSelection().addRange(r);
-  });
-  function finishDate(keep) {
-    if (!dateEl.isContentEditable) return;
-    const d = keep && parseDay(dateEl.textContent, dayStart(new Date()));
-    if (keep && !d) {
-      dateEl.classList.add("invalid");
-      dateEl.title = "try today, friday, 2/11 or 2 nov 2026";
-      setTimeout(() => {
-        dateEl.classList.remove("invalid");
-        dateEl.title = "click to change the date";
-      }, 1500);
-    }
-    dateEl.contentEditable = "false";
-    if (d && isoDay(d) !== current.date) {
-      checkpoint();
-      current.date = isoDay(d);
-      save();
-    }
-    renderDate();
+  // The note date uses the same native calendar selector as task dates.
+  dateEl.setAttribute("role", "button");
+  dateEl.tabIndex = 0;
+  dateEl.title = "Click to confirm or change the note date";
+  function chooseNoteDate() {
+    if (!current || dateEl.isContentEditable) return;
+    ToolkitDates.openDatePickerValue(current.date, iso => {
+      if (iso !== current.date) {
+        checkpoint();
+        current.date = iso;
+        save();
+      }
+      renderDate();
+    });
   }
+  dateEl.addEventListener("click", chooseNoteDate);
   dateEl.addEventListener("keydown", e => {
-    if (e.key === "Enter") {
+    if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      finishDate(true);
-      dateEl.blur();
-    } else if (e.key === "Escape") {
-      e.preventDefault();
-      finishDate(false);
-      dateEl.blur();
+      chooseNoteDate();
     }
   });
-  dateEl.addEventListener("blur", () => finishDate(true));
-  dateEl.addEventListener("paste", e => {
-    e.preventDefault();
-    document.execCommand("insertText", false,
-      e.clipboardData.getData("text/plain").replace(/\s+/g, " "));
-  });
+
 
   // ---- Floating format menu ----
 
