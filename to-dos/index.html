@@ -1204,10 +1204,16 @@
     }
     if (!data.dateSections) data.dateSections = [];
 
-    // Give every task a written day for its relative dates
+    // Give every task a written day and roll relative tokens while keeping
+    // their original calendar date fixed.
+    let relativeChanged = false;
     allLists(data).forEach(([, list]) => {
-      list.forEach(t => { if (t.text && !t.anchorAt) stampAnchor(t); });
+      list.forEach(t => {
+        if (t.text && !t.anchorAt) stampAnchor(t);
+        if (DATES.refreshRelativeTask(t)) relativeChanged = true;
+      });
     });
+    if (relativeChanged) saveData(data);
     return data;
   }
 
