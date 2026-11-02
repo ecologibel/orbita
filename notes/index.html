@@ -1342,6 +1342,7 @@
   </div>
 </div>
 
+<script src="../dates.js"></script>
 <script src="../sync.js"></script>
 <script src="../sidebar.js"></script>
 <script src="../recovery.js"></script>
@@ -1538,27 +1539,7 @@
 
   // ---- Dates (as in the to-dos) ----
 
-  const MONTH_RE = '(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?'
-    + '|apr(?:il)?|may|june?|july?|aug(?:ust)?'
-    + '|sep(?:t(?:ember)?)?|oct(?:ober)?'
-    + '|nov(?:ember)?|dec(?:ember)?)(?![a-z])';
-  const WEEKDAY_RE = '(?:mon(?:day)?|tue(?:sday)?|wed(?:nesday)?'
-    + '|thu(?:rsday)?|fri(?:day)?|sat(?:urday)?|sun(?:day)?)(?![a-z])';
-  const DATE_CORE = '(?:'
-    + '(?:today|tomorrow|yesterday)(?![a-z])'
-    + '|(?:this|next)\\s+(?:week|month)(?![a-z])'
-    + '|(?:next\\s+)?' + WEEKDAY_RE
-    + '(?:\\s+\\d{1,2}\\s+' + MONTH_RE + '(?:,?\\s+\\d{4})?)?'
-    + '|\\d{1,2}\\s+' + MONTH_RE + '(?:,?\\s+\\d{4})?'
-    + '|' + MONTH_RE + '\\s+\\d{1,2}(?!\\d)(?:,?\\s*\\d{4})?'
-    + '|\\d{1,2}[\\/\\-]\\d{1,2}(?:[\\/\\-]\\d{2,4})?'
-    + '|' + MONTH_RE + '(?:\\s+\\d{4})?'
-    + ')';
-  const DATE_PATTERN = new RegExp(
-    '@' + DATE_CORE
-    + '(?:\\s*(?:–|—|-|to(?![a-z]))\\s*' + DATE_CORE + ')?',
-    'gi'
-  );
+  const DATE_PATTERN = ToolkitDates.datePattern();
   const TAG_PATTERN = /(^|\s)(#[^\s#]+)/g;
   const MONTHS = MONS.map(m => m.toLowerCase());
   const WEEKDAYS = DAYS.map(d => d.toLowerCase());
@@ -1592,41 +1573,9 @@
       + " " + d.getFullYear()).toLowerCase();
   }
 
-  // A single day typed as today, friday, 2/11, 2 nov 2026 and so on
+  // Parse note dates with the shared app-wide date rules.
   function parseDay(str, anchor) {
-    const s = str.trim().toLowerCase().replace(/^@/, "").replace(/,/g, " ")
-      .replace(/\s+/g, " ");
-    const mon = name => MONTHS.indexOf(name.slice(0, 3));
-    let m;
-    if (s === "today") return anchor;
-    if (s === "tomorrow") return addDays(anchor, 1);
-    if (s === "yesterday") return addDays(anchor, -1);
-    if ((m = s.match(new RegExp('^(next )?' + WEEKDAY_RE + '$')))) {
-      const wd = WEEKDAYS.indexOf(s.replace("next ", "").slice(0, 3));
-      if (m[1]) return addDays(addDays(weekStart(anchor), 7), (wd + 6) % 7);
-      return addDays(anchor, (wd - anchor.getDay() + 7) % 7);
-    }
-    let day, month, year;
-    const rest = s.replace(new RegExp('^' + WEEKDAY_RE + ' '), "");
-    if ((m = rest.match(new RegExp(
-      '^(\\d{1,2}) ' + MONTH_RE + '(?: (\\d{4}))?$')))) {
-      [day, month, year] = [+m[1], mon(m[2]), m[3]];
-    } else if ((m = rest.match(new RegExp(
-      '^' + MONTH_RE + ' (\\d{1,2})(?: (\\d{4}))?$')))) {
-      [day, month, year] = [+m[2], mon(m[1]), m[3]];
-    } else if ((m = rest.match(
-      /^(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?$/))) {
-      [day, month, year] = [+m[1], +m[2] - 1, m[3]];
-    } else if ((m = rest.match(/^(\d{4})-(\d{2})-(\d{2})$/))) {
-      [day, month, year] = [+m[3], +m[2] - 1, m[1]];
-    } else {
-      return null;
-    }
-    let y = year ? +year : anchor.getFullYear();
-    if (y < 100) y += 2000;
-    const d = new Date(y, month, day);
-    if (d.getMonth() !== month || d.getDate() !== day) return null;
-    return d;
+    return ToolkitDates.parseDay(str, anchor);
   }
 
   function firstToken(text) {
