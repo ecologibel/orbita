@@ -572,11 +572,25 @@
       ? "" : " to " + formatDateToken(end).slice(1));
   }
 
+  let pendingDateUndo = null;
+
+  function recordDateUndo(action) {
+    pendingDateUndo = typeof action === "function" ? action : null;
+  }
+
+  function clearDateUndo() {
+    pendingDateUndo = null;
+  }
+
   function showDatePicker(start, end, rangeMode, onChange, origin, anchor, originalToken) {
     const from = pickerDate(start), to = pickerDate(end);
     if (!from || !to || typeof onChange !== "function") return false;
     ensureDatePickerStyles();
 
+    const commitToken = token => {
+      const undo = onChange(token);
+      if (typeof undo === "function") recordDateUndo(undo);
+    };
     const popup = document.createElement("section");
     popup.className = "orbita-date-picker";
     popup.setAttribute("role", "dialog");
@@ -688,7 +702,7 @@
         error.textContent = "Choose an end date on or after the start date.";
         return false;
       }
-      onChange(rangeMode
+      commitToken(rangeMode
         ? formatRangeToken(selectedStart, selectedEnd)
         : (originalToken && localDateKey(selectedStart) === localDateKey(from)
           ? originalToken : formatDateToken(selectedStart)));
@@ -710,7 +724,7 @@
       renderCalendar();
       if (!rangeMode) {
         const localEntry = /^(?:\d{1,2}\/\d{1,2}\/\d{4}|\d{4}-\d{2}-\d{2})$/.test(raw);
-        onChange(localEntry ? formatDateToken(parsed.start)
+        commitToken(localEntry ? formatDateToken(parsed.start)
           : (entered.startsWith("@") ? entered : "@" + entered));
         close();
       }
@@ -753,7 +767,7 @@
         button.addEventListener("click", () => {
           if (!rangeMode) {
             selectedStart = selectedEnd = d;
-            onChange(originalToken && key === localDateKey(from)
+            commitToken(originalToken && key === localDateKey(from)
               ? originalToken : formatDateToken(d));
             close();
             return;
@@ -795,7 +809,7 @@
     todayButton.addEventListener("click", () => {
       const today = dayStart(new Date());
       if (!rangeMode) {
-        onChange("@today");
+        commitToken("@today");
         close();
         return;
       }
@@ -848,6 +862,15 @@
 
   if (typeof document !== "undefined") {
     document.addEventListener("keydown", e => {
+      if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey
+          && e.key.toLowerCase() === "z" && pendingDateUndo) {
+        e.preventDefault();
+        e.stopPropagation();
+        const undo = pendingDateUndo;
+        pendingDateUndo = null;
+        undo();
+        return;
+      }
       const token = e.target && e.target.closest
         ? e.target.closest(".date-token[role='button']") : null;
       if (!token || (e.key !== "Enter" && e.key !== " ")) return;
@@ -863,6 +886,11 @@
       e.preventDefault();
       e.stopPropagation();
       openDatePicker(token, replacement => {
+        const beforeHtml = editor.innerHTML;
+        editor.dispatchEvent(new InputEvent("beforeinput", {
+          bubbles: true, cancelable: true, inputType: "insertText",
+          data: replacement
+        }));
         const before = document.createRange();
         before.selectNodeContents(editor);
         before.setEndBefore(token);
@@ -895,7 +923,21 @@
         const selection = getSelection();
         selection.removeAllRanges();
         selection.addRange(caret);
+        if (editor.id === "focal-text" && editor.innerHTML !== beforeHtml) {
+          recordDateUndo(() => {
+            editor.innerHTML = beforeHtml;
+            editor.dispatchEvent(new InputEvent("input", {
+              bubbles: true, inputType: "insertText", data: null
+            }));
+            editor.focus({ preventScroll: true });
+          });
+        }
       });
+    });
+    document.addEventListener("beforeinput", e => {
+      if (e.inputType !== "historyUndo" && e.inputType !== "historyRedo") {
+        clearDateUndo();
+      }
     });
   }
   function highlightTags(seg) {
@@ -988,9 +1030,9 @@
   window.ToolkitDates = {
     addDays, dateKey, datePattern, dateTokenHtml, dayStart, decorate,
     firstToken, highlight, keyToDate, migrateStoredTodoKeys, monthRange, oneDay,
-    openDatePicker, openDatePickerValue, parseDay, parseSpec,
-    refreshRelativeTask, refreshRelativeText, replaceHtmlRange,
-    replaceTextRange, stampAnchor, taskRange, textRange,
+    clearDateUndo, openDatePicker, openDatePickerValue, parseDay, parseSpec,
+    recordDateUndo, refreshRelativeTask, refreshRelativeText,
+    replaceHtmlRange, replaceTextRange, stampAnchor, taskRange, textRange,
     weekStart
   };
 
