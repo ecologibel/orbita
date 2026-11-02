@@ -1986,12 +1986,22 @@
       e.preventDefault();
       e.stopPropagation();
       DATES.openDatePicker(token, replacement => {
+        const previous = { anchorAt: task.anchorAt, anchorTok: task.anchorTok,
+          text: task.text };
         task.text = DATES.replaceTextRange(task.text,
           token.dataset.dateStart, token.dataset.dateEnd, replacement);
         DATES.stampAnchor(task);
         txt.value = task.text;
         syncHighlight();
         onUpdate();
+        return () => {
+          task.text = previous.text;
+          task.anchorAt = previous.anchorAt;
+          task.anchorTok = previous.anchorTok;
+          txt.value = task.text;
+          syncHighlight();
+          onUpdate();
+        };
       });
     });
 
@@ -2886,6 +2896,8 @@
         const note = data && data.notes.find(n => n.id === item.note.id);
         const block = note && note.blocks.find(b => b.id === item.block.id);
         if (!block) return;
+        const previous = { anchorAt: block.anchorAt, anchorTok: block.anchorTok,
+          html: block.html, updated: note.updated };
         const html = DATES.replaceHtmlRange(block.html,
           token.dataset.dateStart, token.dataset.dateEnd, replacement);
         if (html == null) return;
@@ -2893,6 +2905,19 @@
         note.updated = Date.now();
         localStorage.setItem(NOTES_KEY, JSON.stringify(data));
         renderFn();
+        return () => {
+          const latest = loadNotes();
+          const savedNote = latest && latest.notes.find(n => n.id === item.note.id);
+          const savedBlock = savedNote
+            && savedNote.blocks.find(b => b.id === item.block.id);
+          if (!savedBlock) return;
+          savedBlock.html = previous.html;
+          savedBlock.anchorAt = previous.anchorAt;
+          savedBlock.anchorTok = previous.anchorTok;
+          savedNote.updated = previous.updated;
+          localStorage.setItem(NOTES_KEY, JSON.stringify(latest));
+          renderFn();
+        };
       });
     });
     wrap.appendChild(text);
