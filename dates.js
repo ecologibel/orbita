@@ -413,16 +413,20 @@
         position: fixed; width: 284px; z-index: 10000;
       }
       .orbita-date-picker[hidden] { display: none; }
-      .orbita-date-picker .date-fields { display: grid; gap: 6px;
-        grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 10px; }
-      .orbita-date-picker .date-fields.single { grid-template-columns: 1fr; }
-      .orbita-date-picker label { color: #8291a5; display: grid;
-        font-size: 11px; gap: 3px; }
-      .orbita-date-picker input[type="date"] {
+      .orbita-date-picker .date-field-row { align-items: center;
+        display: flex; gap: 6px; margin-bottom: 10px; }
+      .orbita-date-picker input.date-input {
         background: #011627; border: 1px solid #1e3a52; border-radius: 4px;
-        color: #d6deeb; font: inherit; min-height: 32px; min-width: 0;
-        padding: 4px 6px; width: 100%;
+        color: #d6deeb; flex: 1; font: 15px/1.3 'Segoe UI', sans-serif;
+        min-height: 34px; min-width: 0; padding: 5px 8px; width: 0;
       }
+      .orbita-date-picker .today-button {
+        border: 1px solid #426078; color: #7fdbca; flex: 0 0 auto;
+        font-size: 12px; min-height: 30px; padding: 3px 8px;
+      }
+      .orbita-date-picker .date-error { color: #f78c6c; font-size: 11px;
+        margin: -5px 0 8px; }
+      .orbita-date-picker .date-error:empty { display: none; }
       .orbita-date-picker .calendar-head { align-items: center; display: flex;
         justify-content: space-between; margin: 2px 0 8px; }
       .orbita-date-picker .month-name { font-size: 13px; font-weight: 600; }
@@ -456,8 +460,11 @@
         background: #fff; border-color: #d7e0e8; color: #233044;
         box-shadow: 0 8px 28px rgba(20,40,60,.18);
       }
-      :where(.t-light) .orbita-date-picker input[type="date"] {
+      :where(.t-light) .orbita-date-picker input.date-input {
         background: #fff; border-color: #d7e0e8; color: #233044;
+      }
+      :where(.t-light) .orbita-date-picker .today-button {
+        border-color: #d7e0e8; color: #147d70;
       }
       :where(.t-light) .orbita-date-picker .day.selected,
       :where(.t-light) .orbita-date-picker .day.in-range {
@@ -479,7 +486,7 @@
       && d.getDate() === +m[3] ? d : null;
   }
 
-  function showDatePicker(start, end, rangeMode, onChange, origin) {
+  function showDatePicker(start, end, rangeMode, onChange, origin, anchor) {
     const from = pickerDate(start), to = pickerDate(end);
     if (!from || !to || typeof onChange !== "function") return false;
     ensureDatePickerStyles();
@@ -488,22 +495,33 @@
     popup.className = "orbita-date-picker";
     popup.setAttribute("role", "dialog");
     popup.setAttribute("aria-label", rangeMode ? "Choose date range" : "Choose date");
-    const fields = document.createElement("div");
-    fields.className = "date-fields" + (rangeMode ? "" : " single");
-    const makeField = (labelText, value) => {
-      const label = document.createElement("label");
-      label.appendChild(document.createTextNode(labelText));
-      const input = document.createElement("input");
-      input.type = "date";
-      input.value = localDateKey(value);
-      label.appendChild(input);
-      fields.appendChild(label);
-      return input;
-    };
-    const startInput = makeField(rangeMode ? "start date" : "date", from);
-    const endInput = rangeMode ? makeField("end date", to) : null;
-    let activeInput = startInput;
+    const fieldRow = document.createElement("div");
+    fieldRow.className = "date-field-row";
+    const dateInput = document.createElement("input");
+    dateInput.type = "text";
+    dateInput.className = "date-input";
+    dateInput.setAttribute("aria-label", "Type a date");
+    dateInput.placeholder = "e.g. 6 nov or next fri";
+    const todayButton = document.createElement("button");
+    todayButton.type = "button";
+    todayButton.className = "today-button";
+    todayButton.textContent = "today";
+    fieldRow.append(dateInput, todayButton);
+    const error = document.createElement("div");
+    error.className = "date-error";
+    error.setAttribute("role", "status");
+    let selectedStart = from, selectedEnd = to;
+    let activeEdge = "start";
     let shownMonth = new Date(from.getFullYear(), from.getMonth(), 1);
+    const writeField = () => {
+      const first = localDateKey(selectedStart);
+      const last = localDateKey(selectedEnd);
+      dateInput.value = rangeMode && first !== last
+        ? first + " to " + last : first;
+      error.textContent = "";
+    };
+    writeField();
+
     const head = document.createElement("div");
     head.className = "calendar-head";
     const prev = document.createElement("button");
@@ -565,7 +583,34 @@
       popup.style.left = left + "px";
       popup.style.top = top + "px";
     };
-    const dateKeyOf = input => input.value;
+    const applyRange = () => {
+      if (selectedEnd < selectedStart) {
+        error.textContent = "Choose an end date on or after the start date.";
+        return false;
+      }
+      onChange("@" + localDateKey(selectedStart)
+        + (localDateKey(selectedEnd) !== localDateKey(selectedStart)
+          ? " to " + localDateKey(selectedEnd) : ""));
+      close();
+      return true;
+    };
+    const acceptTyped = () => {
+      const raw = dateInput.value.trim().replace(/^@/, "");
+      const parsed = parseSpec(raw, dayStart(anchor || new Date()));
+      if (!parsed) {
+        error.textContent = "Enter a recognised date, such as 6 nov or next fri.";
+        return false;
+      }
+      selectedStart = parsed.start;
+      selectedEnd = parsed.end;
+      shownMonth = new Date(parsed.start.getFullYear(), parsed.start.getMonth(), 1);
+      writeField();
+      renderCalendar();
+      if (!rangeMode) {
+        applyRange();
+      }
+      return true;
+    };
     const renderCalendar = () => {
       monthName.textContent = shownMonth.toLocaleDateString(undefined,
         { month: "long", year: "numeric" });
@@ -582,7 +627,8 @@
       const first = new Date(shownMonth.getFullYear(), shownMonth.getMonth(), 1);
       const offset = (first.getDay() + 6) % 7;
       const gridStart = new Date(first.getFullYear(), first.getMonth(), 1 - offset);
-      const startKey = dateKeyOf(startInput), endKey = endInput && dateKeyOf(endInput);
+      const startKey = localDateKey(selectedStart);
+      const endKey = localDateKey(selectedEnd);
       const todayKey = localDateKey(dayStart(new Date()));
       for (let i = 0; i < 42; i++) {
         const d = addDays(gridStart, i), key = localDateKey(d);
@@ -596,17 +642,26 @@
         if (d.getMonth() !== shownMonth.getMonth()) button.classList.add("outside");
         if (key === todayKey) button.classList.add("today");
         if (key === startKey || key === endKey) button.classList.add("selected");
-        if (endKey && key > startKey && key < endKey) button.classList.add("in-range");
+        if (endKey !== startKey && key > startKey && key < endKey) {
+          button.classList.add("in-range");
+        }
         button.addEventListener("click", () => {
-          activeInput.value = key;
           if (!rangeMode) {
+            selectedStart = selectedEnd = d;
             onChange("@" + key);
             close();
             return;
           }
-          if (activeInput === startInput) activeInput = endInput;
+          if (activeEdge === "start") {
+            selectedStart = d;
+            if (selectedEnd < selectedStart) selectedEnd = selectedStart;
+            activeEdge = "end";
+          } else {
+            selectedEnd = d;
+            activeEdge = "start";
+          }
+          writeField();
           renderCalendar();
-          if (activeInput === endInput) endInput.focus({ preventScroll: true });
         });
         grid.appendChild(button);
       }
@@ -620,44 +675,44 @@
       shownMonth = new Date(shownMonth.getFullYear(), shownMonth.getMonth() + 1, 1);
       renderCalendar();
     });
-    startInput.addEventListener("focus", () => { activeInput = startInput; });
-    if (endInput) endInput.addEventListener("focus", () => { activeInput = endInput; });
-    [startInput, endInput].filter(Boolean).forEach(input => {
-      input.addEventListener("change", () => {
-        const chosen = pickerDate(input.value);
-        if (chosen) {
-          if (!rangeMode) {
-            onChange("@" + input.value);
-            close();
-            return;
-          }
-          shownMonth = new Date(chosen.getFullYear(), chosen.getMonth(), 1);
-          renderCalendar();
-        }
-      });
+    dateInput.addEventListener("keydown", e => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        acceptTyped();
+      }
+    });
+    dateInput.addEventListener("input", () => { error.textContent = ""; });
+    todayButton.addEventListener("click", () => {
+      const today = dayStart(new Date());
+      if (!rangeMode) {
+        onChange("@" + localDateKey(today));
+        close();
+        return;
+      }
+      if (activeEdge === "start") {
+        selectedStart = today;
+        if (selectedEnd < selectedStart) selectedEnd = selectedStart;
+        activeEdge = "end";
+      } else {
+        selectedEnd = today;
+        activeEdge = "start";
+      }
+      shownMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      writeField();
+      renderCalendar();
     });
     if (rangeMode) {
       cancel.addEventListener("click", close);
-      apply.addEventListener("click", () => {
-        const first = startInput.value, last = endInput.value;
-        if (!first || !last || last < first) {
-          endInput.setCustomValidity("Choose an end date on or after the start date.");
-          endInput.reportValidity();
-          return;
-        }
-        endInput.setCustomValidity("");
-        onChange("@" + first + (last !== first ? " to " + last : ""));
-        close();
-      });
+      apply.addEventListener("click", applyRange);
     }
-    popup.append(fields, head, grid, actions);
+    popup.append(fieldRow, error, head, grid, actions);
     document.body.appendChild(popup);
     document.addEventListener("pointerdown", outside, true);
     document.addEventListener("keydown", escape, true);
     document.addEventListener("scroll", position, true);
     window.addEventListener("resize", position);
     renderCalendar();
-    startInput.focus({ preventScroll: true });
+    dateInput.focus({ preventScroll: true });
     return true;
   }
 
@@ -668,13 +723,13 @@
     const range = parseSpec(String(token && token.textContent || "").replace(/^@/, ""), anchor);
     if (!range) return false;
     return showDatePicker(range.start, range.end,
-      range.start.getTime() !== range.end.getTime(), onChange, token);
+      range.start.getTime() !== range.end.getTime(), onChange, token, anchor);
   }
 
   function openDatePickerValue(value, onChange, origin) {
     const date = pickerDate(value);
     return date ? showDatePicker(date, date, false,
-      iso => onChange(iso.slice(1)), origin) : false;
+      iso => onChange(iso.slice(1)), origin, dayStart(new Date())) : false;
   }
 
   if (typeof document !== "undefined") {
