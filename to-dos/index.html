@@ -2780,7 +2780,7 @@
 
     // Overdue shows only when it has tasks
     if (overdue.length) {
-      buildSection(el, { id: "overdue", name: "Overdue" },
+      buildSection(el, { id: "overdue", name: "Past" },
         overdue.sort(byDate), data, tState, { showDate: true });
     }
     sections.forEach(sec => {
