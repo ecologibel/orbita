@@ -312,6 +312,39 @@
     }
   }
 
+  // Roll relative single-day tokens forward while keeping their original
+  // calendar day fixed. The new token is anchored today so it stays stable.
+  function refreshRelativeTask(task) {
+    if (!task || typeof task.text !== "string") return false;
+    DATE_PATTERN.lastIndex = 0;
+    const match = DATE_PATTERN.exec(task.text);
+    if (!match || !/^@(today|tomorrow|yesterday|(?:(?:this|last|next)\\s+)?(?:mon(?:day)?|tue(?:sday)?|wed(?:nesday)?|thu(?:rsday)?|fri(?:day)?|sat(?:urday)?|sun(?:day)?))$/i.test(match[0])) {
+      return false;
+    }
+    const anchor = dayStart(task.anchorAt ? new Date(task.anchorAt) : new Date());
+    const range = parseSpec(match[0].slice(1), anchor);
+    if (!range || range.start.getTime() !== range.end.getTime()) return false;
+    const updatedToken = formatDateToken(range.start);
+    if (updatedToken.toLowerCase() === match[0].toLowerCase()) return false;
+    task.text = replaceTextRange(task.text, match.index,
+      match.index + match[0].length, updatedToken);
+    task.anchorAt = Date.now();
+    task.anchorTok = firstToken(task.text);
+    return true;
+  }
+
+  // Same token rollover for a note block's visible text; callers use the
+  // returned offsets to replace the token without flattening its formatting.
+  function refreshRelativeText(text, anchorAt) {
+    const task = { anchorAt, text: String(text || "") };
+    if (!refreshRelativeTask(task)) return null;
+    const token = firstToken(task.text);
+    const previous = firstToken(String(text || ""));
+    const start = String(text || "").indexOf(previous);
+    return { anchorAt: task.anchorAt, end: start + token.length,
+      start, text: task.text, token };
+  }
+
   function datePattern() {
     return new RegExp(DATE_PATTERN.source, DATE_PATTERN.flags);
   }
@@ -953,7 +986,8 @@
     addDays, dateKey, datePattern, dateTokenHtml, dayStart, decorate,
     firstToken, highlight, keyToDate, migrateStoredTodoKeys, monthRange, oneDay,
     openDatePicker, openDatePickerValue, parseDay, parseSpec,
-    replaceHtmlRange, replaceTextRange, stampAnchor, taskRange, textRange,
+    refreshRelativeTask, refreshRelativeText, replaceHtmlRange,
+    replaceTextRange, stampAnchor, taskRange, textRange,
     weekStart
   };
 
