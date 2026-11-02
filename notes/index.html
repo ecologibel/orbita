@@ -1719,6 +1719,7 @@
     const cutoff = Date.now() - TRASH_DAYS * 864e5;
     const before = notes.length;
     notes = notes.filter(n => !n.trashed || n.trashed > cutoff);
+    let relativeChanged = false;
     notes.forEach(n => {
       n.title = typeof n.title === "string" ? n.title : "";
       n.created = n.created || n.updated || Date.now();
@@ -1734,8 +1735,22 @@
       n.blocks = (Array.isArray(n.blocks) ? n.blocks : []).map(normBlock);
       if (!n.blocks.length) n.blocks.push(newBlock());
       normalise(n.blocks);
+      n.blocks.forEach(block => {
+        if (block.type !== "todo") return;
+        const text = blockText(block).trim();
+        const refreshed = ToolkitDates.refreshRelativeText(text,
+          block.anchorAt || n.updated);
+        if (!refreshed) return;
+        const html = ToolkitDates.replaceHtmlRange(block.html,
+          refreshed.start, refreshed.end, refreshed.token);
+        if (html == null) return;
+        block.html = html;
+        block.anchorAt = refreshed.anchorAt;
+        block.anchorTok = ToolkitDates.firstToken(refreshed.text);
+        relativeChanged = true;
+      });
     });
-    if (notes.length !== before) persist();
+    if (notes.length !== before || relativeChanged) persist();
   }
 
   function persist() {
