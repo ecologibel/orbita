@@ -191,7 +191,7 @@
     if ((m = s.match(new RegExp(
       '^((?:this|last|next) )?' + WEEKDAY_RE + '$'
     )))) {
-      const qualifier = m[1] || "";
+      const qualifier = (m[1] || "").trim();
       const name = s.replace(/^(this|last|next) /, "").slice(0, 3);
       const wd = WEEKDAYS.indexOf(name);
       const coming = (wd - anchor.getDay() + 7) % 7;
