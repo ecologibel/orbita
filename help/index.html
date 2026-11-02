@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>help · orbita</title>
+<style>
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    --bg: #011627; --surface: #01111f; --fg: #d6deeb; --muted: #8291a5;
+    --line: #1e3a52; --accent: #7fdbca;
+    background: var(--bg); color: var(--fg);
+    font: 16px/1.65 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    margin: 0; min-height: 100%;
+  }
+  body.t-light {
+    --bg: #f7f9fb; --surface: #fff; --fg: #233044; --muted: #607086;
+    --line: #d7e0e8; --accent: #147d70;
+  }
+  a { color: var(--accent); }
+  .skip-link {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 4px;
+    left: 12px; padding: 8px 12px; position: fixed; top: 8px;
+    transform: translateY(-150%); z-index: 1000;
+  }
+  .skip-link:focus { transform: none; }
+  .help-shell { margin: 0 auto; max-width: 760px; padding: 38px 28px 70px; }
+  .help-shell.size-s { font-size: 14px; }
+  .help-shell.size-l { font-size: 18px; }
+  .help-shell.width-wide { max-width: 960px; }
+  .help-shell.width-full { max-width: none; }
+  h1, h2, h3 { line-height: 1.25; }
+  h1 { font-size: 2rem; margin: 0 0 8px; }
+  h2 { border-bottom: 1px solid var(--line); font-size: 1.35rem; margin: 38px 0 14px; padding-bottom: 8px; }
+  h3 { font-size: 1.05rem; margin: 24px 0 8px; }
+  p, ul, ol { margin: 10px 0; }
+  li + li { margin-top: 5px; }
+  .intro, .muted { color: var(--muted); }
+  .contents {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+    margin: 24px 0; padding: 14px 18px;
+  }
+  .contents ul { display: flex; flex-wrap: wrap; gap: 6px 18px; list-style: none; margin: 0; padding: 0; }
+  code, kbd { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; }
+  details {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 7px;
+    margin: 16px 0; padding: 12px 16px;
+  }
+  summary { color: var(--accent); cursor: pointer; font-weight: 600; }
+  .note { border-left: 3px solid var(--accent); color: var(--muted); margin: 16px 0; padding: 4px 14px; }
+  @media (max-width: 600px) { .help-shell { padding: 26px 18px 50px; } }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+</head>
+<body class="t-dark">
+<a class="skip-link" href="#main">skip to help content</a>
+<main id="main" class="help-shell">
+  <h1>help</h1>
+  <p class="intro">A guide to using orbita's dashboard, notes, to dos, focus timer and codepad.</p>
+  <nav class="contents" aria-label="help topics">
+    <ul>
+      <li><a href="#getting-started">getting started</a></li>
+      <li><a href="#dashboard">dashboard</a></li>
+      <li><a href="#notes">notes</a></li>
+      <li><a href="#to-dos">to dos</a></li>
+      <li><a href="#focus">focus</a></li>
+      <li><a href="#codepad">codepad</a></li>
+      <li><a href="#sync">Google Drive sync</a></li>
+      <li><a href="#shortcuts">keyboard shortcuts</a></li>
+    </ul>
+  </nav>
+
+  <section id="getting-started">
+    <h2>getting started</h2>
+    <p>Use the sidebar to move between tools. The layers button at the top returns to the dashboard. Click <strong>to dos</strong> to open its views, then choose a view; the list folds away after you choose one.</p>
+    <p>Your content is saved in this browser. Sign in to Google Drive sync to keep supported data available on your other devices. Display preferences stay on each device.</p>
+    <p>The sidebar controls switch between dark and light mode, change text size and page width, and show sync status. Menus and view pickers close when you leave their page.</p>
+  </section>
+
+  <section id="dashboard">
+    <h2>dashboard</h2>
+    <p>The dashboard is the home page. Open notes or a to dos view from its tool buttons. Its <em>at a glance</em> list groups dated tasks due today, tomorrow, later this week or next week. You can tick a task there or add one for today.</p>
+    <p>Drag the divider beside the at-a-glance list to resize it. Use the fold control to hide or show the list.</p>
+  </section>
+
+  <section id="notes">
+    <h2>notes</h2>
+    <h3>organise notes</h3>
+    <p>Search notes, filter by tag, pin notes, sort the gallery, and choose whether cards show a preview. Create folders from the folder menu; drag notes or folders to move them. The bin keeps deleted notes for 30 days.</p>
+    <h3>write and format</h3>
+    <p>Type <kbd>/</kbd> in a note to choose a block type. Common shortcuts include <kbd>[]</kbd> for a to do, <kbd>/tog</kbd> for a toggle, <kbd>/tab</kbd> for a table, and <kbd>```</kbd> for an R code block. Markdown shortcuts such as <kbd>#</kbd> for a heading and <kbd>-</kbd> for a bullet list are also available.</p>
+    <p>Select text to use the floating format menu, or use <kbd>Ctrl+B</kbd> for bold, <kbd>Ctrl+I</kbd> for italics, <kbd>Ctrl+E</kbd> for inline code and <kbd>Ctrl+K</kbd> for a link. Drag blocks by their handle; use <kbd>Tab</kbd> and <kbd>Shift+Tab</kbd> to change indentation. <kbd>Ctrl+Z</kbd> and <kbd>Ctrl+Y</kbd> undo and redo.</p>
+    <p>Each note can have a date, tags and a pin. Type a date such as <code>@today</code> or <code>@friday</code> in a note to-do to show it in the to dos and dashboard. Notes remain the source of truth for those linked tasks.</p>
+  </section>
+
+  <section id="to-dos">
+    <h2>to dos</h2>
+    <p>Choose one of six views:</p>
+    <ul>
+      <li><strong>simple:</strong> a flexible list.</li>
+      <li><strong>dates:</strong> tasks grouped by date or date range.</li>
+      <li><strong>week:</strong> tasks grouped by day, with a section for unscheduled tasks.</li>
+      <li><strong>month</strong> and <strong>year:</strong> calendar views.</li>
+      <li><strong>done:</strong> completed tasks grouped by day.</li>
+    </ul>
+    <p>Add <code>@today</code>, <code>@friday</code> or <code>@next week</code> to a task to give it a date. Add a <code>#tag</code> to group related tasks. <code>@today</code> keeps the date from when you typed it, so it can show as overdue after that day passes.</p>
+    <p>Press <kbd>Enter</kbd> to add a task below the current one; pressing it in the middle of a task splits the text. Drag a task by its handle to move or indent it. Select multiple tasks with <kbd>Ctrl</kbd>+click or <kbd>Shift</kbd>+click; <kbd>Ctrl+C</kbd> copies the selection and <kbd>Ctrl+A</kbd> twice selects the whole view.</p>
+    <p>Deleting a task or date section shows an undo option briefly.</p>
+  </section>
+
+  <section id="focus">
+    <h2>focus</h2>
+    <p>Choose one of today's or overdue tasks, search for another task, or type a new one. Add optional subtasks and use the timer controls to start, pause or reset the countdown. The timer continues when you visit another page; the sidebar shows the remaining time.</p>
+    <p>Press <kbd>Esc</kbd> or choose <strong>leave focus</strong> to return to your previous page.</p>
+  </section>
+
+  <section id="codepad">
+    <h2>codepad</h2>
+    <p>Use codepad as a scratchpad for R. It highlights R syntax and matching brackets. Your code is saved in the browser and included in Google Drive sync when signed in.</p>
+  </section>
+
+  <section id="sync">
+    <h2>Google Drive sync</h2>
+    <p>Choose the sync control at the bottom of the sidebar and select the Google account to use. Sync stores the app's files in a private app-data folder in Drive; orbita does not use this access to browse your other Drive files.</p>
+    <p>Notes, to dos and codepad sync as separate files. Dashboard and focus can sync to dos and notes too. The focus timer itself stays on the device.</p>
+    <p>If local and Drive copies have conflicting changes, orbita reports the conflict and offers a choice of which copy to keep. A recovery copy is made before resolving it. If a sync replaces a newer copy, look for a sync backup in the app's recovery data.</p>
+    <p>Sync requires the hosted site or a local web server; it does not work when you open an HTML file directly using <code>file://</code>. The sync icon indicates the current connection status. Alt-click it to sign out.</p>
+    <p class="note">If you use more than one Google account, select the account you want for Drive when the Google sign-in window appears. It can be different from an account you use with another Google service.</p>
+  </section>
+
+  <section id="shortcuts">
+    <h2>keyboard shortcuts</h2>
+    <ul>
+      <li><kbd>Ctrl+K</kbd> opens the quick switcher from any tool.</li>
+      <li>In notes, <kbd>Ctrl+B</kbd>, <kbd>Ctrl+I</kbd>, <kbd>Ctrl+E</kbd> and <kbd>Ctrl+K</kbd> format selected text or add a link.</li>
+      <li>In lists, <kbd>Enter</kbd> creates a task below; <kbd>Esc</kbd> leaves focus mode.</li>
+    </ul>
+  </section>
+
+  <details>
+    <summary>For people hosting their own copy</summary>
+    <p>This section is for the person configuring a separate orbita installation. It is not needed to use the hosted app.</p>
+    <ol>
+      <li>In Google Cloud Console, create a project and enable the Google Drive API.</li>
+      <li>In Google Auth Platform, configure the app as external. Add your account as a test user while the app is in testing.</li>
+      <li>Add the <code>https://www.googleapis.com/auth/drive.appdata</code> scope.</li>
+      <li>Create a web OAuth client. Add the exact site origin (for the hosted site, <code>https://ecologibel.github.io</code>; for local testing, the origin might be <code>http://localhost:8000</code> or <code>http://localhost:8001</code>). Do not add a path or trailing slash.</li>
+      <li>Set the client ID in the app's sync configuration. Do not put the client secret in client-side code.</li>
+    </ol>
+  </details>
+
+  <p class="muted"><a href="../dashboard/index.html">back to dashboard</a></p>
+</main>
+<script src="../sync.js"></script>
+<script>
+  ToolSync.init({
+    file: "to-dos.json",
+    keys: ["todo-data", "todo-toggle-sections"],
+    onRemote: () => {}
+  });
+  ToolSync.init({
+    file: "notes.json",
+    keys: ["notes-data"],
+    onRemote: () => {}
+  });
+  ToolSync.init({
+    file: "r-codepad.json",
+    keys: ["r-editor-content"],
+    onRemote: () => {}
+  });
+</script>
+<script src="../sidebar.js"></script>
+<script>
+(function () {
+  const body = document.body;
+  const main = document.querySelector(".help-shell");
+  const read = key => { try { return localStorage.getItem(key); } catch { return null; } };
+  const write = (key, value) => { try { localStorage.setItem(key, value); } catch {} };
+  let size = ["s", "m", "l"].includes(read("toolkit-size")) ? read("toolkit-size") : "m";
+  let width = ["normal", "wide", "full"].includes(read("toolkit-width"))
+    ? read("toolkit-width") : "normal";
+  const applyLayout = () => {
+    main.classList.remove("size-s", "size-m", "size-l",
+      "width-normal", "width-wide", "width-full");
+    main.classList.add("size-" + size, "width-" + width);
+  };
+  applyLayout();
+  ToolkitSidebar.init({
+    active: "help",
+    page: "help/index.html",
+    mode: {
+      initial: "dark",
+      apply: mode => {
+        body.classList.toggle("t-dark", mode !== "light");
+        body.classList.toggle("t-light", mode === "light");
+      }
+    },
+    size: {
+      get: () => size,
+      set: value => { size = value; write("toolkit-size", value); applyLayout(); }
+    },
+    width: {
+      get: () => width,
+      set: value => { width = value; write("toolkit-width", value); applyLayout(); }
+    }
+  });
+  ToolkitSidebar.title("help");
+})();
+</script>
+</body>
+</html>
