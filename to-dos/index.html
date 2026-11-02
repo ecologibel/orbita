@@ -3753,6 +3753,17 @@
   });
 
   renderCurrentView();
+  let relativeDate = new Date().toDateString();
+  setInterval(() => {
+    const today = new Date().toDateString();
+    const active = document.activeElement;
+    if (today !== relativeDate && !document.querySelector(".orbita-date-picker")
+        && !(active && (active.tagName === "INPUT"
+          || active.tagName === "TEXTAREA" || active.isContentEditable))) {
+      relativeDate = today;
+      renderCurrentView();
+    }
+  }, 60000);
 
   // Sync to-dos and sections via Google Drive
   ToolSync.init({
