@@ -534,6 +534,19 @@
       e.preventDefault();
       token.click();
     });
+    document.addEventListener("click", e => {
+      const token = e.target && e.target.closest
+        ? e.target.closest(".date-token[role='button']") : null;
+      if (!token) return;
+      const editor = token.closest("[contenteditable='true'], [contenteditable='plaintext-only']");
+      if (!editor) return;
+      e.preventDefault();
+      e.stopPropagation();
+      openDatePicker(token, replacement => {
+        token.replaceWith(document.createTextNode(replacement));
+        editor.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: replacement }));
+      });
+    });
   }
   function highlightTags(seg) {
     let out = "", last = 0, m;
