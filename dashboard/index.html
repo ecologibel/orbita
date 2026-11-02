@@ -402,6 +402,7 @@
     text-decoration: line-through;
   }
   .date-token, .mention-token { color: var(--accent); }
+  .task.done .task-text .date-token { color: var(--accent); }
   .tag-token {
     background: color-mix(in srgb, var(--accent) 16%, transparent);
     border-radius: 3px;
@@ -736,6 +737,12 @@
         if (!data.weekly) data.weekly = {};
         if (!data.toggleData) data.toggleData = {};
         if (dateKeysReady) data.dateKeyVersion = 1;
+        let relativeChanged = false;
+        lists(data).forEach(([, list]) => (list || []).forEach(task => {
+          if (task.text && !task.anchorAt) D.stampAnchor(task);
+          if (D.refreshRelativeTask(task)) relativeChanged = true;
+        }));
+        if (relativeChanged) store(TODO_KEY, JSON.stringify(data));
         return data;
       }
     } catch {}
@@ -749,7 +756,25 @@
     try {
       const data = JSON.parse(raw);
       if (data && Array.isArray(data.notes)
-          && (data.folders == null || Array.isArray(data.folders))) return data;
+          && (data.folders == null || Array.isArray(data.folders))) {
+        let relativeChanged = false;
+        data.notes.forEach(note => (note.blocks || []).forEach(block => {
+          if (block.type !== "todo") return;
+          const text = htmlText(block.html).trim();
+          const refreshed = D.refreshRelativeText(text,
+            block.anchorAt || note.updated);
+          if (!refreshed) return;
+          const html = D.replaceHtmlRange(block.html,
+            refreshed.start, refreshed.end, refreshed.token);
+          if (html == null) return;
+          block.html = html;
+          block.anchorAt = refreshed.anchorAt;
+          block.anchorTok = D.firstToken(refreshed.text);
+          relativeChanged = true;
+        }));
+        if (relativeChanged) store(NOTES_KEY, JSON.stringify(data));
+        return data;
+      }
     } catch {}
     if (raw !== null) ToolkitSidebar.preserveRecovery(NOTES_KEY, raw);
     return null;
@@ -913,7 +938,68 @@
       });
       const text = document.createElement("div");
       text.className = "task-text";
-      text.innerHTML = D.highlight(item.text);
+      const anchorAt = item.block
+        ? item.block.anchorAt || item.note.updated : item.task.anchorAt;
+      text.innerHTML = D.highlight(item.text, anchorAt);
+      text.addEventListener("click", e => {
+        const token = e.target.closest(".date-token");
+        if (!token) return;
+        e.preventDefault();
+        e.stopPropagation();
+        D.openDatePicker(token, replacement => {
+          if (item.note) {
+            const data = loadNotes();
+            const note = data && data.notes.find(n => n.id === item.note.id);
+            const block = note && note.blocks.find(b => b.id === item.block.id);
+            if (!block) return;
+            const previous = { anchorAt: block.anchorAt, anchorTok: block.anchorTok,
+              html: block.html, updated: note.updated };
+            const html = D.replaceHtmlRange(block.html,
+              token.dataset.dateStart, token.dataset.dateEnd, replacement);
+            if (html == null) return;
+            block.html = html;
+            note.updated = Date.now();
+            store(NOTES_KEY, JSON.stringify(data));
+            renderToday();
+            return () => {
+              const latest = loadNotes();
+              const savedNote = latest && latest.notes.find(n => n.id === item.note.id);
+              const savedBlock = savedNote
+                && savedNote.blocks.find(b => b.id === item.block.id);
+              if (!savedBlock) return;
+              savedBlock.html = previous.html;
+              savedBlock.anchorAt = previous.anchorAt;
+              savedBlock.anchorTok = previous.anchorTok;
+              savedNote.updated = previous.updated;
+              store(NOTES_KEY, JSON.stringify(latest));
+              renderToday();
+            };
+          }
+          const previous = { anchorAt: item.task.anchorAt,
+            anchorTok: item.task.anchorTok, text: item.task.text };
+          item.task.text = D.replaceTextRange(item.task.text,
+            token.dataset.dateStart, token.dataset.dateEnd, replacement);
+          D.stampAnchor(item.task);
+          const changedText = item.task.text, fid = item.task.fid;
+          store(TODO_KEY, JSON.stringify(data));
+          renderToday();
+          return () => {
+            const latest = loadTodos();
+            let target = null;
+            lists(latest).some(([, list]) => (list || []).some(task => {
+              if (fid ? task.fid === fid
+                : task.text === changedText && !task.done && !task.fid) target = task;
+              return !!target;
+            }));
+            if (!target) return;
+            target.text = previous.text;
+            target.anchorAt = previous.anchorAt;
+            target.anchorTok = previous.anchorTok;
+            store(TODO_KEY, JSON.stringify(latest));
+            renderToday();
+          };
+        });
+      });
       row.append(cb, text);
       if (item.note) {
         const link = document.createElement("a");

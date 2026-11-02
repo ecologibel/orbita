@@ -25,10 +25,21 @@
     transform: translateY(-150%); z-index: 1000;
   }
   .skip-link:focus { transform: none; }
-  .help-shell { margin: 0 auto; max-width: 760px; padding: 38px 28px 70px; }
+  .help-shell {
+    display: grid;
+    gap: 0 34px;
+    grid-template-columns: 190px minmax(0, 760px);
+    margin: 0 auto;
+    max-width: 1080px;
+    padding: 38px 28px 70px;
+  }
+  .help-shell > h1, .help-shell > .intro, .help-shell > section,
+  .help-shell > .muted {
+    grid-column: 2;
+  }
   .help-shell.size-s { font-size: 14px; }
   .help-shell.size-l { font-size: 18px; }
-  .help-shell.width-wide { max-width: 960px; }
+  .help-shell.width-wide { max-width: 1180px; }
   .help-shell.width-full { max-width: none; }
   h1, h2, h3 { line-height: 1.25; }
   h1 { font-size: 2rem; margin: 0 0 8px; }
@@ -38,10 +49,22 @@
   li + li { margin-top: 5px; }
   .intro, .muted { color: var(--muted); }
   .contents {
+    align-self: start;
     background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
-    margin: 24px 0; padding: 14px 18px;
+    grid-column: 1; grid-row: 1 / span 20;
+    margin: 0; padding: 12px;
+    position: sticky; top: 24px;
   }
-  .contents ul { display: flex; flex-wrap: wrap; gap: 6px 18px; list-style: none; margin: 0; padding: 0; }
+  .contents ul { display: grid; gap: 4px; list-style: none; margin: 0; padding: 0; }
+  .contents a {
+    align-items: center; border-radius: 5px; display: flex; gap: 10px;
+    padding: 7px 8px; text-decoration: none; transition: background .18s ease;
+  }
+  .contents a:hover, .contents a:focus-visible { background: var(--bg); }
+  .topic-icon {
+    color: var(--accent); flex: 0 0 20px; font-size: 17px;
+    line-height: 1; text-align: center;
+  }
   code, kbd { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; }
   details {
     background: var(--surface); border: 1px solid var(--line); border-radius: 7px;
@@ -49,7 +72,12 @@
   }
   summary { color: var(--accent); cursor: pointer; font-weight: 600; }
   .note { border-left: 3px solid var(--accent); color: var(--muted); margin: 16px 0; padding: 4px 14px; }
-  @media (max-width: 600px) { .help-shell { padding: 26px 18px 50px; } }
+  @media (max-width: 760px) {
+    .help-shell { display: block; max-width: 760px; padding: 26px 18px 50px; }
+    .contents { margin: 20px 0 28px; position: static; }
+    .contents ul { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 420px) { .contents ul { grid-template-columns: 1fr; } }
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 </style>
 </head>
@@ -57,17 +85,17 @@
 <a class="skip-link" href="#main">skip to help content</a>
 <main id="main" class="help-shell">
   <h1>help</h1>
-  <p class="intro">A guide to using orbita's dashboard, notes, to dos, focus timer and codepad.</p>
+  <p class="intro">A guide to using orbita's dashboard, notes, to dos, focus timer, and codepad.</p>
   <nav class="contents" aria-label="help topics">
     <ul>
-      <li><a href="#getting-started">getting started</a></li>
-      <li><a href="#dashboard">dashboard</a></li>
-      <li><a href="#notes">notes</a></li>
-      <li><a href="#to-dos">to dos</a></li>
-      <li><a href="#focus">focus</a></li>
-      <li><a href="#codepad">codepad</a></li>
-      <li><a href="#sync">Google Drive sync</a></li>
-      <li><a href="#shortcuts">keyboard shortcuts</a></li>
+      <li><a href="#getting-started"><span class="topic-icon" aria-hidden="true">✦</span>getting started</a></li>
+      <li><a href="#dashboard"><span class="topic-icon" aria-hidden="true">▦</span>dashboard</a></li>
+      <li><a href="#notes"><span class="topic-icon" aria-hidden="true">▤</span>notes</a></li>
+      <li><a href="#to-dos"><span class="topic-icon" aria-hidden="true">☑</span>to dos</a></li>
+      <li><a href="#focus"><span class="topic-icon" aria-hidden="true">◉</span>focus</a></li>
+      <li><a href="#codepad"><span class="topic-icon" aria-hidden="true">&lt;/&gt;</span>codepad</a></li>
+      <li><a href="#sync"><span class="topic-icon" aria-hidden="true">⇄</span>Google Drive sync</a></li>
+      <li><a href="#shortcuts"><span class="topic-icon" aria-hidden="true">⌨</span>keyboard shortcuts</a></li>
     </ul>
   </nav>
 
@@ -90,8 +118,8 @@
     <p>Search notes, filter by tag, pin notes, sort the gallery, and choose whether cards show a preview. Create folders from the folder menu; drag notes or folders to move them. The bin keeps deleted notes for 30 days.</p>
     <h3>write and format</h3>
     <p>Type <kbd>/</kbd> in a note to choose a block type. Common shortcuts include <kbd>[]</kbd> for a to do, <kbd>/tog</kbd> for a toggle, <kbd>/tab</kbd> for a table, and <kbd>```</kbd> for an R code block. Markdown shortcuts such as <kbd>#</kbd> for a heading and <kbd>-</kbd> for a bullet list are also available.</p>
-    <p>Select text to use the floating format menu, or use <kbd>Ctrl+B</kbd> for bold, <kbd>Ctrl+I</kbd> for italics, <kbd>Ctrl+E</kbd> for inline code and <kbd>Ctrl+K</kbd> for a link. Drag blocks by their handle; use <kbd>Tab</kbd> and <kbd>Shift+Tab</kbd> to change indentation. <kbd>Ctrl+Z</kbd> and <kbd>Ctrl+Y</kbd> undo and redo.</p>
-    <p>Each note can have a date, tags and a pin. Type a date such as <code>@today</code> or <code>@friday</code> in a note to-do to show it in the to dos and dashboard. Notes remain the source of truth for those linked tasks.</p>
+    <p>Select text to use the floating format menu, or use <kbd>Ctrl+B</kbd> for bold, <kbd>Ctrl+I</kbd> for italics, <kbd>Ctrl+E</kbd> for inline code, and <kbd>Ctrl+K</kbd> for a link. Drag blocks by their handle; use <kbd>Tab</kbd> and <kbd>Shift+Tab</kbd> to change indentation. <kbd>Ctrl+Z</kbd> and <kbd>Ctrl+Y</kbd> undo and redo.</p>
+    <p>Each note can have a date, tags, and a pin. Click a note's date to confirm or change it with the calendar. Click a date token such as <code>@today</code> or <code>@friday</code> in a note to-do to see the date it resolves to and adjust it. Those linked tasks appear in the to dos and dashboard; notes remain their source of truth.</p>
   </section>
 
   <section id="to-dos">
@@ -104,14 +132,14 @@
       <li><strong>month</strong> and <strong>year:</strong> calendar views.</li>
       <li><strong>done:</strong> completed tasks grouped by day.</li>
     </ul>
-    <p>Add <code>@today</code>, <code>@friday</code> or <code>@next week</code> to a task to give it a date. Add a <code>#tag</code> to group related tasks. <code>@today</code> keeps the date from when you typed it, so it can show as overdue after that day passes.</p>
+    <p>Add <code>@today</code>, <code>@friday</code>, or <code>@next week</code> to a task to give it a date. Weekdays accept short names: <code>@fri</code> and <code>@this fri</code> mean the coming Friday, <code>@last fri</code> the previous Friday, and <code>@next fri</code> the Friday of the following week. For a calendar date, use <code>@6 nov</code>, <code>@nov 6</code>, or add its weekday and year, such as <code>@fri 6 nov 2026</code>. ISO dates such as <code>@2026-11-06</code> are also accepted. Add a <code>#tag</code> to group related tasks. Relative date tokens stay anchored to the date you chose, while their labels roll as days pass—for example, <code>@today</code> becomes <code>@yesterday</code> the next day.</p>
     <p>Press <kbd>Enter</kbd> to add a task below the current one; pressing it in the middle of a task splits the text. Drag a task by its handle to move or indent it. Select multiple tasks with <kbd>Ctrl</kbd>+click or <kbd>Shift</kbd>+click; <kbd>Ctrl+C</kbd> copies the selection and <kbd>Ctrl+A</kbd> twice selects the whole view.</p>
-    <p>Deleting a task or date section shows an undo option briefly.</p>
+    <p>Click a date token in a task to see the date it resolves to and change it with the calendar. Date ranges show separate start and end dates. Deleting a task or date section shows an undo option briefly.</p>
   </section>
 
   <section id="focus">
     <h2>focus</h2>
-    <p>Choose one of today's or overdue tasks, search for another task, or type a new one. Add optional subtasks and use the timer controls to start, pause or reset the countdown. The timer continues when you visit another page; the sidebar shows the remaining time.</p>
+    <p>Choose one of today's or overdue tasks, search for another task, or type a new one. Add optional subtasks and use the timer controls to start, pause, or reset the countdown. The timer continues when you visit another page; the sidebar shows the remaining time.</p>
     <p>Press <kbd>Esc</kbd> or choose <strong>leave focus</strong> to return to your previous page.</p>
   </section>
 
@@ -123,7 +151,7 @@
   <section id="sync">
     <h2>Google Drive sync</h2>
     <p>Choose the sync control at the bottom of the sidebar and select the Google account to use. Sync stores the app's files in a private app-data folder in Drive; orbita does not use this access to browse your other Drive files.</p>
-    <p>Notes, to dos and codepad sync as separate files. Dashboard and focus can sync to dos and notes too. The focus timer itself stays on the device.</p>
+    <p>Notes, to dos, and codepad sync as separate files. Dashboard and focus can sync to dos and notes too. The focus timer itself stays on the device.</p>
     <p>If local and Drive copies have conflicting changes, orbita reports the conflict and offers a choice of which copy to keep. A recovery copy is made before resolving it. If a sync replaces a newer copy, look for a sync backup in the app's recovery data.</p>
     <p>Sync requires the hosted site or a local web server; it does not work when you open an HTML file directly using <code>file://</code>. The sync icon indicates the current connection status. Alt-click it to sign out.</p>
     <p class="note">If you use more than one Google account, select the account you want for Drive when the Google sign-in window appears. It can be different from an account you use with another Google service.</p>
@@ -133,7 +161,7 @@
     <h2>keyboard shortcuts</h2>
     <ul>
       <li><kbd>Ctrl+K</kbd> opens the quick switcher from any tool.</li>
-      <li>In notes, <kbd>Ctrl+B</kbd>, <kbd>Ctrl+I</kbd>, <kbd>Ctrl+E</kbd> and <kbd>Ctrl+K</kbd> format selected text or add a link.</li>
+      <li>In notes, <kbd>Ctrl+B</kbd>, <kbd>Ctrl+I</kbd>, <kbd>Ctrl+E</kbd>, and <kbd>Ctrl+K</kbd> format selected text or add a link.</li>
       <li>In lists, <kbd>Enter</kbd> creates a task below; <kbd>Esc</kbd> leaves focus mode.</li>
     </ul>
   </section>

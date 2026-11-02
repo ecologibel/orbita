@@ -242,7 +242,7 @@
     word-break: break-word;
     overflow: hidden;
     color: var(--fg);
-    z-index: 0;
+    z-index: 2;
     line-height: 1.4;
   }
   /* Checked items in a slightly darker highlight colour */
@@ -251,7 +251,8 @@
     text-decoration: line-through;
     color: var(--done);
   }
-  .task-highlight .date-token,
+  .task-highlight .date-token { color: var(--accent); cursor: pointer; pointer-events: auto; }
+  .task-highlight .date-token:focus-visible { outline: 2px solid var(--accent); }
   .task-highlight .mention-token {
     color: var(--accent);
   }
@@ -262,7 +263,8 @@
   }
 
   /* Overdue tasks: only the date, in the completed colour */
-  .task.overdue .task-highlight .date-token { color: var(--done); }
+  .task.overdue .task-highlight .date-token,
+  .task.done .task-highlight .date-token { color: var(--accent); }
 
   /* Tags echoed at the right of a task, each with a tinted background */
   .task-tags {
@@ -1202,10 +1204,16 @@
     }
     if (!data.dateSections) data.dateSections = [];
 
-    // Give every task a written day for its relative dates
+    // Give every task a written day and roll relative tokens while keeping
+    // their original calendar date fixed.
+    let relativeChanged = false;
     allLists(data).forEach(([, list]) => {
-      list.forEach(t => { if (t.text && !t.anchorAt) stampAnchor(t); });
+      list.forEach(t => {
+        if (t.text && !t.anchorAt) stampAnchor(t);
+        if (DATES.refreshRelativeTask(t)) relativeChanged = true;
+      });
     });
+    if (relativeChanged) saveData(data);
     return data;
   }
 
@@ -1714,7 +1722,7 @@
       .replace(/>/g, "&gt;");
   }
 
-  function highlightDates(text) {
+  function highlightDates(text, anchor) {
     if (!text) return "";
     let result = "";
     let lastIdx = 0;
@@ -1724,8 +1732,9 @@
       result += highlightTags(
         text.slice(lastIdx, match.index)
       );
-      result += '<span class="date-token">'
-        + escapeHtml(match[0]) + '</span>';
+      result += DATES.isValidToken(match[0], anchor)
+        ? DATES.dateTokenHtml(match[0], match.index, anchor)
+        : escapeHtml(match[0]);
       lastIdx = match.index + match[0].length;
     }
     result += highlightTags(text.slice(lastIdx));
@@ -1968,11 +1977,37 @@
     tagBox.className = "task-tags";
 
     function syncHighlight() {
-      highlight.innerHTML = highlightDates(txt.value);
+      highlight.innerHTML = highlightDates(txt.value, task.anchorAt);
       tagBox.innerHTML = taskTags(txt.value)
         .map(t => '<span class="tag-chip">' + escapeHtml(t) + '</span>')
         .join("");
     }
+    highlight.addEventListener("click", e => {
+      const token = e.target.closest(".date-token");
+      if (!token) return;
+      e.preventDefault();
+      e.stopPropagation();
+      DATES.openDatePicker(token, replacement => {
+        const previous = { anchorAt: task.anchorAt, anchorTok: task.anchorTok,
+          text: task.text };
+        task.text = DATES.replaceTextRange(task.text,
+          token.dataset.dateStart, token.dataset.dateEnd, replacement);
+        DATES.stampAnchor(task);
+        txt.value = task.text;
+        syncHighlight();
+        onUpdate();
+        if (currentView === "dates") renderDatesAnimated();
+        return () => {
+          task.text = previous.text;
+          task.anchorAt = previous.anchorAt;
+          task.anchorTok = previous.anchorTok;
+          txt.value = task.text;
+          syncHighlight();
+          onUpdate();
+          if (currentView === "dates") renderDatesAnimated();
+        };
+      });
+    });
 
     function autoResize() {
       txt.style.height = "auto";
@@ -1988,12 +2023,23 @@
       });
     }
 
+    let renderedDateToken = DATES.firstToken(task.text);
     txt.addEventListener("input", () => {
       task.text = txt.value;
       if (task.text) stampAnchor(task);
       autoResize();
       syncHighlight();
       onUpdate();
+    });
+    txt.addEventListener("blur", () => {
+      setTimeout(() => {
+        if (currentView !== "dates" || opts.onCommit
+            || document.querySelector(".orbita-date-picker")) return;
+        const nextToken = DATES.firstToken(task.text);
+        if (nextToken === renderedDateToken) return;
+        renderedDateToken = nextToken;
+        renderDatesAnimated();
+      }, 0);
     });
 
     wrap.appendChild(highlight);
@@ -2478,6 +2524,8 @@
           section: sec.id, srcKey: src
         }
       );
+      tEl.dataset.dateMoveKey = "todo:" + src + ":"
+        + getList(data, src).indexOf(task);
       tEl.title = "from " + sourceLabel(src);
       if (opts.showDate) {
         const r = taskRange(task, src);
@@ -2630,6 +2678,27 @@
 
   const COUNTS_KEY = "todo-show-counts";
 
+  function renderDatesAnimated() {
+    const el = document.getElementById("dates-view");
+    const before = new Map();
+    el.querySelectorAll(".task[data-date-move-key]").forEach(task => {
+      before.set(task.dataset.dateMoveKey, task.getBoundingClientRect());
+    });
+    renderDates();
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    el.querySelectorAll(".task[data-date-move-key]").forEach(task => {
+      const rect = before.get(task.dataset.dateMoveKey);
+      if (!rect || typeof task.animate !== "function") return;
+      const next = task.getBoundingClientRect();
+      const x = rect.left - next.left, y = rect.top - next.top;
+      if (Math.abs(x) < 1 && Math.abs(y) < 1) return;
+      task.animate([
+        { transform: "translate(" + x + "px, " + y + "px)", opacity: 0.78 },
+        { transform: "translate(0, 0)", opacity: 1 }
+      ], { duration: 220, easing: "cubic-bezier(.2,.7,.2,1)" });
+    });
+  }
+
   function renderDates() {
     const data = loadData();
     const tState = loadToggleState();
@@ -2711,7 +2780,7 @@
 
     // Overdue shows only when it has tasks
     if (overdue.length) {
-      buildSection(el, { id: "overdue", name: "Overdue" },
+      buildSection(el, { id: "overdue", name: "Past" },
         overdue.sort(byDate), data, tState, { showDate: true });
     }
     sections.forEach(sec => {
@@ -2836,9 +2905,10 @@
 
   }
 
-  function noteTaskEl(item, renderFn = renderDates) {
+  function noteTaskEl(item, renderFn = renderDatesAnimated) {
     const el = document.createElement("div");
     el.className = "task note-task" + (item.task.done ? " done" : "");
+    el.dataset.dateMoveKey = "note:" + item.note.id + ":" + item.block.id;
     el.title = "from the note " + (item.note.title || "untitled");
 
     const box = document.createElement("input");
@@ -2853,7 +2923,42 @@
     wrap.className = "task-text-wrap";
     const text = document.createElement("div");
     text.className = "task-highlight note-text";
-    text.innerHTML = highlightDates(item.task.text);
+    text.innerHTML = highlightDates(item.task.text,
+      item.block.anchorAt || item.note.updated);
+    text.addEventListener("click", e => {
+      const token = e.target.closest(".date-token");
+      if (!token) return;
+      e.preventDefault();
+      e.stopPropagation();
+      DATES.openDatePicker(token, replacement => {
+        const data = loadNotes();
+        const note = data && data.notes.find(n => n.id === item.note.id);
+        const block = note && note.blocks.find(b => b.id === item.block.id);
+        if (!block) return;
+        const previous = { anchorAt: block.anchorAt, anchorTok: block.anchorTok,
+          html: block.html, updated: note.updated };
+        const html = DATES.replaceHtmlRange(block.html,
+          token.dataset.dateStart, token.dataset.dateEnd, replacement);
+        if (html == null) return;
+        block.html = html;
+        note.updated = Date.now();
+        localStorage.setItem(NOTES_KEY, JSON.stringify(data));
+        renderFn();
+        return () => {
+          const latest = loadNotes();
+          const savedNote = latest && latest.notes.find(n => n.id === item.note.id);
+          const savedBlock = savedNote
+            && savedNote.blocks.find(b => b.id === item.block.id);
+          if (!savedBlock) return;
+          savedBlock.html = previous.html;
+          savedBlock.anchorAt = previous.anchorAt;
+          savedBlock.anchorTok = previous.anchorTok;
+          savedNote.updated = previous.updated;
+          localStorage.setItem(NOTES_KEY, JSON.stringify(latest));
+          renderFn();
+        };
+      });
+    });
     wrap.appendChild(text);
 
     const link = document.createElement("a");
@@ -3712,6 +3817,17 @@
   });
 
   renderCurrentView();
+  let relativeDate = new Date().toDateString();
+  setInterval(() => {
+    const today = new Date().toDateString();
+    const active = document.activeElement;
+    if (today !== relativeDate && !document.querySelector(".orbita-date-picker")
+        && !(active && (active.tagName === "INPUT"
+          || active.tagName === "TEXTAREA" || active.isContentEditable))) {
+      relativeDate = today;
+      renderCurrentView();
+    }
+  }, 60000);
 
   // Sync to-dos and sections via Google Drive
   ToolSync.init({

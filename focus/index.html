@@ -122,6 +122,9 @@
   .size-m { --task-fs: 18px; }
   .size-l { --task-fs: 21px; }
   section[hidden] { display: none; }
+  #focus.picking #panel,
+  #focus.picking #c-btns { display: none; }
+  #picker { margin-top: 0; }
 
   /* Entrance */
   @keyframes rise {
@@ -358,6 +361,7 @@
     color: var(--done);
     text-decoration: line-through;
   }
+  .focal.done #focal-text .date-token { color: var(--accent); }
 
   /* Timer: a ring that drains as time passes, centred, with its
      controls inside, beneath the time */
@@ -416,8 +420,11 @@
     flex-direction: column;
     min-height: 0;
   }
+  .face-below { position: relative; top: -16px; }
   #c-time {
     color: var(--accent);
+    position: relative;
+    top: -16px;
     font-size: 76px;
     font-variant-numeric: tabular-nums;
     font-weight: 600;
@@ -573,7 +580,8 @@
     main { padding-top: 70px; }
     .focal { flex-wrap: wrap; }
     #ring { height: 240px; width: 240px; }
-    #c-time { font-size: 64px; }
+    #c-time { font-size: 64px; top: -14px; }
+    .face-below { top: -14px; }
     #c-cheer { font-size: 28px; max-width: 190px; }
   }
 </style>
@@ -594,19 +602,6 @@
   </button>
 
   <main>
-    <section id="picker" hidden>
-      <div class="pick-title"><svg viewBox="0 0 24 24" fill="none"
-        stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
-        stroke-linejoin="round" aria-hidden="true">
-        <circle cx="10.5" cy="13.5" r="8"/><circle cx="10.5" cy="13.5" r="4"/>
-        <path d="M10.5 13.5L20 4M16.5 3.5h4v4"/>
-        </svg>what are you focusing on?</div>
-      <input id="pick-input" autocomplete="off"
-        placeholder="search your to dos, or type a new one">
-      <div class="pick-label" id="pick-label"></div>
-      <div id="pick-list"></div>
-    </section>
-
     <section id="focus" hidden>
       <div class="timer">
         <div id="ring">
@@ -649,6 +644,19 @@
           <input id="add-sub" autocomplete="off" placeholder="break it down?">
         </div>
       </div>
+    </section>
+
+    <section id="picker" hidden>
+      <div class="pick-title"><svg viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+        stroke-linejoin="round" aria-hidden="true">
+        <circle cx="10.5" cy="13.5" r="8"/><circle cx="10.5" cy="13.5" r="4"/>
+        <path d="M10.5 13.5L20 4M16.5 3.5h4v4"/>
+        </svg>what are you focusing on?</div>
+      <input id="pick-input" autocomplete="off"
+        placeholder="search your to dos, or type a new one">
+      <div class="pick-label" id="pick-label"></div>
+      <div id="pick-list"></div>
     </section>
   </main>
 
@@ -736,6 +744,12 @@
         if (!data.weekly) data.weekly = {};
         if (!data.toggleData) data.toggleData = {};
         if (dateKeysReady) data.dateKeyVersion = 1;
+        let relativeChanged = false;
+        lists(data).forEach(([, list]) => (list || []).forEach(task => {
+          if (task.text && !task.anchorAt) D.stampAnchor(task);
+          if (D.refreshRelativeTask(task)) relativeChanged = true;
+        }));
+        if (relativeChanged) saveTodos(data);
         return data;
       }
     } catch {}
@@ -753,7 +767,25 @@
     try {
       const data = JSON.parse(raw);
       if (data && Array.isArray(data.notes)
-          && (data.folders == null || Array.isArray(data.folders))) return data;
+          && (data.folders == null || Array.isArray(data.folders))) {
+        let relativeChanged = false;
+        data.notes.forEach(note => (note.blocks || []).forEach(block => {
+          if (block.type !== "todo") return;
+          const text = htmlText(block.html).trim();
+          const refreshed = D.refreshRelativeText(text,
+            block.anchorAt || note.updated);
+          if (!refreshed) return;
+          const html = D.replaceHtmlRange(block.html,
+            refreshed.start, refreshed.end, refreshed.token);
+          if (html == null) return;
+          block.html = html;
+          block.anchorAt = refreshed.anchorAt;
+          block.anchorTok = D.firstToken(refreshed.text);
+          relativeChanged = true;
+        }));
+        if (relativeChanged) saveNotes(data);
+        return data;
+      }
     } catch {}
     if (raw !== null) ToolkitSidebar.preserveRecovery(NOTES_KEY, raw);
     return null;
@@ -826,8 +858,8 @@
     lists(data).forEach(([src, list]) => {
       (list || []).forEach(task => {
         if (!task.text || task.done) return;
-        out.push({ kind: "todo", r: D.taskRange(task, src), task,
-          text: task.text });
+        out.push({ anchorAt: task.anchorAt, kind: "todo",
+          r: D.taskRange(task, src), task, text: task.text });
       });
     });
     const notes = loadNotes();
@@ -839,8 +871,8 @@
         if (!text) return;
         const anchor = D.dayStart(
           new Date(b.anchorAt || n.updated || Date.now()));
-        out.push({ block: b, kind: "note", note: n,
-          r: D.textRange(text, anchor), text });
+        out.push({ anchorAt: b.anchorAt || n.updated, block: b,
+          kind: "note", note: n, r: D.textRange(text, anchor), text });
       });
     });
     return out;
@@ -869,14 +901,84 @@
       btn.className = "pick-row";
       btn.innerHTML = '<span class="pr-focus" aria-hidden="true">'
         + ToolkitSidebar.icon("focus") + '</span><span class="pr-text">'
-        + D.highlight(c.text) + "</span>";
+        + D.highlight(c.text, c.anchorAt) + "</span>";
       if (c.kind === "note") {
         const src = document.createElement("span");
         src.className = "pr-src";
         src.textContent = "↗ " + ((c.note.title || "").trim() || "untitled");
         btn.appendChild(src);
       }
-      btn.addEventListener("click", () => choose(c));
+      btn.addEventListener("click", e => {
+        const token = e.target.closest(".date-token");
+        if (token) {
+          e.preventDefault();
+          e.stopPropagation();
+          D.openDatePicker(token, replacement => {
+            if (c.kind === "todo") {
+              const data = loadTodos();
+              let task = null;
+              lists(data).some(([, list]) => (list || []).some(t => {
+                if (c.task.fid ? t.fid === c.task.fid
+                  : t.text === c.task.text && !t.done && !t.fid) task = t;
+                return !!task;
+              }));
+              if (!task) return;
+              const previous = { anchorAt: task.anchorAt, anchorTok: task.anchorTok,
+                text: task.text };
+              task.text = D.replaceTextRange(task.text,
+                token.dataset.dateStart, token.dataset.dateEnd, replacement);
+              D.stampAnchor(task);
+              const changedText = task.text, fid = task.fid;
+              saveTodos(data);
+              renderPicker();
+              return () => {
+                const latest = loadTodos();
+                let target = null;
+                lists(latest).some(([, list]) => (list || []).some(t => {
+                  if (fid ? t.fid === fid
+                    : t.text === changedText && !t.done && !t.fid) target = t;
+                  return !!target;
+                }));
+                if (!target) return;
+                target.text = previous.text;
+                target.anchorAt = previous.anchorAt;
+                target.anchorTok = previous.anchorTok;
+                saveTodos(latest);
+                renderPicker();
+              };
+            } else {
+              const data = loadNotes();
+              const note = data && data.notes.find(n => n.id === c.note.id);
+              const block = note && note.blocks.find(b => b.id === c.block.id);
+              if (!block) return;
+              const previous = { anchorAt: block.anchorAt, anchorTok: block.anchorTok,
+                html: block.html, updated: note.updated };
+              const html = D.replaceHtmlRange(block.html,
+                token.dataset.dateStart, token.dataset.dateEnd, replacement);
+              if (html == null) return;
+              block.html = html;
+              note.updated = Date.now();
+              saveNotes(data);
+              renderPicker();
+              return () => {
+                const latest = loadNotes();
+                const savedNote = latest && latest.notes.find(n => n.id === c.note.id);
+                const savedBlock = savedNote
+                  && savedNote.blocks.find(b => b.id === c.block.id);
+                if (!savedBlock) return;
+                savedBlock.html = previous.html;
+                savedBlock.anchorAt = previous.anchorAt;
+                savedBlock.anchorTok = previous.anchorTok;
+                savedNote.updated = previous.updated;
+                saveNotes(latest);
+                renderPicker();
+              };
+            }
+          });
+          return;
+        }
+        choose(c);
+      });
       box.appendChild(btn);
       pickRows.push({ btn, run: () => choose(c) });
     });
@@ -975,16 +1077,25 @@
     firstRender = false;
     const picking = !loc;
     $("picker").hidden = !picking;
-    $("focus").hidden = picking;
+    $("focus").hidden = false;
+    $("focus").classList.toggle("picking", picking);
     if (picking) $("switch").hidden = true;
     if (picking) {
-      if (s.task) F.set({ state: "idle" });
+      if (s.task) {
+        s.state = "idle";
+        delete s.endAt;
+        delete s.remaining;
+        delete s.total;
+        F.set(s);
+      }
       if (shownSig !== "picker") {
         shownSig = "picker";
         $("picker").classList.remove("rise");
         void $("picker").offsetWidth;
         $("picker").classList.add("rise");
       }
+      renderClock(s, true);
+      $("switch").hidden = true;
       renderPicker();
       $("pick-input").focus();
       ToolkitSidebar.title("focus");
@@ -992,9 +1103,9 @@
     }
     if (shownSig !== "focus") {
       shownSig = "focus";
-      $("focus").classList.remove("rise");
-      void $("focus").offsetWidth;
-      $("focus").classList.add("rise");
+      $("panel").classList.remove("rise");
+      void $("panel").offsetWidth;
+      $("panel").classList.add("rise");
     }
 
     // Keep the chip and banner's copy of the text current; the timer
@@ -1164,8 +1275,8 @@
   function showFocal(loc) {
     focalKind = loc.kind;
     focalEl.contentEditable = loc.kind === "todo" ? "plaintext-only" : "true";
-    focalEl.innerHTML = loc.kind === "todo" ? D.highlight(loc.text)
-      : D.decorate(clean(loc.item.html));
+    focalEl.innerHTML = loc.kind === "todo" ? D.highlight(loc.text, loc.item.anchorAt)
+      : D.decorate(clean(loc.item.html), loc.item.anchorAt || loc.note.updated);
   }
 
   function selRange() {
@@ -1265,7 +1376,7 @@
       loc.item.anchorAt = t.anchorAt;
       loc.item.anchorTok = t.anchorTok;
       save(loc);
-      const want = D.decorate(html);
+      const want = D.decorate(html, loc.item.anchorAt || loc.note.updated);
       if (focalEl.innerHTML !== want) {
         focalEl.innerHTML = want;
         if (pos !== null) setCaret(focalEl, pos);
@@ -1592,8 +1703,17 @@
   render();
   F.onTick(s => renderClock(s));
 
-  // Smoother than the shared once-a-second check
+  // Refresh relative task tokens after local midnight.
+  let relativeDate = new Date().toDateString();
   setInterval(() => {
+    const today = new Date().toDateString();
+    const active = document.activeElement;
+    if (today !== relativeDate && !document.querySelector(".orbita-date-picker")
+        && !(active && (active.tagName === "INPUT"
+          || active.tagName === "TEXTAREA" || active.isContentEditable))) {
+      relativeDate = today;
+      render();
+    }
     const s = F.get();
     if (s.state === "running") renderClock(s);
   }, 250);

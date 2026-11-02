@@ -1,0 +1,14 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Drive sync concurrency probe</title>
+<h1>Drive sync concurrency probe</h1>
+<p>This local-only check creates one uniquely named JSON file in this app's
+Google Drive app-data folder, tests a stale conditional update, then deletes
+the test file. It does not read or write your Notes, To dos, or Codepad files.</p>
+<p>Run this from <code>http://localhost:8000</code> while signed in to sync.
+The access token is used only for requests to Google Drive and is never shown.</p>
+<button id="run-probe" type="button">Run probe</button>
+<button id="retry-cleanup" type="button" disabled>Retry cleanup</button>
+<pre id="probe-result" role="status" aria-live="polite">Ready.</pre>
+<script src="drive-concurrency-probe.js"></script>
