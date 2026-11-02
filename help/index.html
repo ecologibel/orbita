@@ -25,7 +25,17 @@
     transform: translateY(-150%); z-index: 1000;
   }
   .skip-link:focus { transform: none; }
-  .help-shell { margin: 0 auto; max-width: 760px; padding: 38px 28px 70px; }
+  .help-shell {
+    display: grid;
+    gap: 0 34px;
+    grid-template-columns: 190px minmax(0, 760px);
+    margin: 0 auto;
+    max-width: 1080px;
+    padding: 38px 28px 70px;
+  }
+  .help-shell > h1, .help-shell > .intro, .help-shell > section {
+    grid-column: 2;
+  }
   .help-shell.size-s { font-size: 14px; }
   .help-shell.size-l { font-size: 18px; }
   .help-shell.width-wide { max-width: 960px; }
@@ -38,10 +48,22 @@
   li + li { margin-top: 5px; }
   .intro, .muted { color: var(--muted); }
   .contents {
+    align-self: start;
     background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
-    margin: 24px 0; padding: 14px 18px;
+    grid-column: 1; grid-row: 1 / span 20;
+    margin: 0; padding: 12px;
+    position: sticky; top: 24px;
   }
-  .contents ul { display: flex; flex-wrap: wrap; gap: 6px 18px; list-style: none; margin: 0; padding: 0; }
+  .contents ul { display: grid; gap: 4px; list-style: none; margin: 0; padding: 0; }
+  .contents a {
+    align-items: center; border-radius: 5px; display: flex; gap: 10px;
+    padding: 7px 8px; text-decoration: none; transition: background .18s ease;
+  }
+  .contents a:hover, .contents a:focus-visible { background: var(--bg); }
+  .topic-icon {
+    color: var(--accent); flex: 0 0 20px; font-size: 17px;
+    line-height: 1; text-align: center;
+  }
   code, kbd { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; }
   details {
     background: var(--surface); border: 1px solid var(--line); border-radius: 7px;
@@ -49,7 +71,12 @@
   }
   summary { color: var(--accent); cursor: pointer; font-weight: 600; }
   .note { border-left: 3px solid var(--accent); color: var(--muted); margin: 16px 0; padding: 4px 14px; }
-  @media (max-width: 600px) { .help-shell { padding: 26px 18px 50px; } }
+  @media (max-width: 760px) {
+    .help-shell { display: block; max-width: 760px; padding: 26px 18px 50px; }
+    .contents { margin: 20px 0 28px; position: static; }
+    .contents ul { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 420px) { .contents ul { grid-template-columns: 1fr; } }
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 </style>
 </head>
@@ -60,14 +87,14 @@
   <p class="intro">A guide to using orbita's dashboard, notes, to dos, focus timer and codepad.</p>
   <nav class="contents" aria-label="help topics">
     <ul>
-      <li><a href="#getting-started">getting started</a></li>
-      <li><a href="#dashboard">dashboard</a></li>
-      <li><a href="#notes">notes</a></li>
-      <li><a href="#to-dos">to dos</a></li>
-      <li><a href="#focus">focus</a></li>
-      <li><a href="#codepad">codepad</a></li>
-      <li><a href="#sync">Google Drive sync</a></li>
-      <li><a href="#shortcuts">keyboard shortcuts</a></li>
+      <li><a href="#getting-started"><span class="topic-icon" aria-hidden="true">✦</span>getting started</a></li>
+      <li><a href="#dashboard"><span class="topic-icon" aria-hidden="true">▦</span>dashboard</a></li>
+      <li><a href="#notes"><span class="topic-icon" aria-hidden="true">▤</span>notes</a></li>
+      <li><a href="#to-dos"><span class="topic-icon" aria-hidden="true">☑</span>to dos</a></li>
+      <li><a href="#focus"><span class="topic-icon" aria-hidden="true">◉</span>focus</a></li>
+      <li><a href="#codepad"><span class="topic-icon" aria-hidden="true">&lt;/&gt;</span>codepad</a></li>
+      <li><a href="#sync"><span class="topic-icon" aria-hidden="true">⇄</span>Google Drive sync</a></li>
+      <li><a href="#shortcuts"><span class="topic-icon" aria-hidden="true">⌨</span>keyboard shortcuts</a></li>
     </ul>
   </nav>
 
