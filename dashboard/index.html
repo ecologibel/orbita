@@ -952,19 +952,52 @@
             const note = data && data.notes.find(n => n.id === item.note.id);
             const block = note && note.blocks.find(b => b.id === item.block.id);
             if (!block) return;
+            const previous = { anchorAt: block.anchorAt, anchorTok: block.anchorTok,
+              html: block.html, updated: note.updated };
             const html = D.replaceHtmlRange(block.html,
               token.dataset.dateStart, token.dataset.dateEnd, replacement);
             if (html == null) return;
             block.html = html;
             note.updated = Date.now();
             store(NOTES_KEY, JSON.stringify(data));
-          } else {
-            item.task.text = D.replaceTextRange(item.task.text,
-              token.dataset.dateStart, token.dataset.dateEnd, replacement);
-            D.stampAnchor(item.task);
-            store(TODO_KEY, JSON.stringify(data));
+            renderToday();
+            return () => {
+              const latest = loadNotes();
+              const savedNote = latest && latest.notes.find(n => n.id === item.note.id);
+              const savedBlock = savedNote
+                && savedNote.blocks.find(b => b.id === item.block.id);
+              if (!savedBlock) return;
+              savedBlock.html = previous.html;
+              savedBlock.anchorAt = previous.anchorAt;
+              savedBlock.anchorTok = previous.anchorTok;
+              savedNote.updated = previous.updated;
+              store(NOTES_KEY, JSON.stringify(latest));
+              renderToday();
+            };
           }
+          const previous = { anchorAt: item.task.anchorAt,
+            anchorTok: item.task.anchorTok, text: item.task.text };
+          item.task.text = D.replaceTextRange(item.task.text,
+            token.dataset.dateStart, token.dataset.dateEnd, replacement);
+          D.stampAnchor(item.task);
+          const changedText = item.task.text, fid = item.task.fid;
+          store(TODO_KEY, JSON.stringify(data));
           renderToday();
+          return () => {
+            const latest = loadTodos();
+            let target = null;
+            lists(latest).some(([, list]) => (list || []).some(task => {
+              if (fid ? task.fid === fid
+                : task.text === changedText && !task.done && !task.fid) target = task;
+              return !!target;
+            }));
+            if (!target) return;
+            target.text = previous.text;
+            target.anchorAt = previous.anchorAt;
+            target.anchorTok = previous.anchorTok;
+            store(TODO_KEY, JSON.stringify(latest));
+            renderToday();
+          };
         });
       });
       row.append(cb, text);
