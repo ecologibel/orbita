@@ -1,21 +1,31 @@
 # Default files for Git to ignore
 
+# Environment variables and credentials
+.env
+.env.*
+!.env.example
+credentials.json
+secrets.json
+
 ## HTML 
 .DS_Store
 Thumbs.db
 *.swp
 *~
 
-## R environment
-.Rhistory
-.RData
-.RDataTmp
-.Ruserdata
-.Renviron
-.Rapp.history
-.Rproj.user/
-.httr-oauth
-
-# System
+# Local data and backups
+*.sqlite
+*.db
+backups/
 [Dd]esktop.ini
 .positai
+
+# Local development files
+.Rapp.history
+.RData
+.RDataTmp
+.Renviron
+.Rhistory
+.Ruserdata
+.Rproj.user/
+.httr-oauth
