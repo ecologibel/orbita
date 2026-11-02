@@ -2023,12 +2023,23 @@
       });
     }
 
+    let renderedDateToken = DATES.firstToken(task.text);
     txt.addEventListener("input", () => {
       task.text = txt.value;
       if (task.text) stampAnchor(task);
       autoResize();
       syncHighlight();
       onUpdate();
+    });
+    txt.addEventListener("blur", () => {
+      setTimeout(() => {
+        if (currentView !== "dates" || opts.onCommit
+            || document.querySelector(".orbita-date-picker")) return;
+        const nextToken = DATES.firstToken(task.text);
+        if (nextToken === renderedDateToken) return;
+        renderedDateToken = nextToken;
+        renderDatesAnimated();
+      }, 0);
     });
 
     wrap.appendChild(highlight);
