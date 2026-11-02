@@ -35,7 +35,7 @@
 
   // @ then a date or period, optionally "to" another one
   const DATE_PATTERN = new RegExp(
-    '@' + DATE_CORE
+    '(?<![A-Za-z0-9._%+-])@' + DATE_CORE
     + '(?:\\s*(?:–|—|-|to(?![a-z]))\\s*' + DATE_CORE + ')?',
     'gi'
   );
@@ -233,9 +233,16 @@
     if (y < 100) y += 2000;
     let d = new Date(y, month, day);
     if (d.getMonth() !== month || d.getDate() !== day) return null;
-    // Keep recent same-year past dates in this year; dates far behind the
-    // anchor are treated as the next occurrence when no year was supplied.
-    if (!year && d < addDays(anchor, -183)) d = new Date(y + 1, month, day);
+    if (!year && weekday !== null && d.getDay() !== weekday) {
+      // An explicit weekday disambiguates a yearless month/day token. Prefer
+      // this year's matching date when it exists; otherwise find the next one.
+      for (let nextYear = y + 1; nextYear <= y + 7; nextYear++) {
+        const candidate = new Date(nextYear, month, day);
+        if (candidate.getDay() === weekday) { d = candidate; break; }
+      }
+    } else if (!year && weekday === null && d < addDays(anchor, -183)) {
+      d = new Date(y + 1, month, day);
+    }
     if (weekday !== null && d.getDay() !== weekday) return null;
     return oneDay(d);
   }
@@ -267,6 +274,14 @@
       if (range) return range;
     }
     return null;
+  }
+
+  function isValidToken(token, anchor) {
+    const value = String(token || "").trim();
+    if (value[0] !== "@") return false;
+    const day = anchor instanceof Date ? dayStart(anchor)
+      : dayStart(new Date(anchor || Date.now()));
+    return !!parseSpec(value.slice(1), day);
   }
 
   function firstToken(text) {
@@ -961,8 +976,9 @@
     let out = "", last = 0, m;
     DATE_PATTERN.lastIndex = 0;
     while ((m = DATE_PATTERN.exec(text || ""))) {
-      out += highlightTags(text.slice(last, m.index))
-        + dateTokenHtml(m[0], m.index, anchor);
+      out += highlightTags(text.slice(last, m.index));
+      out += isValidToken(m[0], anchor)
+        ? dateTokenHtml(m[0], m.index, anchor) : escapeHtml(m[0]);
       last = m.index + m[0].length;
     }
     return out + highlightTags((text || "").slice(last));
@@ -993,7 +1009,9 @@
       let m;
       DATE_PATTERN.lastIndex = 0;
       while ((m = DATE_PATTERN.exec(text))) {
-        marks.push([m.index, m.index + m[0].length, "date-token", true, offset]);
+        if (isValidToken(m[0], anchor)) {
+          marks.push([m.index, m.index + m[0].length, "date-token", true, offset]);
+        }
       }
       TAG_PATTERN.lastIndex = 0;
       while ((m = TAG_PATTERN.exec(text))) {
@@ -1029,7 +1047,8 @@
 
   window.ToolkitDates = {
     addDays, dateKey, datePattern, dateTokenHtml, dayStart, decorate,
-    firstToken, highlight, keyToDate, migrateStoredTodoKeys, monthRange, oneDay,
+    firstToken, highlight, isValidToken, keyToDate, migrateStoredTodoKeys,
+    monthRange, oneDay,
     clearDateUndo, openDatePicker, openDatePickerValue, parseDay, parseSpec,
     recordDateUndo, refreshRelativeTask, refreshRelativeText,
     replaceHtmlRange, replaceTextRange, stampAnchor, taskRange, textRange,
