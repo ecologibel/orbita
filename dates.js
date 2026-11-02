@@ -208,7 +208,9 @@
     if (weekdayDate) {
       weekday = WEEKDAYS.indexOf(weekdayDate[1].slice(0, 3));
       dateText = weekdayDate[2];
-    }    let day, month, year;
+    }
+
+    let day, month, year;
     if ((m = dateText.match(/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/))) {
       [year, month, day] = [m[1], +m[2] - 1, +m[3]];
     } else if ((m = dateText.match(new RegExp(
