@@ -97,6 +97,12 @@
       id: "focus", label: "focus", page: "focus/index.html",
       icon: svg(dim('<circle cx="12" cy="12" r="8.5"/>')
         + '<path d="M12 3.5a8.5 8.5 0 1 1-8.5 8.5"/>')
+    },
+    {
+      id: "help", label: "help", page: "help/index.html",
+      icon: svg('<circle cx="12" cy="12" r="9"/>'
+        + '<path d="M9.7 9a2.4 2.4 0 1 1 3.8 1.9c-1 .7-1.5 1.1-1.5 2.6"/>'
+        + '<circle cx="12" cy="17.2" r=".7" fill="currentColor" stroke="none"/>')
     }
   ];
 
@@ -577,7 +583,7 @@
     // Three stacked layers, with the title, lead to the dashboard
     nav.innerHTML = '<a class="tk-home" href="' + root
       + 'dashboard/index.html" aria-label="dashboard" title="dashboard">'
-      + svg(LAYERS) + '<div class="tk-title">toolkit</div></a>'
+      + svg(LAYERS) + '<div class="tk-title">orbita</div></a>'
       + '<hr class="tk-rule"><div class="tk-group tk-items"></div>'
       + '<div class="tk-group tk-controls"></div>';
     if (cfg.active === "dashboard") {
@@ -818,16 +824,18 @@
     const link = document.createElement("link");
     link.rel = "icon";
     link.href = "data:image/svg+xml," + encodeURIComponent(
-      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" '
-      + 'fill="none" stroke="#7fdbca" stroke-width="2" '
-      + 'stroke-linecap="round" stroke-linejoin="round">' + LAYERS
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'
+      + '<path d="M18 7a26 26 0 1 1-11 13" fill="none" stroke="#7fdbca" '
+      + 'stroke-width="4.5" stroke-linecap="round"/>'
+      + '<circle cx="32" cy="32" r="13" fill="#7fdbca"/>'
+      + '<circle cx="14" cy="12" r="5" fill="#7fdbca"/>'
       + '</svg>');
     document.head.appendChild(link);
   }
 
-  // "week · to dos · toolkit"
+  // "week · to dos · orbita"
   function title(...parts) {
-    document.title = parts.filter(Boolean).concat("toolkit").join(" · ");
+    document.title = parts.filter(Boolean).concat("orbita").join(" · ");
   }
 
   // ---- Undo toast ----
