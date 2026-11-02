@@ -274,19 +274,23 @@
   function parseSpec(str, anchor) {
     const one = parseOne(str, anchor);
     if (one) return one;
-    const isYearlessCalendarDate = value => {
+    const isCalendarDate = value => {
       const date = String(value || "").trim().replace(/^@/, "");
       return new RegExp(
         '^(?:' + WEEKDAY_RE + '\\s+)?(?:\\d{1,2}\\s+' + MONTH_RE
-          + '|' + MONTH_RE + '\\s+\\d{1,2})$',
+          + '|' + MONTH_RE + '\\s+\\d{1,2})(?:,?\\s*\\d{4})?$',
         'i'
       ).test(date);
+    };
+    const isYearlessCalendarDate = value => {
+      const date = String(value || "").trim().replace(/^@/, "");
+      return isCalendarDate(date) && !/\d{4}$/.test(date);
     };
     const join = (left, right) => {
       const a = parseOne(left, anchor), b = parseOne(right, anchor);
       if (!a || !b) return null;
       if (b.end < a.start) {
-        if (!isYearlessCalendarDate(left)
+        if (!isCalendarDate(left)
             || !isYearlessCalendarDate(right)) return null;
         const nextYear = parseOne(
           String(right).trim() + " " + (a.start.getFullYear() + 1), anchor
