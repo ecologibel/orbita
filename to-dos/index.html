@@ -251,7 +251,7 @@
     text-decoration: line-through;
     color: var(--done);
   }
-  .task-highlight .date-token { cursor: pointer; pointer-events: auto; text-decoration: underline dotted; text-underline-offset: 2px; }
+  .task-highlight .date-token { color: var(--accent); cursor: pointer; pointer-events: auto; }
   .task-highlight .date-token:focus-visible { outline: 2px solid var(--accent); }
   .task-highlight .mention-token {
     color: var(--accent);
@@ -263,7 +263,8 @@
   }
 
   /* Overdue tasks: only the date, in the completed colour */
-  .task.overdue .task-highlight .date-token { color: var(--done); }
+  .task.overdue .task-highlight .date-token,
+  .task.done .task-highlight .date-token { color: var(--accent); }
 
   /* Tags echoed at the right of a task, each with a tinted background */
   .task-tags {
