@@ -123,9 +123,8 @@
   .size-l { --task-fs: 21px; }
   section[hidden] { display: none; }
   #focus.picking #panel,
-  #focus.picking #minutes,
   #focus.picking #c-btns { display: none; }
-  #picker { margin-top: 30px; }
+  #picker { margin-top: 0; }
 
   /* Entrance */
   @keyframes rise {
@@ -421,8 +420,11 @@
     flex-direction: column;
     min-height: 0;
   }
+  .face-below { position: relative; top: 25px; }
   #c-time {
     color: var(--accent);
+    position: relative;
+    top: -25px;
     font-size: 76px;
     font-variant-numeric: tabular-nums;
     font-weight: 600;
@@ -578,7 +580,8 @@
     main { padding-top: 70px; }
     .focal { flex-wrap: wrap; }
     #ring { height: 240px; width: 240px; }
-    #c-time { font-size: 64px; }
+    #c-time { font-size: 64px; top: -21px; }
+    .face-below { top: 21px; }
     #c-cheer { font-size: 28px; max-width: 190px; }
   }
 </style>
@@ -1100,9 +1103,9 @@
     }
     if (shownSig !== "focus") {
       shownSig = "focus";
-      $("focus").classList.remove("rise");
-      void $("focus").offsetWidth;
-      $("focus").classList.add("rise");
+      $("panel").classList.remove("rise");
+      void $("panel").offsetWidth;
+      $("panel").classList.add("rise");
     }
 
     // Keep the chip and banner's copy of the text current; the timer
