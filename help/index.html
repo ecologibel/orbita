@@ -153,6 +153,23 @@
   <p class="muted"><a href="../dashboard/index.html">back to dashboard</a></p>
 </main>
 <script src="../sync.js"></script>
+<script>
+  ToolSync.init({
+    file: "to-dos.json",
+    keys: ["todo-data", "todo-toggle-sections"],
+    onRemote: () => {}
+  });
+  ToolSync.init({
+    file: "notes.json",
+    keys: ["notes-data"],
+    onRemote: () => {}
+  });
+  ToolSync.init({
+    file: "r-codepad.json",
+    keys: ["r-editor-content"],
+    onRemote: () => {}
+  });
+</script>
 <script src="../sidebar.js"></script>
 <script>
 (function () {
