@@ -518,6 +518,7 @@
           aria-expanded="false"></button>
         <a class="tool" href="../codepad/index.html" data-tool="codepad"></a>
         <a class="tool" href="../focus/index.html" data-tool="focus"></a>
+        <a class="tool" href="../timekeeper/index.html" data-tool="timekeeper"></a>
       </div>
       <div class="views notes-slide"><div class="slide-inner">
         <div class="recent"></div>
@@ -653,7 +654,7 @@
 
   function renderTools() {
     const icon = id => ToolkitSidebar.icon(id);
-    const label = { codepad: "codepad", focus: "focus", notes: "notes",
+    const label = { codepad: "codepad", focus: "focus", timekeeper: "timekeeper", notes: "notes",
       todos: "to dos" };
     document.querySelectorAll(".tool").forEach(t => {
       const id = t.dataset.tool;
