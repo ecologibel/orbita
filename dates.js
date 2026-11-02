@@ -935,7 +935,7 @@
         editor.dispatchEvent(new InputEvent("input", {
           bubbles: true, inputType: "insertText", data: replacement
         }));
-        const decorated = decorate(editor.innerHTML, token.dataset.dateAnchor);
+        const decorated = decorate(editor.innerHTML, Date.now());
         if (decorated !== editor.innerHTML) editor.innerHTML = decorated;
         editor.focus({ preventScroll: true });
         const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT);
