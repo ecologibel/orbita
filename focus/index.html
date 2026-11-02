@@ -1301,7 +1301,7 @@
       loc.item.anchorAt = t.anchorAt;
       loc.item.anchorTok = t.anchorTok;
       save(loc);
-      const want = D.decorate(html);
+      const want = D.decorate(html, loc.item.anchorAt || loc.note.updated);
       if (focalEl.innerHTML !== want) {
         focalEl.innerHTML = want;
         if (pos !== null) setCaret(focalEl, pos);
