@@ -913,7 +913,35 @@
       });
       const text = document.createElement("div");
       text.className = "task-text";
-      text.innerHTML = D.highlight(item.text);
+      const anchorAt = item.block
+        ? item.block.anchorAt || item.note.updated : item.task.anchorAt;
+      text.innerHTML = D.highlight(item.text, anchorAt);
+      text.addEventListener("click", e => {
+        const token = e.target.closest(".date-token");
+        if (!token) return;
+        e.preventDefault();
+        e.stopPropagation();
+        D.openDatePicker(token, replacement => {
+          if (item.note) {
+            const data = loadNotes();
+            const note = data && data.notes.find(n => n.id === item.note.id);
+            const block = note && note.blocks.find(b => b.id === item.block.id);
+            if (!block) return;
+            const html = D.replaceHtmlRange(block.html,
+              token.dataset.dateStart, token.dataset.dateEnd, replacement);
+            if (html == null) return;
+            block.html = html;
+            note.updated = Date.now();
+            store(NOTES_KEY, JSON.stringify(data));
+          } else {
+            item.task.text = D.replaceTextRange(item.task.text,
+              token.dataset.dateStart, token.dataset.dateEnd, replacement);
+            D.stampAnchor(item.task);
+            store(TODO_KEY, JSON.stringify(data));
+          }
+          renderToday();
+        });
+      });
       row.append(cb, text);
       if (item.note) {
         const link = document.createElement("a");
