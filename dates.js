@@ -209,7 +209,7 @@
       weekday = WEEKDAYS.indexOf(weekdayDate[1].slice(0, 3));
       dateText = weekdayDate[2];
     }    let day, month, year;
-    if ((m = dateText.match(/^(\\d{4})-(\\d{2})-(\\d{2})$/))) {
+    if ((m = dateText.match(/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/))) {
       [year, month, day] = [m[1], +m[2] - 1, +m[3]];
     } else if ((m = dateText.match(new RegExp(
       '^(\\d{1,2}) ' + MONTH_RE + '(?:,? (\\d{4}))?$'
@@ -226,7 +226,8 @@
       return r;
     } else {
       return null;
-    }    let y = year ? +year : anchor.getFullYear();
+    }
+    let y = year ? +year : anchor.getFullYear();
     if (y < 100) y += 2000;
     let d = new Date(y, month, day);
     if (d.getMonth() !== month || d.getDate() !== day) return null;
@@ -242,7 +243,8 @@
       ? parsed.start : null;
   }
 
-  // A date, period, or "A to B" range as a day range  function parseSpec(str, anchor) {
+  // A date, period, or "A to B" range as a day range
+  function parseSpec(str, anchor) {
     const one = parseOne(str, anchor);
     if (one) return one;
     const join = (left, right) => {
