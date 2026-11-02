@@ -521,8 +521,12 @@
     if (offset === 1) return "@tomorrow";
     if (offset === -1) return "@yesterday";
     const weekday = WEEKDAYS[date.getDay()];
+    const nextOccurrence = (date.getDay() - today.getDay() + 7) % 7;
     if (offset >= 0 && offset <= 6) return "@" + weekday;
-    if (offset >= 7 && offset <= 13) return "@next " + weekday;
+    if (offset === nextOccurrence + 7 && nextOccurrence > 0) {
+      return "@next " + weekday;
+    }
+    if (offset === 14 && nextOccurrence === 0) return "@next " + weekday;
     if (offset >= -7 && offset < 0) return "@last " + weekday;
     return "@" + weekday + " " + date.getDate() + " "
       + MONTHS[date.getMonth()]
