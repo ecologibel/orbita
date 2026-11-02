@@ -1653,8 +1653,17 @@
   render();
   F.onTick(s => renderClock(s));
 
-  // Smoother than the shared once-a-second check
+  // Refresh relative task tokens after local midnight.
+  let relativeDate = new Date().toDateString();
   setInterval(() => {
+    const today = new Date().toDateString();
+    const active = document.activeElement;
+    if (today !== relativeDate && !document.querySelector(".orbita-date-picker")
+        && !(active && (active.tagName === "INPUT"
+          || active.tagName === "TEXTAREA" || active.isContentEditable))) {
+      relativeDate = today;
+      render();
+    }
     const s = F.get();
     if (s.state === "running") renderClock(s);
   }, 250);
