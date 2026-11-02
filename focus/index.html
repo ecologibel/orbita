@@ -1078,7 +1078,13 @@
     $("focus").classList.toggle("picking", picking);
     if (picking) $("switch").hidden = true;
     if (picking) {
-      if (s.task) F.set({ state: "idle" });
+      if (s.task) {
+        s.state = "idle";
+        delete s.endAt;
+        delete s.remaining;
+        delete s.total;
+        F.set(s);
+      }
       if (shownSig !== "picker") {
         shownSig = "picker";
         $("picker").classList.remove("rise");
