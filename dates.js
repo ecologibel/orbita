@@ -233,7 +233,9 @@
     if (y < 100) y += 2000;
     let d = new Date(y, month, day);
     if (d.getMonth() !== month || d.getDate() !== day) return null;
-    if (!year && d < addDays(anchor, -31)) d = new Date(y + 1, month, day);
+    // Keep recent same-year past dates in this year; dates far behind the
+    // anchor are treated as the next occurrence when no year was supplied.
+    if (!year && d < addDays(anchor, -183)) d = new Date(y + 1, month, day);
     if (weekday !== null && d.getDay() !== weekday) return null;
     return oneDay(d);
   }
@@ -513,8 +515,19 @@
   }
 
   function formatDateToken(date) {
-    return "@" + WEEKDAYS[date.getDay()] + " " + date.getDate() + " "
-      + MONTHS[date.getMonth()] + " " + date.getFullYear();
+    const today = dayStart(new Date());
+    const offset = Math.round((dayStart(date) - today) / 86400000);
+    if (offset === 0) return "@today";
+    if (offset === 1) return "@tomorrow";
+    if (offset === -1) return "@yesterday";
+    const weekday = WEEKDAYS[date.getDay()];
+    if (offset >= 0 && offset <= 6) return "@" + weekday;
+    if (offset >= 7 && offset <= 13) return "@next " + weekday;
+    if (offset >= -7 && offset < 0) return "@last " + weekday;
+    return "@" + weekday + " " + date.getDate() + " "
+      + MONTHS[date.getMonth()]
+      + (date.getFullYear() === today.getFullYear()
+        ? "" : " " + date.getFullYear());
   }
 
   function formatRangeToken(start, end) {
