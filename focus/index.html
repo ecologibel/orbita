@@ -916,23 +916,57 @@
                 return !!task;
               }));
               if (!task) return;
+              const previous = { anchorAt: task.anchorAt, anchorTok: task.anchorTok,
+                text: task.text };
               task.text = D.replaceTextRange(task.text,
                 token.dataset.dateStart, token.dataset.dateEnd, replacement);
               D.stampAnchor(task);
+              const changedText = task.text, fid = task.fid;
               saveTodos(data);
+              renderPicker();
+              return () => {
+                const latest = loadTodos();
+                let target = null;
+                lists(latest).some(([, list]) => (list || []).some(t => {
+                  if (fid ? t.fid === fid
+                    : t.text === changedText && !t.done && !t.fid) target = t;
+                  return !!target;
+                }));
+                if (!target) return;
+                target.text = previous.text;
+                target.anchorAt = previous.anchorAt;
+                target.anchorTok = previous.anchorTok;
+                saveTodos(latest);
+                renderPicker();
+              };
             } else {
               const data = loadNotes();
               const note = data && data.notes.find(n => n.id === c.note.id);
               const block = note && note.blocks.find(b => b.id === c.block.id);
               if (!block) return;
+              const previous = { anchorAt: block.anchorAt, anchorTok: block.anchorTok,
+                html: block.html, updated: note.updated };
               const html = D.replaceHtmlRange(block.html,
                 token.dataset.dateStart, token.dataset.dateEnd, replacement);
               if (html == null) return;
               block.html = html;
               note.updated = Date.now();
               saveNotes(data);
+              renderPicker();
+              return () => {
+                const latest = loadNotes();
+                const savedNote = latest && latest.notes.find(n => n.id === c.note.id);
+                const savedBlock = savedNote
+                  && savedNote.blocks.find(b => b.id === c.block.id);
+                if (!savedBlock) return;
+                savedBlock.html = previous.html;
+                savedBlock.anchorAt = previous.anchorAt;
+                savedBlock.anchorTok = previous.anchorTok;
+                savedNote.updated = previous.updated;
+                saveNotes(latest);
+                renderPicker();
+              };
             }
-            renderPicker();
           });
           return;
         }
