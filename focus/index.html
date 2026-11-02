@@ -737,6 +737,12 @@
         if (!data.weekly) data.weekly = {};
         if (!data.toggleData) data.toggleData = {};
         if (dateKeysReady) data.dateKeyVersion = 1;
+        let relativeChanged = false;
+        lists(data).forEach(([, list]) => (list || []).forEach(task => {
+          if (task.text && !task.anchorAt) D.stampAnchor(task);
+          if (D.refreshRelativeTask(task)) relativeChanged = true;
+        }));
+        if (relativeChanged) saveTodos(data);
         return data;
       }
     } catch {}
@@ -754,7 +760,25 @@
     try {
       const data = JSON.parse(raw);
       if (data && Array.isArray(data.notes)
-          && (data.folders == null || Array.isArray(data.folders))) return data;
+          && (data.folders == null || Array.isArray(data.folders))) {
+        let relativeChanged = false;
+        data.notes.forEach(note => (note.blocks || []).forEach(block => {
+          if (block.type !== "todo") return;
+          const text = htmlText(block.html).trim();
+          const refreshed = D.refreshRelativeText(text,
+            block.anchorAt || note.updated);
+          if (!refreshed) return;
+          const html = D.replaceHtmlRange(block.html,
+            refreshed.start, refreshed.end, refreshed.token);
+          if (html == null) return;
+          block.html = html;
+          block.anchorAt = refreshed.anchorAt;
+          block.anchorTok = D.firstToken(refreshed.text);
+          relativeChanged = true;
+        }));
+        if (relativeChanged) saveNotes(data);
+        return data;
+      }
     } catch {}
     if (raw !== null) ToolkitSidebar.preserveRecovery(NOTES_KEY, raw);
     return null;
