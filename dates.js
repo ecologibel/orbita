@@ -231,20 +231,36 @@
     }
     let y = year ? +year : anchor.getFullYear();
     if (y < 100) y += 2000;
-    let d = new Date(y, month, day);
-    if (d.getMonth() !== month || d.getDate() !== day) return null;
-    if (!year && weekday !== null && d.getDay() !== weekday) {
-      // An explicit weekday disambiguates a yearless month/day token. Prefer
-      // this year's matching date when it exists; otherwise find the next one.
-      for (let nextYear = y + 1; nextYear <= y + 7; nextYear++) {
-        const candidate = new Date(nextYear, month, day);
-        if (candidate.getDay() === weekday) { d = candidate; break; }
+    const candidateFor = candidateYear => {
+      const candidate = new Date(candidateYear, month, day);
+      if (candidate.getMonth() !== month || candidate.getDate() !== day) {
+        return null;
       }
-    } else if (!year && weekday === null && d < addDays(anchor, -183)) {
-      d = new Date(y + 1, month, day);
+      if (weekday !== null && candidate.getDay() !== weekday) return null;
+      return candidate;
+    };
+    if (year) {
+      const exact = candidateFor(y);
+      return exact ? oneDay(exact) : null;
     }
-    if (weekday !== null && d.getDay() !== weekday) return null;
-    return oneDay(d);
+
+    const currentYearDate = candidateFor(y);
+    if (weekday !== null) {
+      if (currentYearDate) return oneDay(currentYearDate);
+      for (let nextYear = y + 1; nextYear <= y + 8; nextYear++) {
+        const candidate = candidateFor(nextYear);
+        if (candidate) return oneDay(candidate);
+      }
+      return null;
+    }
+    if (currentYearDate && currentYearDate >= addDays(anchor, -183)) {
+      return oneDay(currentYearDate);
+    }
+    for (let nextYear = y + 1; nextYear <= y + 8; nextYear++) {
+      const candidate = candidateFor(nextYear);
+      if (candidate) return oneDay(candidate);
+    }
+    return null;
   }
 
   // Parse one day with the same grammar used for task dates.
