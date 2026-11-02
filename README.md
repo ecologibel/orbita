@@ -2,7 +2,7 @@
 
 A personal productivity space with a dashboard, notes, to dos, focus timer and R codepad.
 
-Open the app at [ecologibel.github.io/toolkit](https://ecologibel.github.io/toolkit/). For instructions on using its tools and syncing with Google Drive, open **help** from the sidebar.
+Open the app at [ecologibel.github.io/orbita](https://ecologibel.github.io/orbita/). For instructions on using its tools and syncing with Google Drive, open **help** from the sidebar.
 
 ## Development
 
