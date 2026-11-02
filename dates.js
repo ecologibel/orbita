@@ -402,8 +402,7 @@
     const style = document.createElement("style");
     style.id = "orbita-date-picker-style";
     style.textContent = `
-      .date-token { color: var(--accent) !important; cursor: pointer;
-        text-decoration: none !important; }
+      .date-token { cursor: pointer; }
       .date-token:focus-visible { border-radius: 2px;
         outline: 2px solid var(--accent, #7fdbca); outline-offset: 2px; }
       .orbita-date-picker {
@@ -644,8 +643,9 @@
       return true;
     };
     const acceptTyped = () => {
-      const raw = dateInput.value.trim().replace(/^@/, "");
-      const parsed = parsePickerText(raw, dayStart(anchor || new Date()));
+      const entered = dateInput.value.trim();
+      const raw = entered.replace(/^@/, "");
+      const parsed = parsePickerText(entered, dayStart(anchor || new Date()));
       if (!parsed) {
         error.textContent = "Enter a recognised date, such as 6 nov or next fri.";
         return false;
@@ -658,8 +658,7 @@
       if (!rangeMode) {
         const localEntry = /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(raw);
         onChange(localEntry ? formatDateToken(parsed.start)
-          : (dateInput.value.trim().startsWith("@")
-            ? dateInput.value.trim() : "@" + dateInput.value.trim()));
+          : (entered.startsWith("@") ? entered : "@" + entered));
         close();
       }
       return true;
