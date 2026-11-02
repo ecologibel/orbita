@@ -613,7 +613,8 @@
     pendingDateUndo = null;
   }
 
-  function showDatePicker(start, end, rangeMode, onChange, origin, anchor, originalToken) {
+  function showDatePicker(start, end, rangeMode, onChange, origin, anchor,
+    originalToken, singleDayOnly) {
     const from = pickerDate(start), to = pickerDate(end);
     if (!from || !to || typeof onChange !== "function") return false;
     ensureDatePickerStyles();
@@ -746,6 +747,10 @@
       const parsed = parsePickerText(entered, dayStart(anchor || new Date()));
       if (!parsed) {
         error.textContent = "Enter a recognised date, such as 6 nov or next fri.";
+        return false;
+      }
+      if (singleDayOnly && parsed.start.getTime() !== parsed.end.getTime()) {
+        error.textContent = "Enter one date, not a date range.";
         return false;
       }
       selectedStart = parsed.start;
@@ -888,7 +893,7 @@
       token => {
         const parsed = parsePickerText(token, dayStart(new Date()));
         if (parsed) onChange(localDateKey(parsed.start));
-      }, origin, dayStart(new Date()), "@" + localDateKey(date)) : false;
+      }, origin, dayStart(new Date()), "@" + localDateKey(date), true) : false;
   }
 
   if (typeof document !== "undefined") {
