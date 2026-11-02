@@ -185,9 +185,11 @@
   const NAMES = { s: "small", m: "medium", l: "large" };
   const VIEW_NAMES = { dates: "dates", done: "done", month: "month",
     simple: "simple", weekly: "week", year: "year" };
-  const LAYERS = '<path d="M12 3.5l8.5 4.25L12 12 3.5 7.75z"/>'
-    + '<path d="M3.5 12L12 16.25 20.5 12"/>'
-    + '<path d="M3.5 16.25L12 20.5l8.5-4.25"/>';
+  const LAYERS = '<path d="M7 3.1a9.5 9.5 0 1 1-4 4.8" '
+    + 'fill="none" stroke="currentColor" stroke-width="1.8" '
+    + 'stroke-linecap="round"/>'
+    + '<circle cx="12" cy="12" r="4.5" fill="currentColor" stroke="none"/>'
+    + '<circle cx="5.2" cy="4.7" r="1.8" fill="currentColor" stroke="none"/>';
 
   let cfg = null, nav = null, mode = "dark", syncState = null;
   let tip = null, tipFor = null;
