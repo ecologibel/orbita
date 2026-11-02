@@ -3521,6 +3521,14 @@
     }
     const prev = blocks()[p];
     if (prev.type === "divider") {
+      if (!c.textContent && blocks().length > 1) {
+        const targetIndex = editableIndex(p, -1);
+        const target = targetIndex >= 0 ? blocks()[targetIndex] : null;
+        blocks().splice(i, 1);
+        commit(target && target.id, target ? "end" : undefined);
+        if (!target) setCaret(titleEl, "end");
+        return;
+      }
       blocks().splice(p, 1);
       return commit(b.id, 0);
     }
