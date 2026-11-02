@@ -808,13 +808,43 @@
       const token = e.target && e.target.closest
         ? e.target.closest(".date-token[role='button']") : null;
       if (!token) return;
-      const editor = token.closest("[contenteditable='true'], [contenteditable='plaintext-only']");
+      const editor = token.closest("[contenteditable='true']");
       if (!editor) return;
       e.preventDefault();
       e.stopPropagation();
       openDatePicker(token, replacement => {
+        const before = document.createRange();
+        before.selectNodeContents(editor);
+        before.setEndBefore(token);
+        const caretOffset = before.toString().length + replacement.length;
         token.replaceWith(document.createTextNode(replacement));
-        editor.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: replacement }));
+        editor.dispatchEvent(new InputEvent("input", {
+          bubbles: true, inputType: "insertText", data: replacement
+        }));
+        const decorated = decorate(editor.innerHTML, token.dataset.dateAnchor);
+        if (decorated !== editor.innerHTML) editor.innerHTML = decorated;
+        editor.focus({ preventScroll: true });
+        const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT);
+        let left = caretOffset, placed = false;
+        const caret = document.createRange();
+        while (walker.nextNode()) {
+          const node = walker.currentNode;
+          if (left <= node.length) {
+            caret.setStart(node, left);
+            placed = true;
+            break;
+          }
+          left -= node.length;
+        }
+        if (!placed) {
+          caret.selectNodeContents(editor);
+          caret.collapse(false);
+        } else {
+          caret.collapse(true);
+        }
+        const selection = getSelection();
+        selection.removeAllRanges();
+        selection.addRange(caret);
       });
     });
   }
