@@ -402,8 +402,8 @@
     const style = document.createElement("style");
     style.id = "orbita-date-picker-style";
     style.textContent = `
-      .date-token { cursor: pointer; text-decoration: underline dotted;
-        text-underline-offset: 2px; }
+      .date-token { color: var(--accent) !important; cursor: pointer;
+        text-decoration: none !important; }
       .date-token:focus-visible { border-radius: 2px;
         outline: 2px solid var(--accent, #7fdbca); outline-offset: 2px; }
       .orbita-date-picker {
@@ -486,7 +486,41 @@
       && d.getDate() === +m[3] ? d : null;
   }
 
-  function showDatePicker(start, end, rangeMode, onChange, origin, anchor) {
+  function pickerDateText(date) {
+    return String(date.getDate()).padStart(2, "0") + "/"
+      + String(date.getMonth() + 1).padStart(2, "0") + "/"
+      + date.getFullYear();
+  }
+
+  function parsePickerText(value, anchor) {
+    const text = String(value || "").trim().replace(/^@/, "");
+    const localDate = part => {
+      const m = part.trim().match(/^([0-9]{1,2})\/([0-9]{1,2})\/([0-9]{4})$/);
+      if (!m) return parseOne(part, anchor);
+      const iso = m[3] + "-" + String(m[2]).padStart(2, "0")
+        + "-" + String(m[1]).padStart(2, "0");
+      return parseOne(iso, anchor);
+    };
+    const pieces = text.split(/\s+to\s+/i);
+    if (pieces.length === 2) {
+      const a = localDate(pieces[0]), b = localDate(pieces[1]);
+      return !a || !b || b.end < a.start
+        ? null : { start: a.start, end: b.end };
+    }
+    return parseSpec(text, anchor);
+  }
+
+  function formatDateToken(date) {
+    return "@" + WEEKDAYS[date.getDay()] + " " + date.getDate() + " "
+      + MONTHS[date.getMonth()] + " " + date.getFullYear();
+  }
+
+  function formatRangeToken(start, end) {
+    return formatDateToken(start) + (localDateKey(start) === localDateKey(end)
+      ? "" : " to " + formatDateToken(end).slice(1));
+  }
+
+  function showDatePicker(start, end, rangeMode, onChange, origin, anchor, originalToken) {
     const from = pickerDate(start), to = pickerDate(end);
     if (!from || !to || typeof onChange !== "function") return false;
     ensureDatePickerStyles();
@@ -518,7 +552,8 @@
       const first = localDateKey(selectedStart);
       const last = localDateKey(selectedEnd);
       dateInput.value = rangeMode && first !== last
-        ? first + " to " + last : first;
+        ? pickerDateText(selectedStart) + " to " + pickerDateText(selectedEnd)
+        : pickerDateText(selectedStart);
       error.textContent = "";
       fieldDirty = false;
     };
@@ -587,7 +622,7 @@
     };
     const applyRange = () => {
       if (fieldDirty) {
-        const parsed = parseSpec(dateInput.value.trim().replace(/^@/, ""),
+        const parsed = parsePickerText(dateInput.value,
           dayStart(anchor || new Date()));
         if (!parsed) {
           error.textContent = "Enter a recognised date, such as 6 nov or next fri.";
@@ -601,15 +636,16 @@
         error.textContent = "Choose an end date on or after the start date.";
         return false;
       }
-      onChange("@" + localDateKey(selectedStart)
-        + (localDateKey(selectedEnd) !== localDateKey(selectedStart)
-          ? " to " + localDateKey(selectedEnd) : ""));
+      onChange(rangeMode
+        ? formatRangeToken(selectedStart, selectedEnd)
+        : (originalToken && localDateKey(selectedStart) === localDateKey(from)
+          ? originalToken : formatDateToken(selectedStart)));
       close();
       return true;
     };
     const acceptTyped = () => {
       const raw = dateInput.value.trim().replace(/^@/, "");
-      const parsed = parseSpec(raw, dayStart(anchor || new Date()));
+      const parsed = parsePickerText(raw, dayStart(anchor || new Date()));
       if (!parsed) {
         error.textContent = "Enter a recognised date, such as 6 nov or next fri.";
         return false;
@@ -620,7 +656,11 @@
       writeField();
       renderCalendar();
       if (!rangeMode) {
-        applyRange();
+        const localEntry = /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(raw);
+        onChange(localEntry ? formatDateToken(parsed.start)
+          : (dateInput.value.trim().startsWith("@")
+            ? dateInput.value.trim() : "@" + dateInput.value.trim()));
+        close();
       }
       return true;
     };
@@ -661,7 +701,8 @@
         button.addEventListener("click", () => {
           if (!rangeMode) {
             selectedStart = selectedEnd = d;
-            onChange("@" + key);
+            onChange(originalToken && key === localDateKey(from)
+              ? originalToken : formatDateToken(d));
             close();
             return;
           }
@@ -691,6 +732,7 @@
     dateInput.addEventListener("keydown", e => {
       if (e.key === "Enter") {
         e.preventDefault();
+        if (!fieldDirty) { close(); return; }
         acceptTyped();
       }
     });
@@ -701,7 +743,7 @@
     todayButton.addEventListener("click", () => {
       const today = dayStart(new Date());
       if (!rangeMode) {
-        onChange("@" + localDateKey(today));
+        onChange("@today");
         close();
         return;
       }
@@ -739,13 +781,17 @@
     const range = parseSpec(String(token && token.textContent || "").replace(/^@/, ""), anchor);
     if (!range) return false;
     return showDatePicker(range.start, range.end,
-      range.start.getTime() !== range.end.getTime(), onChange, token, anchor);
+      range.start.getTime() !== range.end.getTime(), onChange, token, anchor,
+      token.textContent);
   }
 
   function openDatePickerValue(value, onChange, origin) {
     const date = pickerDate(value);
     return date ? showDatePicker(date, date, false,
-      iso => onChange(iso.slice(1)), origin, dayStart(new Date())) : false;
+      token => {
+        const parsed = parsePickerText(token, dayStart(new Date()));
+        if (parsed) onChange(localDateKey(parsed.start));
+      }, origin, dayStart(new Date()), "@" + localDateKey(date)) : false;
   }
 
   if (typeof document !== "undefined") {
