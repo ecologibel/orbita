@@ -406,39 +406,65 @@
         text-underline-offset: 2px; }
       .date-token:focus-visible { border-radius: 2px;
         outline: 2px solid var(--accent, #7fdbca); outline-offset: 2px; }
-      dialog.orbita-date-picker {
+      .orbita-date-picker {
         background: #01111f; border: 1px solid #1e3a52; border-radius: 8px;
-        color: #d6deeb; font: 14px/1.4 'Segoe UI', sans-serif;
-        margin: auto; max-width: calc(100vw - 32px); padding: 18px;
-        width: 300px;
+        box-shadow: 0 8px 28px rgba(0,0,0,.32); color: #d6deeb;
+        font: 13px/1.4 'Segoe UI', sans-serif; padding: 12px;
+        position: fixed; width: 284px; z-index: 10000;
       }
-      dialog.orbita-date-picker::backdrop { background: rgba(1, 22, 39, .56); }
-      .orbita-date-picker h2 { font-size: 16px; margin: 0 0 14px; }
-      .orbita-date-picker .date-fields { display: grid; gap: 10px; }
-      .orbita-date-picker label { display: grid; gap: 4px; }
+      .orbita-date-picker[hidden] { display: none; }
+      .orbita-date-picker .date-fields { display: grid; gap: 6px;
+        grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 10px; }
+      .orbita-date-picker .date-fields.single { grid-template-columns: 1fr; }
+      .orbita-date-picker label { color: #8291a5; display: grid;
+        font-size: 11px; gap: 3px; }
       .orbita-date-picker input[type="date"] {
         background: #011627; border: 1px solid #1e3a52; border-radius: 4px;
-        color: #d6deeb; font: inherit; min-height: 36px; padding: 5px 8px;
-        width: 100%;
+        color: #d6deeb; font: inherit; min-height: 32px; min-width: 0;
+        padding: 4px 6px; width: 100%;
       }
-      .orbita-date-picker .date-actions {
-        display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px;
-      }
+      .orbita-date-picker .calendar-head { align-items: center; display: flex;
+        justify-content: space-between; margin: 2px 0 8px; }
+      .orbita-date-picker .month-name { font-size: 13px; font-weight: 600; }
       .orbita-date-picker button {
-        background: transparent; border: 1px solid #426078; border-radius: 4px;
-        color: inherit; cursor: pointer; font: inherit; padding: 6px 10px;
+        align-items: center; background: transparent; border: 0;
+        border-radius: 4px; color: inherit; cursor: pointer; display: inline-flex;
+        font: inherit; justify-content: center; min-height: 28px; min-width: 28px;
       }
-      .orbita-date-picker button.primary {
-        background: #7fdbca; border-color: #7fdbca; color: #011627;
+      .orbita-date-picker button:hover,
+      .orbita-date-picker button:focus-visible { background: rgba(127,219,202,.14);
+        outline: none; }
+      .orbita-date-picker .calendar-nav { color: #8291a5; font-size: 18px; }
+      .orbita-date-picker .calendar-grid { display: grid;
+        grid-template-columns: repeat(7, 1fr); gap: 2px; }
+      .orbita-date-picker .weekday { color: #8291a5; font-size: 10px;
+        text-align: center; padding: 4px 0; }
+      .orbita-date-picker .day { min-height: 30px; padding: 0; }
+      .orbita-date-picker .day.outside { color: #586779; }
+      .orbita-date-picker .day.today { box-shadow: inset 0 0 0 1px #7fdbca; }
+      .orbita-date-picker .day.selected,
+      .orbita-date-picker .day.in-range {
+        background: #7fdbca; color: #011627; font-weight: 600;
       }
-      :where(.t-light) dialog.orbita-date-picker {
+      .orbita-date-picker .date-actions { display: flex; gap: 6px;
+        justify-content: flex-end; margin-top: 10px; }
+      .orbita-date-picker .date-actions button { padding: 4px 9px; }
+      .orbita-date-picker .date-actions .primary {
+        background: #7fdbca; color: #011627; font-weight: 600;
+      }
+      :where(.t-light) .orbita-date-picker {
         background: #fff; border-color: #d7e0e8; color: #233044;
+        box-shadow: 0 8px 28px rgba(20,40,60,.18);
       }
       :where(.t-light) .orbita-date-picker input[type="date"] {
         background: #fff; border-color: #d7e0e8; color: #233044;
       }
-      :where(.t-light) .orbita-date-picker button.primary {
-        background: #147d70; border-color: #147d70; color: #fff;
+      :where(.t-light) .orbita-date-picker .day.selected,
+      :where(.t-light) .orbita-date-picker .day.in-range {
+        background: #147d70; color: #fff;
+      }
+      :where(.t-light) .orbita-date-picker .day.today {
+        box-shadow: inset 0 0 0 1px #147d70;
       }
     `;
     document.head.appendChild(style);
@@ -453,19 +479,17 @@
       && d.getDate() === +m[3] ? d : null;
   }
 
-  function showDatePicker(start, end, rangeMode, onChange) {
+  function showDatePicker(start, end, rangeMode, onChange, origin) {
     const from = pickerDate(start), to = pickerDate(end);
     if (!from || !to || typeof onChange !== "function") return false;
     ensureDatePickerStyles();
-    const dialog = document.createElement("dialog");
-    dialog.className = "orbita-date-picker";
-    dialog.setAttribute("aria-label", rangeMode ? "Choose date range" : "Choose date");
-    const form = document.createElement("form");
-    form.method = "dialog";
-    const heading = document.createElement("h2");
-    heading.textContent = rangeMode ? "Confirm or change date range" : "Confirm or change date";
+
+    const popup = document.createElement("section");
+    popup.className = "orbita-date-picker";
+    popup.setAttribute("role", "dialog");
+    popup.setAttribute("aria-label", rangeMode ? "Choose date range" : "Choose date");
     const fields = document.createElement("div");
-    fields.className = "date-fields";
+    fields.className = "date-fields" + (rangeMode ? "" : " single");
     const makeField = (labelText, value) => {
       const label = document.createElement("label");
       label.appendChild(document.createTextNode(labelText));
@@ -478,35 +502,157 @@
     };
     const startInput = makeField(rangeMode ? "start date" : "date", from);
     const endInput = rangeMode ? makeField("end date", to) : null;
+    let activeInput = startInput;
+    let shownMonth = new Date(from.getFullYear(), from.getMonth(), 1);
+    const head = document.createElement("div");
+    head.className = "calendar-head";
+    const prev = document.createElement("button");
+    prev.type = "button";
+    prev.className = "calendar-nav";
+    prev.setAttribute("aria-label", "previous month");
+    prev.textContent = "‹";
+    const monthName = document.createElement("strong");
+    monthName.className = "month-name";
+    const next = document.createElement("button");
+    next.type = "button";
+    next.className = "calendar-nav";
+    next.setAttribute("aria-label", "next month");
+    next.textContent = "›";
+    head.append(prev, monthName, next);
+    const grid = document.createElement("div");
+    grid.className = "calendar-grid";
+    grid.setAttribute("role", "grid");
     const actions = document.createElement("div");
     actions.className = "date-actions";
     const cancel = document.createElement("button");
     cancel.type = "button";
     cancel.textContent = "cancel";
-    cancel.addEventListener("click", () => dialog.close());
     const apply = document.createElement("button");
     apply.type = "button";
     apply.className = "primary";
     apply.textContent = "apply";
-    apply.addEventListener("click", () => {
-      const first = startInput.value;
-      const last = endInput ? endInput.value : first;
-      if (!first || !last || last < first) {
-        (endInput || startInput).setCustomValidity("Choose a valid date range.");
-        (endInput || startInput).reportValidity();
-        return;
+    if (rangeMode) actions.append(cancel, apply);
+
+    const close = () => {
+      document.removeEventListener("pointerdown", outside, true);
+      document.removeEventListener("keydown", escape, true);
+      document.removeEventListener("scroll", position, true);
+      window.removeEventListener("resize", position);
+      popup.remove();
+      if (origin && origin.isConnected) origin.focus({ preventScroll: true });
+    };
+    const outside = e => {
+      if (!popup.contains(e.target) && e.target !== origin) close();
+    };
+    const escape = e => {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      e.stopPropagation();
+      close();
+    };
+    const position = () => {
+      if (!origin || !origin.isConnected) return;
+      const rect = origin.getBoundingClientRect();
+      const bounds = popup.getBoundingClientRect();
+      const gap = 6;
+      const left = Math.max(8, Math.min(rect.left,
+        window.innerWidth - bounds.width - 8));
+      const below = window.innerHeight - rect.bottom - gap;
+      const above = rect.top - gap;
+      const top = below >= bounds.height || below >= above
+        ? Math.min(rect.bottom + gap, window.innerHeight - bounds.height - 8)
+        : Math.max(8, rect.top - bounds.height - gap);
+      popup.style.left = left + "px";
+      popup.style.top = top + "px";
+    };
+    const dateKeyOf = input => input.value;
+    const renderCalendar = () => {
+      monthName.textContent = shownMonth.toLocaleDateString(undefined,
+        { month: "long", year: "numeric" });
+      grid.replaceChildren();
+      ["M", "T", "W", "T", "F", "S", "S"].forEach((day, i) => {
+        const label = document.createElement("span");
+        label.className = "weekday";
+        label.setAttribute("role", "columnheader");
+        label.textContent = day;
+        label.setAttribute("aria-label",
+          ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"][i]);
+        grid.appendChild(label);
+      });
+      const first = new Date(shownMonth.getFullYear(), shownMonth.getMonth(), 1);
+      const offset = (first.getDay() + 6) % 7;
+      const gridStart = new Date(first.getFullYear(), first.getMonth(), 1 - offset);
+      const startKey = dateKeyOf(startInput), endKey = endInput && dateKeyOf(endInput);
+      const todayKey = localDateKey(dayStart(new Date()));
+      for (let i = 0; i < 42; i++) {
+        const d = addDays(gridStart, i), key = localDateKey(d);
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "day";
+        button.setAttribute("role", "gridcell");
+        button.setAttribute("aria-label", d.toLocaleDateString(undefined,
+          { weekday: "long", month: "long", day: "numeric", year: "numeric" }));
+        button.textContent = String(d.getDate());
+        if (d.getMonth() !== shownMonth.getMonth()) button.classList.add("outside");
+        if (key === todayKey) button.classList.add("today");
+        if (key === startKey || key === endKey) button.classList.add("selected");
+        if (endKey && key > startKey && key < endKey) button.classList.add("in-range");
+        button.addEventListener("click", () => {
+          activeInput.value = key;
+          if (!rangeMode) {
+            onChange("@" + key);
+            close();
+            return;
+          }
+          if (activeInput === startInput) activeInput = endInput;
+          renderCalendar();
+          if (activeInput === endInput) endInput.focus({ preventScroll: true });
+        });
+        grid.appendChild(button);
       }
-      (endInput || startInput).setCustomValidity("");
-      onChange("@" + first + (last !== first ? " to " + last : ""));
-      dialog.close();
+      position();
+    };
+    prev.addEventListener("click", () => {
+      shownMonth = new Date(shownMonth.getFullYear(), shownMonth.getMonth() - 1, 1);
+      renderCalendar();
     });
-    actions.append(cancel, apply);
-    form.append(heading, fields, actions);
-    dialog.appendChild(form);
-    dialog.addEventListener("close", () => dialog.remove(), { once: true });
-    document.body.appendChild(dialog);
-    try { dialog.showModal(); } catch { dialog.setAttribute("open", ""); }
-    try { startInput.showPicker(); } catch {}
+    next.addEventListener("click", () => {
+      shownMonth = new Date(shownMonth.getFullYear(), shownMonth.getMonth() + 1, 1);
+      renderCalendar();
+    });
+    startInput.addEventListener("focus", () => { activeInput = startInput; });
+    if (endInput) endInput.addEventListener("focus", () => { activeInput = endInput; });
+    [startInput, endInput].filter(Boolean).forEach(input => {
+      input.addEventListener("change", () => {
+        const chosen = pickerDate(input.value);
+        if (chosen) {
+          shownMonth = new Date(chosen.getFullYear(), chosen.getMonth(), 1);
+          renderCalendar();
+        }
+      });
+    });
+    if (rangeMode) {
+      cancel.addEventListener("click", close);
+      apply.addEventListener("click", () => {
+        const first = startInput.value, last = endInput.value;
+        if (!first || !last || last < first) {
+          endInput.setCustomValidity("Choose an end date on or after the start date.");
+          endInput.reportValidity();
+          return;
+        }
+        endInput.setCustomValidity("");
+        onChange("@" + first + (last !== first ? " to " + last : ""));
+        close();
+      });
+    }
+    popup.append(fields, head, grid, actions);
+    document.body.appendChild(popup);
+    document.addEventListener("pointerdown", outside, true);
+    document.addEventListener("keydown", escape, true);
+    document.addEventListener("scroll", position, true);
+    window.addEventListener("resize", position);
+    renderCalendar();
+    startInput.focus({ preventScroll: true });
     return true;
   }
 
@@ -517,13 +663,13 @@
     const range = parseSpec(String(token && token.textContent || "").replace(/^@/, ""), anchor);
     if (!range) return false;
     return showDatePicker(range.start, range.end,
-      range.start.getTime() !== range.end.getTime(), onChange);
+      range.start.getTime() !== range.end.getTime(), onChange, token);
   }
 
-  function openDatePickerValue(value, onChange) {
+  function openDatePickerValue(value, onChange, origin) {
     const date = pickerDate(value);
-    return date ? showDatePicker(date, date, false, iso => onChange(iso.slice(1)))
-      : false;
+    return date ? showDatePicker(date, date, false,
+      iso => onChange(iso.slice(1)), origin) : false;
   }
 
   if (typeof document !== "undefined") {
