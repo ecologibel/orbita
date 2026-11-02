@@ -342,10 +342,9 @@
     if (!match) return null;
     const task = { anchorAt, text: source };
     if (!refreshRelativeTask(task)) return null;
-    const token = task.text.slice(match.index,
-      task.text.indexOf(" ", match.index) < 0
-        ? task.text.length : task.text.indexOf(" ", match.index));
-    return { anchorAt: task.anchorAt, end: match.index + token.length,
+    const tokenLength = firstToken(task.text).length;
+    const token = task.text.slice(match.index, match.index + tokenLength);
+    return { anchorAt: task.anchorAt, end: match.index + tokenLength,
       start: match.index, text: task.text, token };
   }
 
