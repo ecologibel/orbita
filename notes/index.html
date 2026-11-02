@@ -2915,7 +2915,39 @@
   function renderEdited() {
     editedEl.textContent = current ? agoText(current.updated) : "";
   }
-  setInterval(() => { if (current) renderEdited(); }, 60000);
+  let relativeDate = new Date().toDateString();
+  function rollCurrentRelativeDates() {
+    if (!current) return;
+    let changed = false;
+    current.blocks.forEach(block => {
+      if (block.type !== "todo") return;
+      const text = blockText(block).trim();
+      const refreshed = ToolkitDates.refreshRelativeText(text,
+        block.anchorAt || current.updated);
+      if (!refreshed) return;
+      const html = ToolkitDates.replaceHtmlRange(block.html,
+        refreshed.start, refreshed.end, refreshed.token);
+      if (html == null) return;
+      block.html = html;
+      block.anchorAt = refreshed.anchorAt;
+      block.anchorTok = ToolkitDates.firstToken(refreshed.text);
+      changed = true;
+    });
+    if (changed) {
+      save(false);
+      renderBlocks();
+    }
+  }
+  setInterval(() => {
+    const today = new Date().toDateString();
+    const active = document.activeElement;
+    if (today !== relativeDate && !document.querySelector(".orbita-date-picker")
+        && !(active && active.closest && active.closest("#blocks .content"))) {
+      relativeDate = today;
+      rollCurrentRelativeDates();
+    }
+    if (current) renderEdited();
+  }, 60000);
 
   function renderWords() {
     const text = current.blocks.map(blockText).join(" ");
