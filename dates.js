@@ -626,6 +626,11 @@
       input.addEventListener("change", () => {
         const chosen = pickerDate(input.value);
         if (chosen) {
+          if (!rangeMode) {
+            onChange("@" + input.value);
+            close();
+            return;
+          }
           shownMonth = new Date(chosen.getFullYear(), chosen.getMonth(), 1);
           renderCalendar();
         }
