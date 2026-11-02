@@ -506,6 +506,9 @@
       return !a || !b || b.end < a.start
         ? null : { start: a.start, end: b.end };
     }
+    if (/^[0-9]{1,2}\/[0-9]{1,2}\/[0-9]{4}$/.test(text)) {
+      return localDate(text);
+    }
     return parseSpec(text, anchor);
   }
 
@@ -656,7 +659,7 @@
       writeField();
       renderCalendar();
       if (!rangeMode) {
-        const localEntry = /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(raw);
+        const localEntry = /^(?:\d{1,2}\/\d{1,2}\/\d{4}|\d{4}-\d{2}-\d{2})$/.test(raw);
         onChange(localEntry ? formatDateToken(parsed.start)
           : (entered.startsWith("@") ? entered : "@" + entered));
         close();
