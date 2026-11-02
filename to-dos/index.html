@@ -242,7 +242,7 @@
     word-break: break-word;
     overflow: hidden;
     color: var(--fg);
-    z-index: 0;
+    z-index: 2;
     line-height: 1.4;
   }
   /* Checked items in a slightly darker highlight colour */
@@ -251,7 +251,8 @@
     text-decoration: line-through;
     color: var(--done);
   }
-  .task-highlight .date-token,
+  .task-highlight .date-token { cursor: pointer; pointer-events: auto; text-decoration: underline dotted; text-underline-offset: 2px; }
+  .task-highlight .date-token:focus-visible { outline: 2px solid var(--accent); }
   .task-highlight .mention-token {
     color: var(--accent);
   }
@@ -1714,7 +1715,7 @@
       .replace(/>/g, "&gt;");
   }
 
-  function highlightDates(text) {
+  function highlightDates(text, anchor) {
     if (!text) return "";
     let result = "";
     let lastIdx = 0;
@@ -1724,8 +1725,7 @@
       result += highlightTags(
         text.slice(lastIdx, match.index)
       );
-      result += '<span class="date-token">'
-        + escapeHtml(match[0]) + '</span>';
+      result += DATES.dateTokenHtml(match[0], match.index, anchor);
       lastIdx = match.index + match[0].length;
     }
     result += highlightTags(text.slice(lastIdx));
@@ -1968,11 +1968,25 @@
     tagBox.className = "task-tags";
 
     function syncHighlight() {
-      highlight.innerHTML = highlightDates(txt.value);
+      highlight.innerHTML = highlightDates(txt.value, task.anchorAt);
       tagBox.innerHTML = taskTags(txt.value)
         .map(t => '<span class="tag-chip">' + escapeHtml(t) + '</span>')
         .join("");
     }
+    highlight.addEventListener("click", e => {
+      const token = e.target.closest(".date-token");
+      if (!token) return;
+      e.preventDefault();
+      e.stopPropagation();
+      DATES.openDatePicker(token, replacement => {
+        task.text = DATES.replaceTextRange(task.text,
+          token.dataset.dateStart, token.dataset.dateEnd, replacement);
+        DATES.stampAnchor(task);
+        txt.value = task.text;
+        syncHighlight();
+        onUpdate();
+      });
+    });
 
     function autoResize() {
       txt.style.height = "auto";
@@ -2853,7 +2867,27 @@
     wrap.className = "task-text-wrap";
     const text = document.createElement("div");
     text.className = "task-highlight note-text";
-    text.innerHTML = highlightDates(item.task.text);
+    text.innerHTML = highlightDates(item.task.text,
+      item.block.anchorAt || item.note.updated);
+    text.addEventListener("click", e => {
+      const token = e.target.closest(".date-token");
+      if (!token) return;
+      e.preventDefault();
+      e.stopPropagation();
+      DATES.openDatePicker(token, replacement => {
+        const data = loadNotes();
+        const note = data && data.notes.find(n => n.id === item.note.id);
+        const block = note && note.blocks.find(b => b.id === item.block.id);
+        if (!block) return;
+        const html = DATES.replaceHtmlRange(block.html,
+          token.dataset.dateStart, token.dataset.dateEnd, replacement);
+        if (html == null) return;
+        block.html = html;
+        note.updated = Date.now();
+        localStorage.setItem(NOTES_KEY, JSON.stringify(data));
+        renderFn();
+      });
+    });
     wrap.appendChild(text);
 
     const link = document.createElement("a");
