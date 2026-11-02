@@ -1994,6 +1994,7 @@
         txt.value = task.text;
         syncHighlight();
         onUpdate();
+        if (currentView === "dates") renderDatesAnimated();
         return () => {
           task.text = previous.text;
           task.anchorAt = previous.anchorAt;
@@ -2001,6 +2002,7 @@
           txt.value = task.text;
           syncHighlight();
           onUpdate();
+          if (currentView === "dates") renderDatesAnimated();
         };
       });
     });
@@ -2509,6 +2511,8 @@
           section: sec.id, srcKey: src
         }
       );
+      tEl.dataset.dateMoveKey = "todo:" + src + ":"
+        + getList(data, src).indexOf(task);
       tEl.title = "from " + sourceLabel(src);
       if (opts.showDate) {
         const r = taskRange(task, src);
@@ -2660,6 +2664,27 @@
   }
 
   const COUNTS_KEY = "todo-show-counts";
+
+  function renderDatesAnimated() {
+    const el = document.getElementById("dates-view");
+    const before = new Map();
+    el.querySelectorAll(".task[data-date-move-key]").forEach(task => {
+      before.set(task.dataset.dateMoveKey, task.getBoundingClientRect());
+    });
+    renderDates();
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    el.querySelectorAll(".task[data-date-move-key]").forEach(task => {
+      const rect = before.get(task.dataset.dateMoveKey);
+      if (!rect || typeof task.animate !== "function") return;
+      const next = task.getBoundingClientRect();
+      const x = rect.left - next.left, y = rect.top - next.top;
+      if (Math.abs(x) < 1 && Math.abs(y) < 1) return;
+      task.animate([
+        { transform: "translate(" + x + "px, " + y + "px)", opacity: 0.78 },
+        { transform: "translate(0, 0)", opacity: 1 }
+      ], { duration: 220, easing: "cubic-bezier(.2,.7,.2,1)" });
+    });
+  }
 
   function renderDates() {
     const data = loadData();
@@ -2867,9 +2892,10 @@
 
   }
 
-  function noteTaskEl(item, renderFn = renderDates) {
+  function noteTaskEl(item, renderFn = renderDatesAnimated) {
     const el = document.createElement("div");
     el.className = "task note-task" + (item.task.done ? " done" : "");
+    el.dataset.dateMoveKey = "note:" + item.note.id + ":" + item.block.id;
     el.title = "from the note " + (item.note.title || "untitled");
 
     const box = document.createElement("input");
