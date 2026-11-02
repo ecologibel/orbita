@@ -512,6 +512,7 @@
     error.setAttribute("role", "status");
     let selectedStart = from, selectedEnd = to;
     let activeEdge = "start";
+    let fieldDirty = false;
     let shownMonth = new Date(from.getFullYear(), from.getMonth(), 1);
     const writeField = () => {
       const first = localDateKey(selectedStart);
@@ -519,6 +520,7 @@
       dateInput.value = rangeMode && first !== last
         ? first + " to " + last : first;
       error.textContent = "";
+      fieldDirty = false;
     };
     writeField();
 
@@ -584,6 +586,17 @@
       popup.style.top = top + "px";
     };
     const applyRange = () => {
+      if (fieldDirty) {
+        const parsed = parseSpec(dateInput.value.trim().replace(/^@/, ""),
+          dayStart(anchor || new Date()));
+        if (!parsed) {
+          error.textContent = "Enter a recognised date, such as 6 nov or next fri.";
+          return false;
+        }
+        selectedStart = parsed.start;
+        selectedEnd = parsed.end;
+        fieldDirty = false;
+      }
       if (selectedEnd < selectedStart) {
         error.textContent = "Choose an end date on or after the start date.";
         return false;
@@ -681,7 +694,10 @@
         acceptTyped();
       }
     });
-    dateInput.addEventListener("input", () => { error.textContent = ""; });
+    dateInput.addEventListener("input", () => {
+      error.textContent = "";
+      fieldDirty = true;
+    });
     todayButton.addEventListener("click", () => {
       const today = dayStart(new Date());
       if (!rangeMode) {
