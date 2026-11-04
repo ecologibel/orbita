@@ -892,15 +892,39 @@
   }
 
   // Preserve unreadable saved data before a tool falls back to an empty view.
+  // Recovery notices already shown on this page, so re-renders don't repeat them
+  const shownRecovery = new Set();
+
+  // An existing recovery copy of key holding exactly raw, if any
+  function findRecovery(key, raw) {
+    const prefix = "recovery-backup-" + key + "-";
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(prefix) && localStorage.getItem(k) === raw) {
+          return k;
+        }
+      }
+    } catch {}
+    return null;
+  }
+
   function preserveRecovery(key, raw) {
     if (raw == null) return false;
-    const backupKey = "recovery-backup-" + key + "-" + Date.now()
-      + "-" + Math.random().toString(36).slice(2, 7);
-    let saved = false;
-    try {
-      localStorage.setItem(backupKey, raw);
-      saved = true;
-    } catch {}
+    // Every tool reads the same data, so the same unreadable copy is seen
+    // on each page load. Keep it once rather than filling storage with
+    // duplicates.
+    let saved = !!findRecovery(key, raw);
+    if (!saved) {
+      const backupKey = "recovery-backup-" + key + "-" + Date.now()
+        + "-" + Math.random().toString(36).slice(2, 7);
+      try {
+        localStorage.setItem(backupKey, raw);
+        saved = true;
+      } catch {}
+    }
+    if (shownRecovery.has(key + "\n" + raw)) return saved;
+    shownRecovery.add(key + "\n" + raw);
     toast(saved
       ? "Saved data couldn't be read; a recovery copy was kept."
       : "Saved data couldn't be read; download a recovery copy now.", null, {
