@@ -62,18 +62,21 @@
       [notesId, { updated: 100, data: { [notesKey]: "notes-base" } }]
     ]);
     const patches = [];
+    const requests = [];
 
     window.fetch = async (url, options = {}) => {
       const method = options.method || "GET";
       for (const [id, remote] of remotes) {
         if (url.includes("/files/" + id + "?alt=media") && method === "GET") {
+          requests.push({ id, method });
           return { ok: true, status: 200, json: async () => remote };
         }
         if (url.includes("/upload/drive/v3/files/" + id)
             && method === "PATCH") {
           const payload = JSON.parse(options.body);
           remotes.set(id, payload);
-          patches.push({ id, payload, keepalive: !!options.keepalive });
+          requests.push({ id, method });
+          patches.push({ id, payload });
           return { ok: true, status: 200, json: async () => ({}) };
         }
       }
@@ -97,6 +100,7 @@
         "Both registered files reach the synced state.", passed);
 
       // These writes represent a note-task checkbox and an ordinary to-do edit.
+      requests.length = 0;
       localStorage.setItem(notesKey, "notes-updated");
       localStorage.setItem(todoKey, "todo-updated");
       if (typeof window.__syncTestPageHide !== "function") {
@@ -115,8 +119,26 @@
       assert(!(todoKey in notesPatch.payload.data)
         && !(notesKey in todoPatch.payload.data),
         "Each file contains only its own registered keys.", passed);
-      assert(patches.every(item => item.keepalive),
-        "Both pending files use the page-hide keepalive upload.", passed);
+      assert([todoId, notesId].every(id => {
+        const own = requests.filter(item => item.id === id);
+        return own.length === 2 && own[0].method === "GET"
+          && own[1].method === "PATCH";
+      }), "Page hide reads Drive before uploading each file.", passed);
+
+      // Another device saves notes, then this device edits before its
+      // next sync and the page is hidden. Drive's copy must survive.
+      patches.length = 0;
+      remotes.set(notesId, { updated: Date.now() + 60000,
+        data: { [notesKey]: "notes-other-device" } });
+      localStorage.setItem(notesKey, "notes-this-device");
+      window.__syncTestPageHide(new Event("pagehide"));
+      await waitFor(() => ToolSync.status() === "conflict");
+      assert(patches.length === 0
+        && remotes.get(notesId).data[notesKey] === "notes-other-device",
+        "Page hide does not overwrite a newer Drive copy.", passed);
+      assert(localStorage.getItem(notesKey) === "notes-this-device"
+        && !!localStorage.getItem("sync-conflict-" + notesFile),
+        "This device's edit is kept and the conflict is recorded.", passed);
 
       result.textContent = "PASS\n" + passed.map(x => "✓ " + x).join("\n");
     } catch (error) {

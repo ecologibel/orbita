@@ -2852,9 +2852,10 @@
     if (!data) return [];
     const out = [];
     data.notes.forEach(n => {
-      if (n.trashed || !Array.isArray(n.blocks)) return;
+      // Skip malformed records; the notes tool keeps a recovery copy
+      if (!n || n.trashed || !Array.isArray(n.blocks)) return;
       n.blocks.forEach(b => {
-        if (b.type !== "todo") return;
+        if (!b || b.type !== "todo") return;
         const text = htmlText(b.html).trim();
         if (!text) return;
         const anchor = dayStart(

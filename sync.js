@@ -286,14 +286,13 @@
     }
   }
 
-  async function writeRemote(cfg, m, payload, keepalive = false) {
+  async function writeRemote(cfg, m, payload) {
     const body = JSON.stringify(payload);
     if (m.fileId) {
       await drive(UPLOAD + "/" + m.fileId + "?uploadType=media", {
         body,
-        headers:   { "Content-Type": "application/json" },
-        keepalive,
-        method:    "PATCH"
+        headers: { "Content-Type": "application/json" },
+        method:  "PATCH"
       });
       return;
     }
@@ -431,39 +430,15 @@
     }
   }
 
-  // Send a pending save before the page is hidden or closed
+  // Send a pending save when the page is hidden or closed. This runs the
+  // normal sync, which reads Drive first, so a change made on another device
+  // is caught as a conflict instead of being overwritten. If the page closes
+  // before the sync finishes, the edit stays marked as unsynced and is sent,
+  // with the same check, the next time the app opens.
   function flush(cfg) {
     const task = runtime.get(cfg.file);
-    if (!task || !task.pushTimer || !getToken() || task.busy) return;
-    if (localStorage.getItem(conflictKey(cfg))) {
-      setStatus("conflict", cfg);
-      return;
-    }
-    clearTimeout(task.pushTimer);
-    task.pushTimer = null;
-    const m = loadMeta(cfg);
-    if (!m.fileId) {
-      sync(cfg);
-      return;
-    }
-    const data = collect(cfg), uploadedAt = m.updated;
-    task.busy = true;
-    writeRemote(cfg, m, { data, updated: uploadedAt }, true)
-      .then(() => {
-        const unchanged = finishUpload(cfg, task, m, data, uploadedAt);
-        setStatus(unchanged ? "synced" : "pending", cfg);
-      })
-      .catch(err => {
-        console.warn("Sync flush:", err);
-        setStatus(err.message === "auth" ? signedOutState(cfg) : "error", cfg);
-      })
-      .finally(() => {
-        task.busy = false;
-        if (task.again) {
-          task.again = false;
-          sync(cfg);
-        }
-      });
+    if (!task || !task.pushTimer || !getToken()) return;
+    sync(cfg);
   }
 
   function flushAll() {
