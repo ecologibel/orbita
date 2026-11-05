@@ -692,10 +692,13 @@
     }
 
     if (!initialized) {
-      const gis = document.createElement("script");
-      gis.async = true;
-      gis.src = "https://accounts.google.com/gsi/client";
-      document.head.appendChild(gis);
+      // Pages such as timekeeper already load Google sign-in for their own use
+      if (!document.querySelector('script[src^="https://accounts.google.com/gsi/client"]')) {
+        const gis = document.createElement("script");
+        gis.async = true;
+        gis.src = "https://accounts.google.com/gsi/client";
+        document.head.appendChild(gis);
+      }
 
       addButton();
       document.addEventListener("visibilitychange", () => {

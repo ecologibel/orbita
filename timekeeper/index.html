@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy"
+  content="default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/ https://cdnjs.cloudflare.com/ajax/libs/codemirror/; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com/ajax/libs/codemirror/ https://accounts.google.com/gsi/style; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' https://www.googleapis.com https://oauth2.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>timekeeper &middot; orbita</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -248,6 +250,7 @@
   <div id="chart-tooltip" class="chart-tooltip" role="tooltip" hidden></div>
 </div>
 <script src="../dates.js"></script>
+<script src="../sync.js"></script>
 <script src="../sidebar.js"></script>
 <script>
 (() => {
@@ -275,6 +278,8 @@
   let token=null,tokenClient=null,calendars=[],events=[],colors={},refreshTimer=0,eventRequest=0,calendarRequest=0,piePage=0;
   let prefs={},tags=[],assignments={},tagColors={},calendarColors={},excludedCalendars=new Set(),selectedTags=new Set(),selectedCalendars=new Set(),selectionMode="calendars";
   try{token=JSON.parse(localStorage.getItem(TOKEN_KEY)||"null");if(token&&(!token.access_token||token.expires_at<=Date.now()+30000)){localStorage.removeItem(TOKEN_KEY);token=null;}}catch{token=null;}
+  // Settings sync through the site's Drive account (sync.js), not the Calendar sign-in, so they are reloaded when Drive or another tab changes them
+  function loadPrefs(){prefs={};tags=[];assignments={};tagColors={};calendarColors={};excludedCalendars=new Set();selectedTags=new Set();selectedCalendars=new Set();selectionMode="calendars";
   try{const d=JSON.parse(localStorage.getItem(DATA_KEY)||"{}");prefs=d&&typeof d==="object"&&!Array.isArray(d)?d:{};
     tags=Array.isArray(prefs.tags)?prefs.tags.filter(t=>typeof t==="string"&&t.trim()).map(t=>t.trim()):[];
     assignments=prefs.assignments&&typeof prefs.assignments==="object"&&!Array.isArray(prefs.assignments)?prefs.assignments:{};
@@ -284,7 +289,8 @@
     selectedTags=new Set(Array.isArray(prefs.selectedTags)?prefs.selectedTags:(Array.isArray(prefs.selected)?prefs.selected:[]));
     selectedCalendars=new Set(Array.isArray(prefs.selectedCalendars)?prefs.selectedCalendars:[]);
     if(prefs.selectionMode==="tags"||prefs.selectionMode==="calendars")selectionMode=prefs.selectionMode;
-  }catch{}
+  }catch{}}
+  loadPrefs();
   const save=()=>{prefs=Object.assign({},prefs,{tags,assignments,tagColors,calendarColors,excludedCalendars:[...excludedCalendars],selectedTags:[...selectedTags],selectedCalendars:[...selectedCalendars],selectionMode});delete prefs.selected;try{localStorage.setItem(DATA_KEY,JSON.stringify(prefs));}catch{}};
   const say=(v,error=false)=>{$("#status").textContent=v;$("#status").classList.toggle("error",error);};
   const auth=()=>({Authorization:"Bearer "+(token&&token.access_token||"")});
@@ -488,6 +494,8 @@
   pageReady=true;
   setConnected(!!(token&&token.access_token&&token.expires_at>Date.now()+30000));if(token&&token.access_token&&token.expires_at>Date.now()+30000){loadCalendars();}else if(token){localStorage.removeItem(TOKEN_KEY);token=null;}
   render();
+  ToolSync.init({file:"timekeeper.json",keys:[DATA_KEY],onRemote:()=>{loadPrefs();render();}});
+  window.addEventListener("storage",e=>{if(e.key===DATA_KEY){loadPrefs();render();}});
 })();
 </script>
 </body>
