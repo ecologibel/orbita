@@ -1112,11 +1112,12 @@
     const data = loadNotes();
     const list = (data ? data.notes : []).filter(n => !n.trashed)
       .sort((a, b) => (b.updated || 0) - (a.updated || 0)).slice(0, 4);
-    const all = document.createElement("a");
-    all.className = "note-card all";
-    all.href = "../notes/index.html";
-    all.innerHTML = ToolkitSidebar.icon("notes") + "<span>all notes</span>";
-    box.appendChild(all);
+    // + new note first, then recent notes (newest first), then all notes
+    const add = document.createElement("a");
+    add.className = "note-card new";
+    add.href = "../notes/index.html#new";
+    add.innerHTML = '<span class="nc-plus">+</span><span>new note</span>';
+    box.appendChild(add);
     list.forEach(n => {
       const a = document.createElement("a");
       a.className = "note-card";
@@ -1140,11 +1141,11 @@
       }
       box.appendChild(a);
     });
-    const add = document.createElement("a");
-    add.className = "note-card new";
-    add.href = "../notes/index.html#new";
-    add.innerHTML = '<span class="nc-plus">+</span><span>new note</span>';
-    box.appendChild(add);
+    const all = document.createElement("a");
+    all.className = "note-card all";
+    all.href = "../notes/index.html";
+    all.innerHTML = ToolkitSidebar.icon("notes") + "<span>all notes</span>";
+    box.appendChild(all);
     const open = document.querySelector(".notes-slide").classList
       .contains("open");
     box.querySelectorAll("a").forEach(a => { a.tabIndex = open ? 0 : -1; });
