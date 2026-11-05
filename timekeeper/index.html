@@ -47,10 +47,14 @@
   button:disabled { cursor:not-allowed;opacity:.4; }
   button.primary { background:var(--accent);border-color:var(--accent);color:var(--bg);font-weight:650; }
   .muted { color:var(--fg-muted); }
-  .selection-columns { display:grid;gap:18px;grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .selection-columns { display:grid;gap:18px;grid-template-columns:minmax(0,1fr); }
+  .mode-tabs { align-items:center;display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px; }
+  .visually-hidden { clip:rect(0 0 0 0);height:1px;overflow:hidden;position:absolute;white-space:nowrap;width:1px; }
+  @keyframes list-in { from { opacity:0;transform:translateY(6px); } to { opacity:1;transform:none; } }
   .selection-list { border:1px solid var(--border);border-radius:8px;min-height:145px;padding:12px;transition:opacity .2s,border-color .2s,background .2s; }
   .selection-list.active { background:color-mix(in srgb,var(--accent) 5%,var(--bg));border-color:var(--accent); }
-  .selection-list.inactive { opacity:.48; }
+  .selection-list.inactive { display:none; }
+  .selection-list.active { animation:list-in .25s ease both; }
   .list-heading { align-items:center;background:transparent;border:0;border-bottom:1px solid var(--border);border-radius:0;display:flex;font-weight:600;justify-content:space-between;margin:-2px 0 9px;padding:2px 0 9px;text-align:left;width:100%; }
   .list-heading[aria-pressed=true] { color:var(--accent); }
   .list-head { align-items:center;border-bottom:1px solid var(--border);display:flex;gap:8px;margin:-2px 0 9px;padding:2px 0 9px; }
@@ -202,13 +206,13 @@
       <header class="page-header"><h1><span class="title-icon" id="title-icon" aria-hidden="true"></span>timekeeper</h1><p class="intro">how did you spend your time?</p></header>
       <hr>
       <section aria-labelledby="selection-heading">
-        <h2 class="section-title" id="selection-heading">calendars or tags <span class="help-tip"><button type="button" aria-label="help with calendars or tags" aria-describedby="selection-help">?</button><span class="help-content" id="selection-help" role="tooltip">choose calendars directly, or select tags to include their assigned calendars</span></span></h2>
+        <h2 class="visually-hidden" id="selection-heading">what to plot</h2><div class="mode-tabs" role="group" aria-labelledby="selection-heading"><button type="button" class="option mode-tab" id="tab-tags" aria-pressed="false">tags</button><button type="button" class="option mode-tab" id="tab-calendars" aria-pressed="true">calendars</button><span class="help-tip"><button type="button" aria-label="help with tags and calendars" aria-describedby="selection-help">?</button><span class="help-content" id="selection-help" role="tooltip">choose tags to include their assigned calendars, or choose calendars directly</span></span></div>
         <div class="selection-columns">
-          <section class="selection-list active" id="calendar-selection" aria-label="calendars">
-            <div class="list-head"><button type="button" class="list-heading" id="calendar-mode" aria-pressed="true"><span>calendars</span><span class="muted" id="calendar-count"></span></button><span class="list-actions"><button type="button" id="calendar-all">select all</button><button type="button" id="calendar-none">deselect all</button></span></div><div class="choice-list" id="calendar-choices"></div>
-          </section>
           <section class="selection-list inactive" id="tag-selection" aria-label="tags">
             <div class="list-head"><button type="button" class="list-heading" id="tag-mode" aria-pressed="false"><span>tags</span><span class="muted" id="tag-count"></span></button><span class="list-actions"><button type="button" id="tag-all">select all</button><button type="button" id="tag-none">deselect all</button></span></div><div class="choice-list" id="tag-choices"></div>
+          </section>
+          <section class="selection-list active" id="calendar-selection" aria-label="calendars">
+            <div class="list-head"><button type="button" class="list-heading" id="calendar-mode" aria-pressed="true"><span>calendars</span><span class="muted" id="calendar-count"></span></button><span class="list-actions"><button type="button" id="calendar-all">select all</button><button type="button" id="calendar-none">deselect all</button></span></div><div class="choice-list" id="calendar-choices"></div>
           </section>
         </div>
       </section>
@@ -321,6 +325,7 @@
     $("#calendar-selection").classList.toggle("active",selectionMode==="calendars");$("#calendar-selection").classList.toggle("inactive",selectionMode!=="calendars");
     $("#tag-selection").classList.toggle("active",selectionMode==="tags");$("#tag-selection").classList.toggle("inactive",selectionMode!=="tags");
     $("#calendar-mode").setAttribute("aria-pressed",selectionMode==="calendars");$("#tag-mode").setAttribute("aria-pressed",selectionMode==="tags");
+    $("#tab-calendars").setAttribute("aria-pressed",selectionMode==="calendars");$("#tab-tags").setAttribute("aria-pressed",selectionMode==="tags");
     $("#calendar-count").textContent=selectedCalendars.size?selectedCalendars.size+" selected":"";
     $("#tag-count").textContent=selectedTags.size?selectedTags.size+" selected":"";
     const shownCalendars=includedCalendars();
@@ -332,6 +337,7 @@
     tagsSorted().forEach(t=>{const selected=selectedTags.has(t),b=document.createElement("button");b.type="button";b.className="choice tag-token tag-color-"+tagColor(t);paintTag(b,t);b.textContent=t;b.setAttribute("aria-pressed",selected);b.onclick=()=>{selectionMode="tags";selectedTags.has(t)?selectedTags.delete(t):selectedTags.add(t);save();render();};tb.append(b);});
   }
   $("#calendar-mode").onclick=()=>{selectionMode="calendars";save();render();};$("#tag-mode").onclick=()=>{selectionMode="tags";save();render();};
+  $("#tab-calendars").onclick=()=>{if(selectionMode==="calendars")return;selectionMode="calendars";save();render();};$("#tab-tags").onclick=()=>{if(selectionMode==="tags")return;selectionMode="tags";save();render();};
   $("#calendar-all").onclick=()=>{selectionMode="calendars";includedCalendars().forEach(c=>selectedCalendars.add(c.id));save();render();};
   $("#calendar-none").onclick=()=>{selectionMode="calendars";selectedCalendars.clear();save();render();};
   $("#tag-all").onclick=()=>{selectionMode="tags";tags.forEach(t=>selectedTags.add(t));save();render();};
