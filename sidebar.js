@@ -22,7 +22,9 @@
 // Focus mode's timer runs here too (window.ToolkitFocus), so it keeps
 // counting on every page: a chip shows the time left, and at 0 a banner
 // slides down and a chime plays. The focus page itself calls init with
-// bare: true, which skips the bar.
+// bare: true, which skips the bar. The focus page passes focusPage: true
+// instead: it gets the bar (shown only while picking a task) but no focus
+// chip, and isn't remembered as the last page.
 
 (function () {
 
@@ -1142,14 +1144,17 @@
     addStyles();
     addTabIcon();
     if (!cfg.bare) {
-      // Remember the page so the toolkit's address reopens it
-      store(LAST_KEY, cfg.page || "to-dos/index.html");
+      // Remember the page so the toolkit's address reopens it. The focus
+      // page shows the bar while picking a task, but isn't remembered.
+      if (!cfg.focusPage) store(LAST_KEY, cfg.page || "to-dos/index.html");
       build();
       setActive(cfg.active);
       applyShared();
 
       // Focus mode returns to the last page left
-      window.addEventListener("pagehide", () => store(FROM_KEY, location.href));
+      if (!cfg.focusPage) {
+        window.addEventListener("pagehide", () => store(FROM_KEY, location.href));
+      }
     }
     startFocus();
 
@@ -1263,7 +1268,7 @@
     + '<rect x="14" y="4.5" width="4" height="15" rx="1"/></svg>';
 
   function renderChip(s) {
-    const show = cfg && !cfg.bare
+    const show = cfg && !cfg.bare && !cfg.focusPage
       && ["running", "paused", "expired"].includes(s.state);
     if (!show) {
       if (focusChip) focusChip.hidden = true;
@@ -1307,7 +1312,7 @@
       };
       focusBanner.querySelector(".tk-fb-main").addEventListener("click", () => {
         off();
-        if (!cfg.bare) focusGo();
+        if (!cfg.bare && !cfg.focusPage) focusGo();
       });
       focusBanner.querySelector(".tk-fb-close").addEventListener("click", off);
       document.body.appendChild(focusBanner);

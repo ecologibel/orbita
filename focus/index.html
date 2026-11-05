@@ -108,6 +108,11 @@
   #switch { left: auto; right: 16px; }
   #switch[hidden] { display: none; }
 
+  /* The left sidebar shows only while picking a task */
+  body.focus-bare #tk-sidebar { display: none; }
+  body.has-sidebar.focus-bare { padding-left: 0; }
+  body.has-sidebar:not(.focus-bare) #leave { left: 76px; }
+
   /* Widths match every page: 672px, wide halfway to full */
   main {
     margin: 0 auto;
@@ -175,10 +180,10 @@
     color: var(--fg);
     cursor: pointer;
     display: flex;
-    font-size: 17px;
+    font-size: 15px;
     gap: 10px;
     line-height: 1.4;
-    padding: 7px 12px;
+    padding: 5px 12px;
     text-align: left;
     width: 100%;
   }
@@ -197,7 +202,7 @@
     opacity: 0.6;
     transition: opacity 0.15s;
   }
-  .pick-row .pr-focus svg { height: 17px; width: 17px; }
+  .pick-row .pr-focus svg { height: 15px; width: 15px; }
   .pick-row:hover .pr-focus, .pick-row.active .pr-focus { opacity: 1; }
   .pick-row .pr-src {
     color: var(--fg-muted);
@@ -232,11 +237,6 @@
     justify-content: center;
     margin-bottom: 32px;
     min-height: 38px;
-  }
-  .min-label {
-    color: var(--fg-muted);
-    font-size: 13px;
-    margin-right: 4px;
   }
   /* Minute buttons: the notes folder cards' colour, with teal text */
   .min-btn {
@@ -643,7 +643,7 @@
         <div id="subs"></div>
         <div class="add-sub" id="add-sub-row" style="margin-left: 32px">
           <span class="plus">+</span>
-          <input id="add-sub" autocomplete="off" placeholder="break it down?">
+          <input id="add-sub" autocomplete="off" placeholder="break it down">
         </div>
       </div>
     </section>
@@ -892,7 +892,7 @@
     }
     rows.sort((a, b) => (a.r ? +a.r.start : 9e15) - (b.r ? +b.r.start : 9e15));
     rows = rows.slice(0, 40);
-    $("pick-label").textContent = q ? "matching to dos" : "today and overdue";
+    $("pick-label").textContent = q ? "matching to dos" : "maybe one of these?";
 
     const box = $("pick-list");
     box.innerHTML = "";
@@ -1078,6 +1078,7 @@
     if (firstRender && loc && loc.done && s.state === "idle") loc = null;
     firstRender = false;
     const picking = !loc;
+    document.body.classList.toggle("focus-bare", !picking);
     $("picker").hidden = !picking;
     $("focus").hidden = false;
     $("focus").classList.toggle("picking", picking);
@@ -1211,7 +1212,7 @@
       row.append(mark, input, del);
       box.appendChild(row);
     });
-    $("add-sub").placeholder = box.children.length ? "" : "break it down?";
+    $("add-sub").placeholder = box.children.length ? "" : "break it down";
   }
 
   function removeStep(k) {
@@ -1500,15 +1501,12 @@
       mins.dataset.kind = kind;
       mins.innerHTML = "";
       if (kind === "more") {
-        const lab = document.createElement("span");
-        lab.className = "min-label";
-        lab.textContent = "add time";
-        mins.appendChild(lab);
         MORE.forEach(m => {
           const b = document.createElement("button");
           b.type = "button";
           b.className = "min-btn more";
           b.textContent = "+" + m;
+          b.title = "add " + m + " minutes";
           b.addEventListener("click", () => addTime(m));
           mins.appendChild(b);
         });
@@ -1687,7 +1685,8 @@
   });
 
   ToolkitSidebar.init({
-    bare: true,
+    active: "focus",
+    focusPage: true,
     mode: {
       apply: (m, anim) => {
         if (anim) {
@@ -1699,7 +1698,17 @@
       },
       initial: "dark"
     },
-    page: "focus/index.html"
+    page: "focus/index.html",
+    size: {
+      get: () => ["s", "m", "l"].includes(read("toolkit-size"))
+        ? read("toolkit-size") : "m",
+      set: v => { store("toolkit-size", v); applyShared(); }
+    },
+    width: {
+      get: () => ["normal", "wide", "full"].includes(read("toolkit-width"))
+        ? read("toolkit-width") : "normal",
+      set: v => { store("toolkit-width", v); applyShared(); }
+    }
   });
 
   render();
