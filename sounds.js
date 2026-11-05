@@ -33,15 +33,17 @@
     rain: "rain", waves: "waves" };
   // Gain for each sound, measured so they start at a similar loudness
   // (fire and rain are quiet recordings; a limiter catches their peaks)
-  const LEVELS = { cafe: 0.54, fireplace: 5.2, nature: 0.74, rain: 8.3,
+  const LEVELS = { cafe: 0.54, fireplace: 5.2, nature: 15, rain: 2.1,
     waves: 0.31 };
+  // The loudest the volume slider goes, the same for every sound
+  const MAX_GAIN = 0.4;
 
   // Recordings sit in the sounds folder beside this script
   const BASE = new URL(".", document.currentScript.src);
   const FILES = {
     cafe: new URL("sounds/cafe.ogg", BASE).href,
     fireplace: new URL("sounds/fire.ogg", BASE).href,
-    nature: new URL("sounds/nature.ogg", BASE).href,
+    nature: new URL("sounds/bushland.webm", BASE).href,
     rain: new URL("sounds/rain.mp3", BASE).href
   };
 
@@ -206,7 +208,7 @@
     const at = ctx.currentTime;
     master.gain.cancelScheduledValues(at);
     master.gain.setValueAtTime(0, at);
-    master.gain.linearRampToValueAtTime(volume(), at + 0.6);
+    master.gain.linearRampToValueAtTime(volume() * MAX_GAIN, at + 0.6);
     const level = gain(LEVELS[name]);
     level.connect(master);
     stopFns.push(() => level.disconnect());
@@ -242,7 +244,7 @@
     if (!ctx || !playing) return;
     const at = ctx.currentTime;
     master.gain.cancelScheduledValues(at);
-    master.gain.setTargetAtTime(v, at, 0.05);
+    master.gain.setTargetAtTime(v * MAX_GAIN, at, 0.05);
   }
 
   // Loudness of what's playing now (root mean square, 0 to 1)
