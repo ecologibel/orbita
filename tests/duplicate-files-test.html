@@ -1,0 +1,22 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Duplicate Drive files test</title>
+<h1>Duplicate Drive files test</h1>
+<p>This test uses fake Drive responses and temporary localStorage keys. It does
+not contact Google Drive or change toolkit records.</p>
+<button id="run" type="button">Run test</button>
+<pre id="result" role="status" aria-live="polite">Ready.</pre>
+<script>
+  window.__syncTestNativeSet = Storage.prototype.setItem;
+  window.__syncTestNativeRemove = Storage.prototype.removeItem;
+  window.setInterval = () => 0;
+  const appendHead = HTMLHeadElement.prototype.appendChild;
+  HTMLHeadElement.prototype.appendChild = function (node) {
+    if (node.tagName === "SCRIPT"
+        && node.src.includes("accounts.google.com/gsi/client")) return node;
+    return appendHead.call(this, node);
+  };
+</script>
+<script src="../sync.js"></script>
+<script src="duplicate-files-test.js"></script>

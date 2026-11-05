@@ -72,6 +72,22 @@
   }
   summary { color: var(--accent); cursor: pointer; font-weight: 600; }
   .note { border-left: 3px solid var(--accent); color: var(--muted); margin: 16px 0; padding: 4px 14px; }
+  .backup-list { display: grid; gap: 10px; list-style: none; margin: 14px 0; padding: 0; }
+  .backup {
+    align-items: center; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 7px; display: flex; flex-wrap: wrap; gap: 8px 16px;
+    justify-content: space-between; padding: 10px 14px;
+  }
+  .backup + .backup { margin-top: 0; }
+  .backup-what { font-weight: 600; }
+  .backup-meta { color: var(--muted); font-size: .9em; }
+  .backup-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+  .backup-actions button {
+    background: transparent; border: 1px solid var(--line); border-radius: 5px;
+    color: var(--accent); cursor: pointer; font: inherit; font-size: .9em; padding: 3px 10px;
+  }
+  .backup-actions button:hover, .backup-actions button:focus-visible { border-color: var(--accent); }
+  .backup-actions button.danger { color: var(--muted); }
   @media (max-width: 760px) {
     .help-shell { display: block; max-width: 760px; padding: 26px 18px 50px; }
     .contents { margin: 20px 0 28px; position: static; }
@@ -95,6 +111,7 @@
       <li><a href="#focus"><span class="topic-icon" aria-hidden="true">◉</span>focus</a></li>
       <li><a href="#codepad"><span class="topic-icon" aria-hidden="true">&lt;/&gt;</span>codepad</a></li>
       <li><a href="#sync"><span class="topic-icon" aria-hidden="true">⇄</span>Google Drive sync</a></li>
+      <li><a href="#backups"><span class="topic-icon" aria-hidden="true">⟲</span>backups</a></li>
       <li><a href="#shortcuts"><span class="topic-icon" aria-hidden="true">⌨</span>keyboard shortcuts</a></li>
     </ul>
   </nav>
@@ -152,9 +169,16 @@
     <h2>Google Drive sync</h2>
     <p>Choose the sync control at the bottom of the sidebar and select the Google account to use. Sync stores the app's files in a private app-data folder in Drive; orbita does not use this access to browse your other Drive files.</p>
     <p>Notes, to dos, and codepad sync as separate files. Dashboard and focus can sync to dos and notes too. The focus timer itself stays on the device.</p>
-    <p>If local and Drive copies have conflicting changes, orbita reports the conflict and offers a choice of which copy to keep. A recovery copy is made before resolving it. If a sync replaces a newer copy, look for a sync backup in the app's recovery data.</p>
+    <p>If local and Drive copies have conflicting changes, orbita reports the conflict and offers a choice of which copy to keep. A recovery copy is made before resolving it. If a sync replaces a newer copy, you can restore the earlier one from <a href="#backups">backups</a>.</p>
     <p>Sync requires the hosted site or a local web server; it does not work when you open an HTML file directly using <code>file://</code>. The sync icon indicates the current connection status. Alt-click it to sign out.</p>
     <p class="note">If you use more than one Google account, select the account you want for Drive when the Google sign-in window appears. It can be different from an account you use with another Google service.</p>
+  </section>
+
+  <section id="backups">
+    <h2>backups</h2>
+    <p>orbita keeps a copy of your data in this browser before sync replaces it, when two devices' changes conflict, and when saved data can't be read. These copies stay on this device and are not synced.</p>
+    <p>Restoring a sync backup replaces that tool's current data and syncs it as your newest edit. Your current data is kept as another backup first. Copies of data that couldn't be read can only be downloaded, to look at or to send for help.</p>
+    <div id="backup-list" aria-live="polite"></div>
   </section>
 
   <section id="shortcuts">
@@ -234,6 +258,150 @@
     }
   });
   ToolkitSidebar.title("help");
+})();
+
+// ---- Backups ----
+(function () {
+  const box = document.getElementById("backup-list");
+  const FILES = { "notes.json": "notes", "to-dos.json": "to dos",
+    "r-codepad.json": "codepad" };
+  const KEYS = { "notes-data": "notes", "todo-data": "to dos",
+    "todo-toggle-sections": "to dos", "r-editor-content": "codepad" };
+  const KINDS = {
+    local: "this device's copy, replaced by Drive's",
+    remote: "Drive's copy, replaced by this device's",
+    duplicate: "a duplicate Drive file, merged",
+    restore: "data replaced by a restore",
+    unreadable: "data that couldn't be read"
+  };
+
+  // A stored backup, or null if key isn't one
+  function parse(key, value) {
+    let m = key.match(/^recovery-backup-(.+)-(\d{13})-[a-z0-9]+$/);
+    if (m) {
+      return { key, value, kind: "unreadable", tool: KEYS[m[1]] || m[1],
+        saved: +m[2], name: m[1] };
+    }
+    m = key.match(/^sync-backup-(.+?\.json)(?:-(remote|duplicate-.+|restore-\d+))?$/);
+    if (!m) return null;
+    let parsed = null;
+    try { parsed = JSON.parse(value); } catch {}
+    const data = parsed && parsed.data;
+    const valid = data && typeof data === "object" && !Array.isArray(data)
+      && Object.values(data).every(v => typeof v === "string");
+    const kind = !m[2] ? "local" : m[2].replace(/-.*$/, "");
+    return { key, value, kind, file: m[1], tool: FILES[m[1]] || m[1],
+      saved: parsed && Number.isFinite(parsed.saved) ? parsed.saved : 0,
+      data: valid ? data : null, name: m[1].replace(/\.json$/, "") };
+  }
+
+  function backups() {
+    const out = [];
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        const b = key && parse(key, localStorage.getItem(key));
+        if (b) out.push(b);
+      }
+    } catch {}
+    return out.sort((a, b) => b.saved - a.saved);
+  }
+
+  const when = b => b.saved ? new Date(b.saved).toLocaleString() : "unknown time";
+
+  function download(b) {
+    let text = b.value, ext = "txt";
+    try { text = JSON.stringify(JSON.parse(b.value), null, 2); ext = "json"; } catch {}
+    const stamp = b.saved ? new Date(b.saved).toISOString().slice(0, 10) : "backup";
+    const url = URL.createObjectURL(new Blob([text], { type: "application/json" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "orbita-" + b.name + "-" + b.kind + "-" + stamp + "." + ext;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function restore(b) {
+    if (!window.confirm("Restore " + b.tool + " from the backup saved "
+        + when(b) + "? This replaces the current " + b.tool
+        + " and syncs it as your newest edit. The current data is kept as"
+        + " another backup.")) return;
+    const current = {};
+    Object.keys(b.data).forEach(k => {
+      const v = localStorage.getItem(k);
+      if (v !== null) current[k] = v;
+    });
+    try {
+      localStorage.setItem("sync-backup-" + b.file + "-restore-" + Date.now(),
+        JSON.stringify({ data: current, saved: Date.now() }));
+    } catch {
+      window.alert("There isn't enough browser storage to keep a copy of the"
+        + " current data, so nothing was restored. Download or delete an old"
+        + " backup and try again.");
+      return;
+    }
+    Object.entries(b.data).forEach(([k, v]) => localStorage.setItem(k, v));
+    render();
+    ToolkitSidebar.toast(b.tool + " restored from the backup saved " + when(b) + ".");
+  }
+
+  function remove(b) {
+    if (!window.confirm("Delete this backup of " + b.tool + " from "
+        + when(b) + "? This can't be undone.")) return;
+    localStorage.removeItem(b.key);
+    render();
+  }
+
+  function button(label, run, cls) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = label;
+    if (cls) btn.className = cls;
+    btn.addEventListener("click", run);
+    return btn;
+  }
+
+  function render() {
+    const list = backups();
+    box.replaceChildren();
+    if (!list.length) {
+      const p = document.createElement("p");
+      p.className = "muted";
+      p.textContent = "No backups on this device.";
+      box.appendChild(p);
+      return;
+    }
+    const ul = document.createElement("ul");
+    ul.className = "backup-list";
+    list.forEach(b => {
+      const li = document.createElement("li");
+      li.className = "backup";
+      const info = document.createElement("div");
+      const what = document.createElement("div");
+      what.className = "backup-what";
+      what.textContent = b.tool + ": " + KINDS[b.kind];
+      const meta = document.createElement("div");
+      meta.className = "backup-meta";
+      const size = b.value.length < 1024 ? b.value.length + " bytes"
+        : (b.value.length / 1024).toFixed(1) + " KB";
+      meta.textContent = "saved " + when(b) + " · " + size;
+      info.append(what, meta);
+      const actions = document.createElement("div");
+      actions.className = "backup-actions";
+      actions.appendChild(button("download", () => download(b)));
+      if (b.data) actions.appendChild(button("restore", () => restore(b)));
+      // Drive's copy is needed to resolve an open sync conflict
+      const inConflict = b.kind === "remote"
+        && localStorage.getItem("sync-conflict-" + b.file);
+      if (!inConflict) actions.appendChild(button("delete", () => remove(b), "danger"));
+      li.append(info, actions);
+      ul.appendChild(li);
+    });
+    box.appendChild(ul);
+  }
+
+  window.addEventListener("storage", render);
+  render();
 })();
 </script>
 </body>

@@ -21,6 +21,20 @@ allows `https://ecologibel.github.io`, `http://localhost:8000`, and
 `http://localhost:8001` as JavaScript origins. Calendar tags and date preferences
 stay in this browser.
 
+### Tests
+
+The pages in `tests/` run in a browser with fake Drive responses. GitHub Actions
+runs them on every pull request. To run them all headlessly on your own machine:
+
+```sh
+pip install playwright
+python -m playwright install chromium
+python tests/run_browser_tests.py
+```
+
+`tests/drive-concurrency-probe.html` is not included, because it needs a real
+Google sign-in.
+
 ## Licence
 
 [MIT](LICENSE)
