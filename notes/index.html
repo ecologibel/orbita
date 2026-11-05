@@ -248,7 +248,7 @@
     margin-left: -6px;
   }
   .side-link:hover, .side-link:focus-visible { background: var(--hover); outline: none; }
-  #side-bin { color: var(--fg-muted); }
+  #side-bin { color: var(--accent); }
   #side-bin svg { height: 16px; width: 16px; }
   #side-bin.drop-into { background: var(--hover); color: var(--accent); }
 
@@ -463,31 +463,111 @@
   .card.trashed { opacity: 0.6; }
   .card.trashed:hover { opacity: 1; }
 
-  /* Card tints */
-  .card.tint-blue {
-    background: color-mix(in srgb, var(--c-blue) 16%, var(--bg));
+  /* Card tints, from the 30-colour menu */
+  .card.tinted {
+    background: color-mix(in srgb, var(--pick) 16%, var(--bg));
   }
-  .card.tint-green {
-    background: color-mix(in srgb, var(--c-green) 16%, var(--bg));
+
+  /* Coloured folders and notes: the folder's title and icon, and the
+     titles of notes beneath it, readable in either mode */
+  .t-dark .coloured { --ink: color-mix(in srgb, var(--pick) 62%, #fff); }
+  .t-light .coloured { --ink: color-mix(in srgb, var(--pick) 70%, #000); }
+  .folder-row.coloured .folder-name, .folder-row.coloured .tree-icon,
+  .folder-row.coloured .tree-chev, .note-row.coloured .tree-name {
+    color: var(--ink);
   }
-  .card.tint-grey {
-    background: color-mix(in srgb, var(--c-grey) 16%, var(--bg));
+
+  /* The 30-colour menu */
+  .palette-grid {
+    display: grid;
+    gap: 5px;
+    grid-template-columns: repeat(10, 18px);
+    padding: 4px 8px 6px;
   }
-  .card.tint-orange {
-    background: color-mix(in srgb, var(--c-orange) 16%, var(--bg));
+  .palette-grid button {
+    background: var(--pick);
+    border: 1px solid color-mix(in srgb, var(--fg) 18%, transparent);
+    border-radius: 50%;
+    cursor: pointer;
+    height: 18px;
+    padding: 0;
+    width: 18px;
   }
-  .card.tint-pink {
-    background: color-mix(in srgb, var(--c-pink) 16%, var(--bg));
+  .palette-grid button:hover, .palette-grid button:focus-visible {
+    outline: 2px solid var(--fg-muted);
+    outline-offset: 1px;
   }
-  .card.tint-purple {
-    background: color-mix(in srgb, var(--c-purple) 16%, var(--bg));
+  .palette-grid button.active { outline: 2px solid var(--fg); outline-offset: 1px; }
+  .palette-none {
+    background: none;
+    border: none;
+    color: var(--fg-muted);
+    cursor: pointer;
+    font: inherit;
+    font-size: 12.5px;
+    padding: 2px 8px 6px;
+    text-align: left;
   }
-  .card.tint-red {
-    background: color-mix(in srgb, var(--c-red) 16%, var(--bg));
+  .palette-none:hover, .palette-none.active { color: var(--fg); }
+
+  /* ---- Main panel: title, then new, recent and folders ---- */
+  .gal-header h1 {
+    font-size: 2em;
+    letter-spacing: -0.03em;
+    margin: 0;
   }
-  .card.tint-yellow {
-    background: color-mix(in srgb, var(--c-yellow) 16%, var(--bg));
+  .gal-header .intro {
+    color: var(--accent);
+    font-style: italic;
+    margin: 7px 0 0;
   }
+  .gal-rule {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 18px 0 8px;
+  }
+  .gal-section { margin-top: 18px; }
+  .gal-label {
+    color: var(--accent);
+    font-size: 1em;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .gal-new { display: flex; flex-wrap: wrap; gap: 4px 18px; }
+  .gal-recent .side-empty { padding-left: 6px; }
+  .gal-recent .tree-chev { display: none; }
+  .gal-recent .tree-path { color: var(--fg-muted); font-size: 11.5px; }
+  .side-section[hidden] { display: none; }
+
+  /* The bin in the sidebar: a section that opens to list binned notes */
+  .bin-toggle {
+    align-items: center;
+    background: none;
+    border: none;
+    border-radius: 6px;
+    color: var(--accent);
+    cursor: pointer;
+    display: flex;
+    font: inherit;
+    font-size: 14px;
+    gap: 8px;
+    margin-left: -6px;
+    padding: 4px 6px;
+    text-align: left;
+    width: calc(100% + 12px);
+  }
+  .bin-toggle:hover, .bin-toggle:focus-visible { background: var(--hover); outline: none; }
+  .bin-toggle svg { height: 16px; width: 16px; }
+  .bin-toggle .bin-count { color: var(--fg-muted); font-size: 0.85em; }
+  .bin-toggle .bin-sign { margin-left: auto; }
+  .bin-toggle .bin-sign::before { content: "+"; }
+  .bin-toggle[aria-expanded="true"] .bin-sign::before { content: "\2212"; }
+  .bin-toggle.empty .bin-sign, .bin-toggle.empty svg { opacity: 0.35; }
+  .bin-toggle.drop-into { background: var(--hover); }
+  #side-bin-list { display: flex; flex-direction: column; }
+  #side-bin-list .tree-row { opacity: 0.75; }
+  #side-bin-list .tree-row:hover { opacity: 1; }
+  #side-bin-list .text-btn { align-self: flex-start; margin-top: 6px; }
 
   .more-btn {
     background: none;
@@ -1586,12 +1666,11 @@
       aria-label="show search">&lt;</button>
     <div>
       <div class="side-head">
-        <button class="side-search-btn" id="search-btn" type="button"
-          aria-expanded="false">search notes</button>
+        <label class="side-search-btn" id="search-btn" for="search">search notes</label>
         <button class="fold-btn" id="fold" type="button"
           title="fold away" aria-label="fold away">&gt;</button>
       </div>
-      <div class="side-search" id="side-search">
+      <div class="side-search open" id="side-search">
         <div class="side-search-inner">
           <input id="search" type="search" placeholder="type to search"
             autocomplete="off" spellcheck="false">
@@ -1610,10 +1689,11 @@
         <div class="side-label">pinned</div>
         <div id="side-pinned"></div>
       </div>
-      <div class="side-section side-actions">
-        <button class="side-link" id="new-folder" type="button">+ new folder</button>
-        <button class="side-link" id="side-bin" type="button"
-          title="bin: drop notes here, click to open"></button>
+      <div class="side-section" id="bin-section">
+        <button class="bin-toggle" id="side-bin" type="button"
+          aria-expanded="false" aria-controls="side-bin-list"
+          title="bin: drop notes here"></button>
+        <div id="side-bin-list" hidden></div>
       </div>
     </div>
   </aside>
@@ -2001,7 +2081,8 @@
 
     folders = (data && Array.isArray(data.folders) ? data.folders : [])
       .filter(f => f && f.id)
-      .map(f => ({ icon: ToolkitSidebar.folderIcons.includes(f.icon)
+      .map(f => ({ colour: ToolkitSidebar.colourKey(f.colour),
+        icon: ToolkitSidebar.folderIcons.includes(f.icon)
         ? f.icon : "folder", id: f.id, name: String(f.name || "folder"),
         order: +f.order || 0, parent: f.parent || null }));
     const ids = new Set(folders.map(f => f.id));
@@ -2032,7 +2113,7 @@
       }
       n.folder = ids.has(n.folder) ? n.folder : null;
       n.pinned = !!n.pinned;
-      n.tint = COLOURS.includes(n.tint) ? n.tint : null;
+      n.tint = ToolkitSidebar.colourKey(n.tint);
       n.tags = [...new Set((Array.isArray(n.tags) ? n.tags : [])
         .map(cleanTag).filter(Boolean))];
       n.trashed = n.trashed || null;
@@ -2164,6 +2245,25 @@
   function folderCount(id) {
     return folderNotes(id).length
       + subfolders(id).reduce((sum, f) => sum + folderCount(f.id), 0);
+  }
+
+  // A folder's colour, or the nearest coloured folder above it
+  function folderColour(id) {
+    for (let f = byFolder(id); f; f = byFolder(f.parent)) {
+      if (f.colour) return f.colour;
+    }
+    return null;
+  }
+
+  // A note's own colour beats its folder's
+  const noteColour = n => n.tint || folderColour(n.folder);
+
+  function paint(el, colour) {
+    const hex = colour && ToolkitSidebar.colourHex(colour);
+    if (!hex) return el;
+    el.classList.add("coloured");
+    el.style.setProperty("--pick", hex);
+    return el;
   }
 
   function setOrder(list) {
@@ -2299,6 +2399,14 @@
     return line;
   }
 
+  // History outside a note, for Ctrl+Z and Ctrl+Y
+  const galUndo = [], galRedo = [];
+  function galCheckpoint() {
+    galUndo.push(JSON.stringify({ folders, notes }));
+    if (galUndo.length > 100) galUndo.shift();
+    galRedo.length = 0;
+  }
+
   function moreButton(onClick) {
     const more = document.createElement("button");
     more.className = "more-btn";
@@ -2315,8 +2423,11 @@
 
   function noteCard(n) {
     const card = document.createElement("div");
-    card.className = "card note-card" + (n.tint ? " tint-" + n.tint : "")
-      + (n.trashed ? " trashed" : "");
+    card.className = "card note-card" + (n.trashed ? " trashed" : "");
+    if (n.tint) {
+      card.classList.add("tinted");
+      card.style.setProperty("--pick", ToolkitSidebar.colourHex(n.tint));
+    }
     card.dataset.id = n.id;
     card.draggable = true;
 
@@ -2370,7 +2481,8 @@
   // Add a folder (inside parent, if given) and start naming it
   function addFolder(parent) {
     const sibs = subfolders(parent);
-    const f = { icon: "folder", id: uid(), name: "new folder",
+    galCheckpoint();
+    const f = { colour: null, icon: "folder", id: uid(), name: "new folder",
       order: sibs.length, parent };
     folders.push(f);
     if (parent) openFolders.add(parent);
@@ -2383,11 +2495,48 @@
     }
   }
 
+  const BIN_OPEN_KEY = "notes-bin-open";
+  let binOpen = false;
+  try { binOpen = localStorage.getItem(BIN_OPEN_KEY) === "1"; } catch {}
+
   function renderTrashFab() {
-    const n = notes.filter(x => x.trashed).length;
-    sideBin.innerHTML = TRASH_ICON + "<span>bin" + (n ? " (" + n + ")" : "")
-      + "</span>";
+    const binned = notes.filter(x => x.trashed)
+      .sort((a, b) => b.trashed - a.trashed);
+    const n = binned.length;
+    sideBin.innerHTML = TRASH_ICON + "<span>bin</span>"
+      + '<span class="bin-count">' + n + "</span>"
+      + '<span class="bin-sign" aria-hidden="true"></span>';
+    sideBin.classList.toggle("empty", !n);
+    sideBin.setAttribute("aria-expanded", String(binOpen));
     sideBin.setAttribute("aria-label", "bin, " + n + (n === 1 ? " note" : " notes"));
+    const list = document.getElementById("side-bin-list");
+    list.hidden = !binOpen;
+    list.innerHTML = "";
+    if (binOpen) {
+      binned.forEach(x => list.appendChild(noteRow(x, 0)));
+      if (!n) {
+        const msg = document.createElement("div");
+        msg.className = "side-empty";
+        msg.textContent = "the bin is empty";
+        list.appendChild(msg);
+      } else {
+        const empty = document.createElement("button");
+        empty.className = "text-btn";
+        empty.type = "button";
+        empty.textContent = "empty the bin";
+        empty.addEventListener("click", () => {
+          if (!empty.classList.contains("armed")) {
+            empty.classList.add("armed");
+            empty.textContent = "click again to empty the bin";
+            return;
+          }
+          withUndo("bin emptied", () => {
+            notes = notes.filter(x => !x.trashed);
+          });
+        });
+        list.appendChild(empty);
+      }
+    }
     trashFab.innerHTML = TRASH_ICON + (n ? '<span class="badge">' + n
       + "</span>" : "");
     trashFab.setAttribute("aria-label", "bin, " + n
@@ -2412,10 +2561,15 @@
     trashFab.classList.remove("open");
   }
 
-  [trashFab, sideBin].forEach(b => b.addEventListener("click", () => {
+  trashFab.addEventListener("click", () => {
     if (trashPop) closeTrash();
     else openTrash(true);
-  }));
+  });
+  sideBin.addEventListener("click", () => {
+    binOpen = !binOpen;
+    try { localStorage.setItem(BIN_OPEN_KEY, binOpen ? "1" : "0"); } catch {}
+    renderTrashFab();
+  });
   document.addEventListener("pointerdown", e => {
     if (trashPop && !e.target.closest("#trash-pop, #trash-fab, #side-bin, .menu")) {
       closeTrash();
@@ -2526,6 +2680,7 @@
     count.textContent = treeCount(f.id);
     row.append(chevron(false), icon, name, count,
       moreButton(btn => folderMenu(btn, f, row)));
+    paint(row, folderColour(f.id));
     row.addEventListener("click", e => {
       if (e.target.isContentEditable || e.target.closest(".more-btn")) return;
       toggleFolder(f.id);
@@ -2569,6 +2724,7 @@
     date.textContent = "@" + fmtLong(fromIso(n.date));
     row.append(chevron(true), icon, text, date,
       moreButton(btn => cardMenu(btn, n)));
+    paint(row, noteColour(n));
     const go = () => { location.hash = n.id; };
     row.addEventListener("click", e => {
       if (!e.target.closest(".more-btn")) go();
@@ -2684,13 +2840,61 @@
     return bar;
   }
 
+  function galSection(label, cls) {
+    const sec = document.createElement("section");
+    sec.className = "gal-section " + cls;
+    const head = document.createElement("h2");
+    head.className = "gal-label";
+    head.textContent = label;
+    sec.appendChild(head);
+    return sec;
+  }
+
+  function galButton(label, run) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "side-link";
+    b.textContent = label;
+    b.addEventListener("click", run);
+    return b;
+  }
+
+  // Title, then new, recent (the last four edited, pinned notes aside)
+  // and folders (the tree, with loose notes at the bottom)
   function renderGallery() {
     renderTrashFab();
     if (trashPop) openTrash();
     galBody.innerHTML = "";
+
+    const header = document.createElement("header");
+    header.className = "gal-header";
+    header.innerHTML = '<h1>notes</h1><p class="intro">your personal brain dump</p>';
+    const hr = document.createElement("hr");
+    hr.className = "gal-rule";
+
+    const fresh = galSection("new", "gal-new-wrap");
+    const row = document.createElement("div");
+    row.className = "gal-new";
+    row.append(galButton("+ new folder", () => addFolder(null)),
+      galButton("+ new note", () => createNote(null)));
+    fresh.appendChild(row);
+
+    const recent = galSection("recent", "gal-recent");
+    const latest = live().filter(n => !n.pinned).sort(byEdited).slice(0, 4);
+    latest.forEach(n => recent.appendChild(noteRow(n, 0, folderPath(n.folder))));
+    if (!latest.length) {
+      const msg = document.createElement("div");
+      msg.className = "side-empty";
+      msg.textContent = "notes you edit show here";
+      recent.appendChild(msg);
+    }
+
+    const tree = galSection("folders", "gal-folders");
     const root = treeLevel(null, 0);
     root.classList.add("tree-root");
-    galBody.appendChild(root);
+    tree.appendChild(root);
+
+    galBody.append(header, hr, fresh, recent, tree);
     playOpen();
     renderSide();
   }
@@ -2769,24 +2973,10 @@
       box.appendChild(noteRow(n, 0, folderPath(n.folder))));
   }
 
+  // The search box always shows; this only moves the cursor to it
   function setSearchOpen(open, focus) {
-    sideSearch.classList.toggle("open", open);
-    searchBtn.setAttribute("aria-expanded", String(open));
     if (open && focus) searchEl.focus();
   }
-
-  searchBtn.addEventListener("click", () => {
-    const open = !sideSearch.classList.contains("open");
-    setSearchOpen(open, true);
-    if (!open) {
-      searchEl.value = query = "";
-      tagFilter = "";
-      renderSide();
-    }
-  });
-
-  document.getElementById("new-folder")
-    .addEventListener("click", () => addFolder(null));
 
   // Resize and fold, as on the dashboard
   {
@@ -2946,6 +3136,7 @@
 
   // Make a change to notes or folders, offering to undo it
   function withUndo(message, change) {
+    galCheckpoint();
     const before = JSON.stringify({ folders, notes });
     change();
     persist();
@@ -2970,6 +3161,7 @@
     if (n.trashed) {
       showMenu(anchor, [
         { label: "restore", sym: "↺", run: () => {
+          galCheckpoint();
           n.trashed = null;
           persist();
           renderGallery();
@@ -2985,6 +3177,7 @@
     }
     showMenu(anchor, [
       { label: n.pinned ? "unpin" : "pin", sym: PIN_ICON, run: () => {
+        galCheckpoint();
         n.pinned = !n.pinned;
         persist();
         if (inNote) renderPin();
@@ -3006,7 +3199,8 @@
       } },
       { rule: true },
       { heading: "colour" },
-      { active: n.tint, swatches: true, pick: col => {
+      { active: n.tint, palette: true, pick: col => {
+        galCheckpoint();
         n.tint = col;
         persist();
         if (!inNote) renderGallery();
@@ -3020,7 +3214,15 @@
       { label: "+ subfolder", run: () => addFolder(f.id) },
       { heading: "icon" },
       { active: f.icon || "folder", icons: true, pick: name => {
+        galCheckpoint();
         f.icon = name;
+        persist();
+        renderGallery();
+      } },
+      { heading: "colour" },
+      { active: f.colour, palette: true, pick: col => {
+        galCheckpoint();
+        f.colour = col;
         persist();
         renderGallery();
       } },
@@ -3056,7 +3258,10 @@
       if (done) return;
       done = true;
       const text = name.textContent.replace(/\s+/g, " ").trim();
-      if (keep && text) f.name = text;
+      if (keep && text && text !== f.name) {
+        galCheckpoint();
+        f.name = text;
+      }
       persist();
       renderGallery();
     };
@@ -3152,6 +3357,7 @@
   });
 
   function applyDrop(act) {
+    if (!act.trash) galCheckpoint();
     if (gDrag.kind === "note") {
       const n = notes.find(x => x.id === gDrag.id);
       if (!n) return;
@@ -5323,6 +5529,32 @@
       blocksToMd(blocks().slice(span[0], span[1])));
   });
 
+  // Undo and redo outside a note: folder moves, renames, colours and
+  // icons, note moves, pins and colours, and anything with an undo toast
+  function galStep(from, to) {
+    if (!from.length) return;
+    to.push(JSON.stringify({ folders, notes }));
+    localStorage.setItem(DATA_KEY, from.pop());
+    load();
+    hideMenus();
+    renderGallery();
+  }
+
+  document.addEventListener("keydown", e => {
+    if (current || !(e.ctrlKey || e.metaKey) || e.altKey) return;
+    const a = document.activeElement;
+    if (a && (a.isContentEditable || (a.matches
+        && a.matches("input, textarea, select")))) return;
+    const key = e.key.toLowerCase();
+    if (key === "z" && !e.shiftKey) {
+      e.preventDefault();
+      galStep(galUndo, galRedo);
+    } else if (key === "y" || (key === "z" && e.shiftKey)) {
+      e.preventDefault();
+      galStep(galRedo, galUndo);
+    }
+  }, true);
+
   // Undo and redo anywhere in an open note
   document.addEventListener("keydown", e => {
     if (!current || !(e.ctrlKey || e.metaKey)) return;
@@ -5776,6 +6008,33 @@
         menu.appendChild(d);
       } else if (it.swatches) {
         menu.appendChild(swatches(it.active, it.pick, true));
+      } else if (it.palette) {
+        const grid = document.createElement("div");
+        grid.className = "palette-grid";
+        ToolkitSidebar.palette.forEach(c => {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.title = c.name;
+          b.setAttribute("aria-label", c.name);
+          b.style.setProperty("--pick", c.hex);
+          if (c.key === it.active) b.classList.add("active");
+          b.addEventListener("click", e => {
+            e.stopPropagation();
+            hideMenus();
+            it.pick(c.key);
+          });
+          grid.appendChild(b);
+        });
+        const none = document.createElement("button");
+        none.type = "button";
+        none.className = "palette-none" + (it.active ? "" : " active");
+        none.textContent = "no colour";
+        none.addEventListener("click", e => {
+          e.stopPropagation();
+          hideMenus();
+          it.pick(null);
+        });
+        menu.append(grid, none);
       } else if (it.icons) {
         const grid = document.createElement("div");
         grid.className = "icon-grid";
@@ -6140,6 +6399,8 @@
   // Follow changes made in another tab, such as ticks in the to-dos
   window.addEventListener("storage", e => {
     if (e.key !== DATA_KEY) return;
+    galUndo.length = 0;
+    galRedo.length = 0;
     const a = document.activeElement;
     if (a && a.isContentEditable) return;
     const openId = current && current.id;

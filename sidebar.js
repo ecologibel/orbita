@@ -113,6 +113,36 @@
     }
   ];
 
+  // The 30-colour menu, as in the timekeeper, for colour menus site-wide
+  const PALETTE = [
+    ["white", "#FFFFFF"], ["silver", "#C5C9CE"], ["grey", "#858B93"],
+    ["charcoal", "#41464D"], ["black", "#202327"],
+    ["army green", "#A4C65A"], ["emerald", "#35B98B"], ["green", "#36B84A"],
+    ["lime", "#91D52E"], ["chartreuse", "#C1D62E"],
+    ["yellow", "#F0D52E"], ["gold", "#E9AD22"], ["amber", "#F49A20"],
+    ["orange", "#F47721"], ["tangerine", "#F05B35"],
+    ["clay", "#D18A70"], ["coral", "#F05261"], ["red", "#E52F42"],
+    ["burgundy", "#C65375"], ["rose", "#E34D91"],
+    ["magenta", "#D62DB5"], ["orchid", "#BD45CF"], ["purple", "#A16BD0"],
+    ["violet", "#A05BE8"], ["indigo", "#7778D5"],
+    ["blue", "#2379E5"], ["azure", "#219FCB"], ["cyan", "#20C4D0"],
+    ["teal", "#238F91"], ["sage", "#91BFA0"]
+  ].map(([name, hex]) => ({ hex, key: name.replace(/ /g, "-"), name }));
+  const LEGACY_COLOURS = { apricot: "tangerine", berry: "burgundy",
+    brown: "clay", pink: "rose", rust: "orange", sky: "azure",
+    terracotta: "coral", turquoise: "cyan" };
+
+  // A stored colour as a palette key (older names mapped), or null
+  function colourKey(name) {
+    const k = LEGACY_COLOURS[name] || name;
+    return PALETTE.some(c => c.key === k) ? k : null;
+  }
+
+  function colourHex(name) {
+    const c = PALETTE.find(x => x.key === colourKey(name));
+    return c ? c.hex : null;
+  }
+
   // Simple icons a notes folder can wear
   const FOLDER_ICONS = {
     folder: '<path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4.6l2 2.2h8.4A1.5 1.5 0 0 1 '
@@ -1941,8 +1971,8 @@
   }
 
   window.ToolkitSidebar = {
-    folderIcon, folderIcons: Object.keys(FOLDER_ICONS), icon, init, modal,
-    setAmbience,
+    colourHex, colourKey, folderIcon, folderIcons: Object.keys(FOLDER_ICONS),
+    icon, init, modal, palette: PALETTE, setAmbience,
     openSwitcher, preserveRecovery, refresh, setActive, setSync, title, toast
   };
 
