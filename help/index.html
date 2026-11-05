@@ -168,7 +168,8 @@
   <section id="sync">
     <h2>Google Drive sync</h2>
     <p>Choose the sync control at the bottom of the sidebar and select the Google account to use. Sync stores the app's files in a private app-data folder in Drive; orbita does not use this access to browse your other Drive files.</p>
-    <p>Notes, to dos, and codepad sync as separate files. Dashboard and focus can sync to dos and notes too. The focus timer itself stays on the device.</p>
+    <p>Notes, to dos, codepad, and timekeeper settings sync as separate files. Dashboard and focus can sync to dos and notes too. The focus timer itself stays on the device.</p>
+    <p>Timekeeper's tags, colours, and calendar choices sync with this Drive account, not the Google account you connect for Calendar, so the two can be different. Its sidebar width and fold stay on each device.</p>
     <p>If local and Drive copies have conflicting changes, orbita reports the conflict and offers a choice of which copy to keep. A recovery copy is made before resolving it. If a sync replaces a newer copy, you can restore the earlier one from <a href="#backups">backups</a>.</p>
     <p>Sync requires the hosted site or a local web server; it does not work when you open an HTML file directly using <code>file://</code>. The sync icon indicates the current connection status. Alt-click it to sign out.</p>
     <p class="note">If you use more than one Google account, select the account you want for Drive when the Google sign-in window appears. It can be different from an account you use with another Google service.</p>
@@ -221,6 +222,11 @@
     keys: ["r-editor-content"],
     onRemote: () => {}
   });
+  ToolSync.init({
+    file: "timekeeper.json",
+    keys: ["timekeeper-data-v1"],
+    onRemote: () => {}
+  });
 </script>
 <script src="../sidebar.js"></script>
 <script>
@@ -264,9 +270,10 @@
 (function () {
   const box = document.getElementById("backup-list");
   const FILES = { "notes.json": "notes", "to-dos.json": "to dos",
-    "r-codepad.json": "codepad" };
+    "r-codepad.json": "codepad", "timekeeper.json": "timekeeper" };
   const KEYS = { "notes-data": "notes", "todo-data": "to dos",
-    "todo-toggle-sections": "to dos", "r-editor-content": "codepad" };
+    "todo-toggle-sections": "to dos", "r-editor-content": "codepad",
+    "timekeeper-data-v1": "timekeeper" };
   const KINDS = {
     local: "this device's copy, replaced by Drive's",
     remote: "Drive's copy, replaced by this device's",
