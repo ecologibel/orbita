@@ -286,6 +286,59 @@
     padding: 0 4px;
   }
   .task.done .tag-chip { color: var(--done); }
+  button.tag-chip {
+    border: none;
+    cursor: pointer;
+    font: inherit;
+    line-height: inherit;
+  }
+  button.tag-chip:hover, button.tag-chip:focus-visible {
+    background: color-mix(in srgb, var(--accent) 30%, transparent);
+    outline: none;
+  }
+
+  /* A tag's menu (edit, remove) and the # suggestions, in the page's mode */
+  .tag-menu, .tag-suggest {
+    background: var(--bg-surface, var(--bg));
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+    color: var(--fg);
+    display: flex;
+    flex-direction: column;
+    font-size: 13px;
+    min-width: 120px;
+    padding: 4px;
+    position: fixed;
+    z-index: 1200;
+  }
+  .tag-menu button, .tag-suggest button {
+    background: none;
+    border: none;
+    border-radius: 4px;
+    color: var(--fg);
+    cursor: pointer;
+    font: inherit;
+    padding: 5px 8px;
+    text-align: left;
+  }
+  .tag-menu button:hover, .tag-menu button:focus-visible,
+  .tag-suggest button:hover, .tag-suggest button.hl {
+    background: var(--hover);
+    outline: none;
+  }
+  .tag-menu .danger { color: var(--fg-muted); }
+  .tag-menu input {
+    background: transparent;
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    color: var(--fg);
+    font: inherit;
+    margin: 2px;
+    outline: none;
+    padding: 4px 6px;
+  }
+  .tag-suggest button { color: var(--accent); }
 
   /* Calendar cells are narrow, so tags stay inline only */
   .day-tasks .task-tags,
@@ -1803,6 +1856,174 @@
     return tags;
   }
 
+  // A task's tags: those it keeps (task.tags) and any in its text
+  function allTaskTags(task, text) {
+    const kept = Array.isArray(task.tags) ? task.tags : [];
+    return [...new Set(kept.concat(taskTags(text)))];
+  }
+
+  // Every tag in use across the to dos, for suggestions
+  function knownTags() {
+    const set = new Set();
+    try {
+      allLists(loadData()).forEach(([, list]) => (list || []).forEach(t => {
+        allTaskTags(t, t.text).forEach(tag => set.add(tag));
+      }));
+    } catch {}
+    return [...set].sort((a, b) => a.localeCompare(b));
+  }
+
+  // The #word being typed just before the caret, if any
+  function hashBeforeCaret(txt) {
+    const m = txt.value.slice(0, txt.selectionStart).match(/(^|\s)(#[^\s#]*)$/);
+    return m ? m[2] : null;
+  }
+
+  // Replace each "#tag" in text (as a whole tag) with replacement
+  function swapTagInText(text, tag, replacement) {
+    const esc = tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const re = new RegExp("(^|\\s)" + esc + "(?=[\\s.,;:!?)\\]]|$)", "gi");
+    let out = String(text || "").replace(re, (m, pre) =>
+      replacement ? pre + replacement : pre);
+    if (!replacement) out = out.replace(/[ \t]{2,}/g, " ").trim();
+    return out;
+  }
+
+  let tagMenu = null, tagSuggest = null;
+
+  function closeTagMenu() {
+    if (tagMenu) tagMenu.remove();
+    tagMenu = null;
+  }
+
+  // Inside #app, which carries the page's colours
+  function placeFloat(el, anchor) {
+    (document.getElementById("app") || document.body).appendChild(el);
+    const r = anchor.getBoundingClientRect();
+    const w = el.offsetWidth, h = el.offsetHeight;
+    el.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left)) + "px";
+    el.style.top = (r.bottom + h + 8 > innerHeight
+      ? Math.max(8, r.top - h - 4) : r.bottom + 4) + "px";
+  }
+
+  // A tag chip's menu: edit (rename it on this task) or remove it from
+  // this task, its text included
+  function openTagMenu(chip, tag, onEdit, onRemove) {
+    closeTagMenu();
+    tagMenu = document.createElement("div");
+    tagMenu.className = "tag-menu";
+    tagMenu.setAttribute("role", "menu");
+    const edit = document.createElement("button");
+    edit.type = "button";
+    edit.textContent = "edit";
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "danger";
+    remove.textContent = "remove";
+    edit.addEventListener("click", () => {
+      const input = document.createElement("input");
+      input.value = tag.replace(/^#/, "");
+      input.setAttribute("aria-label", "new name for " + tag);
+      tagMenu.replaceChildren(input);
+      input.focus();
+      input.select();
+      input.addEventListener("keydown", e => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          const name = input.value.trim().replace(/^#+/, "").replace(/\s+/g, "-");
+          closeTagMenu();
+          if (name && "#" + name !== tag) onEdit("#" + name);
+        } else if (e.key === "Escape") {
+          e.preventDefault();
+          closeTagMenu();
+          chip.focus();
+        }
+      });
+    });
+    remove.addEventListener("click", () => {
+      closeTagMenu();
+      onRemove();
+    });
+    tagMenu.append(edit, remove);
+    placeFloat(tagMenu, chip);
+    edit.focus();
+  }
+
+  document.addEventListener("pointerdown", e => {
+    if (tagMenu && !tagMenu.contains(e.target)
+        && !e.target.closest("button.tag-chip")) closeTagMenu();
+    if (tagSuggest && !tagSuggest.el.contains(e.target)) closeTagSuggest();
+  });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && tagMenu) closeTagMenu();
+  });
+
+  function closeTagSuggest() {
+    if (tagSuggest) tagSuggest.el.remove();
+    tagSuggest = null;
+  }
+
+  // Suggest existing tags while a #word is typed
+  function updateTagSuggest(txt) {
+    const word = hashBeforeCaret(txt);
+    if (!word) return closeTagSuggest();
+    const q = word.toLowerCase();
+    const list = knownTags().filter(t => t.toLowerCase().startsWith(q)
+      && t.toLowerCase() !== q).slice(0, 8);
+    if (!list.length) return closeTagSuggest();
+    closeTagSuggest();
+    const el = document.createElement("div");
+    el.className = "tag-suggest";
+    el.setAttribute("role", "listbox");
+    tagSuggest = { el, txt, list, index: 0, word };
+    list.forEach((tag, i) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = tag;
+      b.setAttribute("role", "option");
+      if (i === 0) b.classList.add("hl");
+      b.addEventListener("mousedown", e => e.preventDefault());
+      b.addEventListener("click", () => acceptTagSuggest(i));
+      el.appendChild(b);
+    });
+    placeFloat(el, txt);
+  }
+
+  function acceptTagSuggest(i) {
+    const sg = tagSuggest;
+    if (!sg) return;
+    const tag = sg.list[i], txt = sg.txt;
+    const pos = txt.selectionStart;
+    const start = pos - sg.word.length;
+    txt.value = txt.value.slice(0, start) + tag + " " + txt.value.slice(pos);
+    const caret = start + tag.length + 1;
+    txt.setSelectionRange(caret, caret);
+    closeTagSuggest();
+    txt.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  // While suggestions show, arrows move, Enter or Tab accepts, Esc closes
+  document.addEventListener("keydown", e => {
+    if (!tagSuggest || e.target !== tagSuggest.txt) return;
+    const sg = tagSuggest, items = sg.el.querySelectorAll("button");
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      sg.index = (sg.index + (e.key === "ArrowDown" ? 1 : sg.list.length - 1))
+        % sg.list.length;
+      items.forEach((b, i) => b.classList.toggle("hl", i === sg.index));
+    } else if (e.key === "Enter" || e.key === "Tab") {
+      acceptTagSuggest(sg.index);
+    } else if (e.key === "Escape") {
+      closeTagSuggest();
+    } else {
+      return;
+    }
+    e.preventDefault();
+    e.stopImmediatePropagation();
+  }, true);
+
+  // True while a keystroke's change is being saved (joins typing steps)
+  let undoTyping = false;
+
   // ---- Task element ----
 
   function createTaskEl(
@@ -1996,11 +2217,54 @@
     const tagBox = document.createElement("span");
     tagBox.className = "task-tags";
 
+    // Tags stay once typed (task.tags), even if their text is deleted
     function syncHighlight() {
       highlight.innerHTML = highlightDates(txt.value, task.anchorAt);
-      tagBox.innerHTML = taskTags(txt.value)
-        .map(t => '<span class="tag-chip">' + escapeHtml(t) + '</span>')
-        .join("");
+      tagBox.replaceChildren();
+      const tags = allTaskTags(task, txt.value);
+      tags.forEach(tag => {
+        const chip = document.createElement("button");
+        chip.className = "tag-chip";
+        chip.textContent = tag;
+        {
+          chip.type = "button";
+          chip.title = "edit or remove " + tag;
+          chip.addEventListener("click", e => {
+            e.stopPropagation();
+            openTagMenu(chip, tag, name => {
+              task.tags = allTaskTags(task, txt.value)
+                .map(t => t === tag ? name : t)
+                .filter((t, i, all) => all.indexOf(t) === i);
+              task.text = swapTagInText(task.text, tag, name);
+              txt.value = task.text;
+              syncHighlight();
+              onUpdate();
+            }, () => {
+              task.tags = allTaskTags(task, txt.value).filter(t => t !== tag);
+              task.text = swapTagInText(task.text, tag, "");
+              txt.value = task.text;
+              if (task.text) stampAnchor(task);
+              autoResize();
+              syncHighlight();
+              onUpdate();
+            });
+          });
+        }
+        tagBox.appendChild(chip);
+      });
+    }
+
+    // Keep the tags in the text; the #word still being typed waits until
+    // it's finished, so a half-typed tag isn't kept
+    function keepTags(all) {
+      let tags = taskTags(txt.value);
+      const typing = !all && hashBeforeCaret(txt);
+      if (typing) tags = tags.filter(t => t !== trimTag(typing));
+      const kept = Array.isArray(task.tags) ? task.tags : [];
+      const merged = [...new Set(kept.concat(tags))];
+      if (merged.length === kept.length) return false;
+      task.tags = merged;
+      return true;
     }
     highlight.addEventListener("click", e => {
       const token = e.target.closest(".date-token");
@@ -2047,9 +2311,21 @@
     txt.addEventListener("input", () => {
       task.text = txt.value;
       if (task.text) stampAnchor(task);
+      keepTags(false);
       autoResize();
       syncHighlight();
-      onUpdate();
+      undoTyping = true;
+      try { onUpdate(); } finally { undoTyping = false; }
+      updateTagSuggest(txt);
+    });
+    // Tags already in the text when editing starts are finished; they're
+    // kept with the next change
+    txt.addEventListener("focus", () => keepTags(true));
+    txt.addEventListener("blur", () => {
+      setTimeout(() => {
+        if (tagSuggest && tagSuggest.txt === txt) closeTagSuggest();
+      }, 150);
+      if (keepTags(true)) onUpdate();
     });
     txt.addEventListener("blur", () => {
       setTimeout(() => {
@@ -3838,6 +4114,90 @@
   });
 
   renderCurrentView();
+
+  // ---- Undo and redo ----
+  //
+  // Every change to the to dos, and to note tasks ticked or edited here,
+  // is kept as a step: Ctrl+Z undoes it, Ctrl+Y (or Ctrl+Shift+Z) redoes
+  // it, in every view. Typing joins one step until a pause of a second.
+  const UNDO_KEYS = [STORAGE_KEY, NOTES_KEY];
+  const undoStack = [], redoStack = [];
+  let undoApplying = false, lastRecord = 0, lastTyping = false;
+  const snapshot = () => UNDO_KEYS.map(k => localStorage.getItem(k));
+  {
+    const prevSet = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (key, value) {
+      if (this === localStorage && !undoApplying && UNDO_KEYS.includes(key)
+          && localStorage.getItem(key) !== String(value)) {
+        const now = Date.now();
+        const join = undoTyping && lastTyping && now - lastRecord < 1000;
+        if (!join) {
+          undoStack.push(snapshot());
+          if (undoStack.length > 200) undoStack.shift();
+        }
+        lastTyping = undoTyping;
+        lastRecord = now;
+        redoStack.length = 0;
+      }
+      return prevSet.call(this, key, value);
+    };
+  }
+
+  // Another tab's changes start a fresh history here
+  window.addEventListener("storage", e => {
+    if (UNDO_KEYS.includes(e.key)) {
+      undoStack.length = 0;
+      redoStack.length = 0;
+    }
+  });
+
+  function stepHistory(from, to) {
+    if (!from.length) return;
+    // Keep the cursor on the same task, if it's still there
+    const a = document.activeElement;
+    const all = () => [...document.querySelectorAll(".task textarea")];
+    const at = a && a.matches && a.matches(".task textarea")
+      ? all().indexOf(a) : -1;
+    to.push(snapshot());
+    const snap = from.pop();
+    undoApplying = true;
+    try {
+      UNDO_KEYS.forEach((k, i) => {
+        if (snap[i] === null) localStorage.removeItem(k);
+        else localStorage.setItem(k, snap[i]);
+      });
+    } finally {
+      undoApplying = false;
+    }
+    lastTyping = false;
+    closeTagMenu();
+    closeTagSuggest();
+    renderCurrentView();
+    if (at >= 0) {
+      setTimeout(() => {
+        const t = all()[at];
+        if (t) {
+          t.focus();
+          t.setSelectionRange(t.value.length, t.value.length);
+        }
+      }, 10);
+    }
+  }
+
+  document.addEventListener("keydown", e => {
+    if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (k !== "z" && k !== "y") return;
+    const a = document.activeElement;
+    // Fields outside the to dos keep their own undo
+    if (a && a.closest && a.closest(".orbita-date-picker, #tk-modal, "
+      + ".tag-menu, #tk-switch")) return;
+    if (a && a.matches && a.matches("input, select, textarea:not(.task-input), "
+      + "[contenteditable='true']")) return;
+    e.preventDefault();
+    if (k === "z" && !e.shiftKey) stepHistory(undoStack, redoStack);
+    else stepHistory(redoStack, undoStack);
+  }, true);
 
   // A task just added from the dashboard slides into the simple list
   (() => {
