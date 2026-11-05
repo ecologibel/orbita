@@ -36,6 +36,15 @@ python tests/run_browser_tests.py
 `tests/drive-concurrency-probe.html` is not included, because it needs a real
 Google sign-in.
 
+### Security headers
+
+GitHub Pages can't send custom headers, so each page sets a
+Content-Security-Policy in a `<meta>` tag near the top. It allows the app's own
+files, Google sign-in, the Google Drive and Calendar APIs, Google Fonts and the
+CodeMirror files on cdnjs. When adding a script, stylesheet, font or API from
+another site, add it to the policy on every page that uses it, and give CDN
+files an `integrity` hash (cdnjs lists one for each file).
+
 ## Licence
 
 [MIT](LICENSE)
