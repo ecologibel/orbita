@@ -265,7 +265,9 @@
   /* The left sidebar shows only while picking a task */
   body.focus-bare #tk-sidebar { display: none; }
   body.has-sidebar.focus-bare { padding-left: 0; }
-  body.has-sidebar:not(.focus-bare) #leave { left: 76px; }
+  /* Leave focus shows only once a task is chosen; while picking, the
+     sidebar is there to move elsewhere */
+  body:not(.focus-bare) #leave { display: none; }
 
   /* Widths match every page: 672px, wide halfway to full */
   main {
