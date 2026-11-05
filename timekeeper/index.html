@@ -74,9 +74,11 @@
   /* Pills: text and a light fill in their tag's or calendar's colour (teal
      when they have none); selected, the fill strengthens, reading lighter
      in dark mode and darker in light mode */
-  #app .choice { --pill:var(--accent);background:color-mix(in srgb,var(--pill) 14%,transparent);border-color:color-mix(in srgb,var(--pill) 45%,transparent);color:var(--pill); }
+  #app .choice { --pill:var(--accent);background:color-mix(in srgb,var(--pill) 10%,transparent);border-color:color-mix(in srgb,var(--pill) 45%,transparent);color:var(--pill); }
   #app .choice.tag-token { --pill:var(--tag-color); }
-  #app .choice[aria-pressed=true] { background:color-mix(in srgb,var(--pill) 40%,transparent);border-color:var(--pill); }
+  #app .choice[aria-pressed=true] { background:color-mix(in srgb,var(--pill) 36%,transparent);border-color:var(--pill); }
+  /* Light mode: selected pills without their own colour (actions, topics) get dark teal text; tags and calendars keep theirs */
+  #app.t-light .choice[aria-pressed=true]:not(.tag-token):not([style*="--pill"]) { color:#086b69!important; }
   #app.t-light .choice { color:color-mix(in srgb,var(--pill) 72%,#000000)!important; }
   #app.t-dark .choice[aria-pressed=true] { color:color-mix(in srgb,var(--pill) 55%,#ffffff); }
   #app.t-dark .choice.tag-color-black,#app.t-dark .choice.tag-color-charcoal { color:color-mix(in srgb,var(--pill) 45%,#ffffff)!important; }

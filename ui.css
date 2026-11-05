@@ -1,28 +1,34 @@
 /* ---- Shared look for pill and option buttons ----
    Loaded after each page's own styles. Pills and square option buttons
-   have a semi-transparent teal fill with teal text; hovering strengthens
-   it, and a selected one has a stronger teal fill. The :not(#_) adds an
-   id's weight, so these win over each page's own button rules.
+   have a light, semi-transparent teal fill with teal text; hovering
+   strengthens it, and a selected one has a stronger teal fill, with dark
+   teal text in light mode. The :not(#_) adds an id's weight, so these win
+   over each page's own button rules.
 
    Timekeeper tag and calendar pills (.choice) keep their own colours. */
 
 :is(.set-opt, .side-opt, .option, .list-actions button, .min-btn,
     .backup-actions button:not(.danger)):not(#_) {
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
   border-color: color-mix(in srgb, var(--accent) 38%, transparent);
   color: var(--accent);
 }
 
 :is(.set-opt, .side-opt, .option, .list-actions button, .min-btn,
     .backup-actions button:not(.danger)):not(#_):is(:hover, :focus-visible):not(:disabled) {
-  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
   border-color: var(--accent);
   outline: none;
 }
 
 /* Two ids' weight, so selected stays strong over the base and hover */
 :is(.set-opt, .side-opt, .option, .min-btn):not(#_):not(#__):is([aria-pressed="true"], .on, .active) {
-  background: color-mix(in srgb, var(--accent) 40%, transparent);
+  background: color-mix(in srgb, var(--accent) 36%, transparent);
   border-color: var(--accent);
   color: var(--fg);
+}
+
+/* Light mode: selected text in dark teal */
+.t-light :is(.set-opt, .side-opt, .option, .min-btn):not(#_):not(#__):is([aria-pressed="true"], .on, .active) {
+  color: #086b69;
 }
