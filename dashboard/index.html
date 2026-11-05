@@ -146,7 +146,7 @@
   .views-inner {
     display: grid;
     gap: 12px;
-    grid-template-columns: repeat(6, 5.5em);
+    grid-template-columns: repeat(7, 5.5em);
     min-height: 0;
     overflow: hidden;
     padding: 0 2px;
@@ -232,7 +232,12 @@
     text-align: center;
     white-space: nowrap;
   }
-  .note-card .nc-plus {
+  .view-btn.new-todo {
+    border: 0;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .note-card .nc-plus, .view-btn .nc-plus {
     align-items: center;
     color: var(--accent);
     display: flex;
@@ -665,6 +670,13 @@
           : "") + label[id] + "</span>";
     });
     const inner = document.querySelector(".views-inner");
+    // + new to do first, then the views
+    const newTodo = document.createElement("button");
+    newTodo.type = "button";
+    newTodo.className = "view-btn new-todo";
+    newTodo.innerHTML = '<span class="nc-plus">+</span><span>new to do</span>';
+    newTodo.addEventListener("click", addNewTodo);
+    inner.appendChild(newTodo);
     VIEWS.forEach(([id, name]) => {
       const a = document.createElement("a");
       a.className = "view-btn";
@@ -685,7 +697,7 @@
       slide.classList.toggle("open", open);
       btn.classList.toggle("open", open);
       btn.setAttribute("aria-expanded", open ? "true" : "false");
-      slide.querySelectorAll("a").forEach(a => {
+      slide.querySelectorAll("a, button").forEach(a => {
         a.tabIndex = open ? 0 : -1;
       });
     });
@@ -1061,6 +1073,28 @@
     renderToday();
     addEl.focus();
   });
+
+  // + new to do: type a task in a window; it joins the end of the simple
+  // list, and the simple view opens with it sliding into place
+  function addNewTodo() {
+    ToolkitSidebar.modal({
+      title: "new to do",
+      input: { placeholder: "what needs doing? add @friday to give it a date" }
+    }).then(text => {
+      if (!text) return;
+      const data = loadTodos();
+      const task = { done: false, indent: 0, text };
+      D.stampAnchor(task);
+      data.simple = data.simple.filter(t => t.text !== "");
+      data.simple.push(task);
+      store(TODO_KEY, JSON.stringify(data));
+      try { sessionStorage.setItem("todo-just-added", text); } catch {}
+      renderToday();
+      // Let the window fade before the page cross-fades to the list
+      setTimeout(() => { location.href = "../to-dos/index.html#simple"; },
+        matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 200);
+    });
+  }
 
   // ---- Resize and fold the today sidebar ----
 

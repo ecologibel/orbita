@@ -1356,6 +1356,8 @@
   //     buttons: [{ label: "local", detail: "keep this device's copy",
   //                 value: "LOCAL" }, ...]
   //   }).then(value => ...)
+  // With input: { placeholder } instead of buttons, Enter resolves with
+  // the typed text.
 
   const MODAL_THEMES = {
     dark: { bg: "#01111f", line: "#1e3a52", fg: "#d6deeb", muted: "#8291a5",
@@ -1407,6 +1409,22 @@
       .tk-modal .tkm-body { font-size: 14px; line-height: 1.55; }
       .tk-modal .tkm-body p { margin: 0 0 8px; }
       .tk-modal .tkm-muted { color: var(--tkm-muted); font-size: 13px; }
+      .tk-modal .tkm-input {
+        background: transparent;
+        border: 1px solid var(--tkm-line);
+        border-radius: 8px;
+        color: var(--tkm-fg);
+        font: inherit;
+        font-size: 16px;
+        margin-top: 4px;
+        outline: none;
+        padding: 10px 12px;
+        transition: border-color 0.15s;
+        width: 100%;
+      }
+      .tk-modal .tkm-input:focus { border-color: var(--tkm-accent); }
+      .tk-modal .tkm-input::placeholder { color: var(--tkm-muted); }
+      .tk-modal .tkm-buttons:empty { display: none; }
       .tk-modal .tkm-buttons {
         display: flex;
         flex-wrap: wrap;
@@ -1501,6 +1519,23 @@
       body.appendChild(opts.body);
     }
 
+    // An optional text field: Enter resolves with its trimmed text
+    let input = null;
+    if (opts.input) {
+      input = document.createElement("input");
+      input.className = "tkm-input";
+      input.autocomplete = "off";
+      input.placeholder = opts.input.placeholder || "";
+      input.setAttribute("aria-label", opts.input.label || opts.title || "");
+      input.addEventListener("keydown", e => {
+        if (e.key !== "Enter" || e.isComposing) return;
+        e.preventDefault();
+        const text = input.value.trim();
+        if (text) done(text);
+      });
+      body.appendChild(input);
+    }
+
     const close = document.createElement("button");
     close.type = "button";
     close.className = "tkm-close";
@@ -1578,7 +1613,7 @@
       if (e.target === wrap) done(null);
     });
     document.addEventListener("keydown", onKey, true);
-    (row.querySelector("button") || close).focus();
+    (input || row.querySelector("button") || close).focus();
     return result;
   }
 
