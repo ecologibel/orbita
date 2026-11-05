@@ -106,7 +106,242 @@
     flex-direction: column;
     height: 100vh;
   }
-  #content { flex: 1; overflow-y: auto; }
+  .notes-row { display: flex; flex: 1; min-height: 0; }
+  #content { flex: 1; min-width: 0; overflow-y: auto; }
+
+  /* ---- Right sidebar: as the dashboard's, beside the tree only ---- */
+  #app.note-open .aside-wrap { display: none; }
+  aside {
+    display: flex;
+    flex: 0 0 300px;
+    flex-direction: column;
+    gap: 24px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 28px 24px 36px;
+    position: relative;
+    transition: flex-basis 0.25s ease, padding 0.25s ease;
+  }
+  aside.dragging { transition: none; }
+  .aside-wrap { display: flex; flex: none; position: relative; }
+  .aside-wrap::before {
+    background: var(--border);
+    bottom: 38px;
+    content: '';
+    left: 0;
+    position: absolute;
+    top: 38px;
+    width: 1px;
+    z-index: 1;
+  }
+  .aside-handle {
+    bottom: 0;
+    cursor: col-resize;
+    left: -4px;
+    position: absolute;
+    top: 0;
+    width: 9px;
+    z-index: 2;
+  }
+  .aside-wrap:has(.aside-handle:hover)::before,
+  .aside-wrap.resizing::before { background: var(--accent); }
+  .fold-btn {
+    background: none;
+    border: none;
+    border-radius: 4px;
+    color: var(--fg-muted);
+    cursor: pointer;
+    font-size: 15px;
+    height: 24px;
+    line-height: 1;
+    width: 24px;
+  }
+  .fold-btn:hover { background: var(--hover); color: var(--accent); }
+  .unfold { display: none; left: 6px; position: absolute; top: 24px; }
+  aside.folded { flex-basis: 36px !important; padding: 28px 0; }
+  aside.folded > * { display: none; }
+  aside.folded > .unfold { display: block; }
+  @keyframes side-in {
+    from { opacity: 0; transform: translateX(12px); }
+    to   { opacity: 1; transform: none; }
+  }
+  aside > div {
+    animation: side-in 0.35s ease 0.08s both;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+  /* Sidebar rows: no chevron space or date, so titles have room */
+  #side .tree-chev, #side .tree-date { display: none; }
+  #side .tree-row { min-height: 30px; padding-left: 6px; }
+  .side-section > .side-empty { padding-left: 6px; }
+  .side-head {
+    align-items: last baseline;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: 8px;
+  }
+  .side-search-btn {
+    background: none;
+    border: none;
+    color: var(--fg);
+    cursor: pointer;
+    font: inherit;
+    font-size: 1.15em;
+    font-weight: 600;
+    padding: 0;
+    text-transform: lowercase;
+  }
+  .side-search-btn:hover, .side-search-btn[aria-expanded="true"] { color: var(--accent); }
+  .side-search {
+    display: grid;
+    grid-template-rows: 0fr;
+    margin: -22px 0 0;
+    transition: grid-template-rows 0.25s ease, margin 0.25s ease;
+  }
+  .side-search.open { grid-template-rows: 1fr; margin-top: -10px; }
+  .side-search-inner { min-height: 0; overflow: hidden; }
+  #search {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--fg);
+    font-size: 15px;
+    margin: 4px 0 8px;
+    outline: none;
+    padding: 7px 10px;
+    width: 100%;
+  }
+  #search:focus { border-color: var(--accent); }
+  #search::placeholder { color: var(--fg-muted); opacity: 0.7; }
+  .side-section { display: flex; flex-direction: column; gap: 6px; }
+  .side-label { color: var(--fg-muted); font-size: 12px; text-transform: lowercase; }
+  .side-opts, .side-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .side-opt {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--fg);
+    cursor: pointer;
+    font: inherit;
+    font-size: 13px;
+    padding: 3px 10px;
+  }
+  .side-opt:hover, .side-opt:focus-visible { border-color: var(--accent); outline: none; }
+  .side-opt.on { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+  .side-empty { color: var(--fg-muted); font-size: 13px; }
+  .side-actions { align-items: flex-start; }
+  .side-link {
+    align-items: center;
+    background: none;
+    border: none;
+    border-radius: 6px;
+    color: var(--accent);
+    cursor: pointer;
+    display: flex;
+    font: inherit;
+    font-size: 14px;
+    gap: 8px;
+    padding: 4px 6px;
+    margin-left: -6px;
+  }
+  .side-link:hover, .side-link:focus-visible { background: var(--hover); outline: none; }
+  #side-bin { color: var(--fg-muted); }
+  #side-bin svg { height: 16px; width: 16px; }
+  #side-bin.drop-into { background: var(--hover); color: var(--accent); }
+
+  /* ---- Tree: folders, then notes, then + new note, each level indented
+     further and opening and closing smoothly ---- */
+  .tree { display: flex; flex-direction: column; }
+  .tree-row {
+    align-items: center;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    color: var(--fg);
+    cursor: pointer;
+    display: flex;
+    font: inherit;
+    font-size: 15px;
+    gap: 8px;
+    min-height: 34px;
+    padding: 3px 6px 3px calc(var(--depth, 0) * 24px + 6px);
+    position: relative;
+    text-align: left;
+    text-decoration: none;
+    width: 100%;
+  }
+  .tree-row:hover, .tree-row:focus-visible { background: var(--hover); outline: none; }
+  .tree-row.dragging { opacity: 0.4; }
+  .tree-row.drop-into { border-color: var(--accent); }
+  .tree-row.drop-before { box-shadow: inset 0 2px 0 var(--accent); }
+  .tree-row.drop-after { box-shadow: inset 0 -2px 0 var(--accent); }
+  .tree-chev {
+    color: var(--fg-muted);
+    flex: 0 0 12px;
+    font-size: 10px;
+    transition: transform 0.24s ease;
+  }
+  .folder-row.open .tree-chev { transform: rotate(90deg); }
+  .tree-icon { color: var(--accent); display: flex; flex-shrink: 0; }
+  .tree-icon svg { height: 17px; width: 17px; }
+  /* Folders are smaller rows than notes */
+  .folder-row { font-size: 13.5px; min-height: 30px; }
+  .folder-row .folder-name { font-weight: 600; }
+  .folder-row .folder-name[contenteditable="true"] {
+    border-bottom: 1px solid var(--accent);
+    cursor: text;
+    outline: none;
+  }
+  .tree-name, .folder-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .tree-name.untitled { color: var(--fg-muted); font-style: italic; }
+  .tree-count, .tree-date { color: var(--fg-muted); flex-shrink: 0; font-size: 12px; }
+  .tree-row .more-btn {
+    opacity: 0;
+    position: static;
+    transform: none;
+  }
+  .tree-row:hover .more-btn, .tree-row:focus-within .more-btn { opacity: 1; }
+  .note-row .tint-dot {
+    border-radius: 50%;
+    flex: 0 0 8px;
+    height: 8px;
+  }
+  .new-row { color: var(--accent); font-size: 14px; }
+  .new-row .tree-chev { visibility: hidden; }
+  .tree-children {
+    display: grid;
+    grid-template-rows: 1fr;
+    transition: grid-template-rows 0.24s ease;
+  }
+  .tree-children.closed { grid-template-rows: 0fr; }
+  .tree-children > .tree { min-height: 0; overflow: hidden; }
+  .tree-root { min-height: 60vh; }
+  .tree-root.drop-into { outline: 1px dashed var(--accent); outline-offset: 4px; border-radius: 6px; }
+  @media (prefers-reduced-motion: reduce) {
+    .tree-children, .tree-chev, .side-search { transition: none; }
+  }
+
+  /* Search results in the sidebar */
+  #search-results .tree-row { padding-left: 6px; }
+  #search-results .tree-path { color: var(--fg-muted); font-size: 11.5px; }
+  .result-text { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+
+  /* Narrow windows: the sidebar sits below */
+  @media (max-width: 900px) {
+    .notes-row { flex-direction: column; }
+    aside, aside.folded { flex-basis: auto !important; padding: 24px; }
+    aside.folded > * { display: revert; }
+    .aside-wrap { border-top: 1px solid var(--border); }
+    .aside-wrap::before, .aside-handle, .fold-btn { display: none; }
+  }
 
   /* ---- Gallery ---- */
   #gallery {
@@ -1311,10 +1546,9 @@
 </head>
 <body>
 <div id="app" class="t-dark size-m width-normal">
+  <div class="notes-row">
   <div id="content">
-    <div id="gallery" class="gone">
-      <input id="search" type="search" placeholder="search notes"
-        autocomplete="off" spellcheck="false">
+    <div id="gallery" class="gone no-previews">
       <div id="gallery-body"></div>
     </div>
     <div id="note" class="sheet gone">
@@ -1334,6 +1568,49 @@
         <div class="word-count"></div>
       </div>
     </div>
+  </div>
+
+  <!-- Beside the tree: search, then sort, tags, pinned notes and the bin.
+       Built like the dashboard's sidebar -->
+  <div class="aside-wrap" id="side-wrap">
+  <div class="aside-handle" title="drag to resize"></div>
+  <aside id="side">
+    <button class="fold-btn unfold" type="button" title="show search"
+      aria-label="show search">&lt;</button>
+    <div>
+      <div class="side-head">
+        <button class="side-search-btn" id="search-btn" type="button"
+          aria-expanded="false">search notes</button>
+        <button class="fold-btn" id="fold" type="button"
+          title="fold away" aria-label="fold away">&gt;</button>
+      </div>
+      <div class="side-search" id="side-search">
+        <div class="side-search-inner">
+          <input id="search" type="search" placeholder="type to search"
+            autocomplete="off" spellcheck="false">
+          <div id="search-results"></div>
+        </div>
+      </div>
+      <div class="side-section">
+        <div class="side-label">sort</div>
+        <div class="side-opts" id="sort-opts"></div>
+      </div>
+      <div class="side-section" id="tags-section">
+        <div class="side-label">tags</div>
+        <div class="side-tags" id="side-tags"></div>
+      </div>
+      <div class="side-section" id="pinned-section">
+        <div class="side-label">pinned</div>
+        <div id="side-pinned"></div>
+      </div>
+      <div class="side-section side-actions">
+        <button class="side-link" id="new-folder" type="button">+ new folder</button>
+        <button class="side-link" id="side-bin" type="button"
+          title="bin: drop notes here, click to open"></button>
+      </div>
+    </div>
+  </aside>
+  </div>
   </div>
 
   <button id="trash-fab" class="gone" type="button" aria-label="bin"
@@ -1386,6 +1663,10 @@
   const tagsEl   = document.getElementById("tags");
   const titleEl  = document.getElementById("title");
   const trashFab = document.getElementById("trash-fab");
+  const sideEl = document.getElementById("side");
+  const sideSearch = document.getElementById("side-search");
+  const searchBtn = document.getElementById("search-btn");
+  const sideBin = document.getElementById("side-bin");
   const crumbsEl = noteEl.querySelector(".crumbs");
   const editedEl = noteEl.querySelector(".edited");
   const wordsEl  = noteEl.querySelector(".word-count");
@@ -1902,11 +2183,9 @@
       subfolders(f.parent).forEach(x => openFolders.delete(x.id));
       openFolders.add(f.id);
     }
-    query = searchEl.value = "";
-    tagFilter = "";
     showGallery(true);
     const card = galBody.querySelector(
-      '.folder-card[data-folder="' + id + '"]');
+      '.folder-row[data-folder="' + id + '"]');
     if (card) card.scrollIntoView({ block: "center" });
   }
 
@@ -1916,7 +2195,7 @@
     fmt.classList.remove("show");
     noteEl.classList.add("gone");
     gallery.classList.remove("gone");
-    trashFab.classList.remove("gone");
+    app.classList.remove("note-open");
     ToolkitSidebar.title("notes");
     renderGallery();
     replay(gallery);
@@ -1938,7 +2217,7 @@
       });
     }
     gallery.classList.add("gone");
-    trashFab.classList.add("gone");
+    app.classList.add("note-open");
     noteEl.classList.remove("gone");
     renderNote();
     if (changed) {
@@ -2081,35 +2360,6 @@
     return card;
   }
 
-  function newNoteCard(folder) {
-    const add = document.createElement("div");
-    add.className = "card new-card";
-    add.textContent = "+ new note";
-    add.addEventListener("click", () => createNote(folder));
-    return add;
-  }
-
-  function folderCard(f) {
-    const card = document.createElement("div");
-    const open = openFolders.has(f.id);
-    card.className = "card folder-card" + (open ? " open" : "");
-    card.dataset.folder = f.id;
-    card.draggable = true;
-    const n = folderCount(f.id);
-    card.innerHTML = '<span class="folder-icon">'
-      + ToolkitSidebar.folderIcon(f.icon) + '</span><div class="folder-text">'
-      + '<div class="folder-name"></div><div class="folder-count">'
-      + n + (n === 1 ? " note" : " notes") + '</div></div>';
-    card.querySelector(".folder-name").textContent = f.name;
-    card.appendChild(moreButton(btn => folderMenu(btn, f, card)));
-    card.addEventListener("click", e => {
-      if (e.target.isContentEditable) return;
-      toggleFolder(f.id);
-    });
-    dragSource(card, "folder", f.id);
-    return card;
-  }
-
   // Add a folder (inside parent, if given) and start naming it
   function addFolder(parent) {
     const sibs = subfolders(parent);
@@ -2126,16 +2376,11 @@
     }
   }
 
-  function newFolderCard() {
-    const add = document.createElement("div");
-    add.className = "card new-card folder-card";
-    add.textContent = "+ new folder";
-    add.addEventListener("click", () => addFolder(null));
-    return add;
-  }
-
   function renderTrashFab() {
     const n = notes.filter(x => x.trashed).length;
+    sideBin.innerHTML = TRASH_ICON + "<span>bin" + (n ? " (" + n + ")" : "")
+      + "</span>";
+    sideBin.setAttribute("aria-label", "bin, " + n + (n === 1 ? " note" : " notes"));
     trashFab.innerHTML = TRASH_ICON + (n ? '<span class="badge">' + n
       + "</span>" : "");
     trashFab.setAttribute("aria-label", "bin, " + n
@@ -2160,12 +2405,12 @@
     trashFab.classList.remove("open");
   }
 
-  trashFab.addEventListener("click", () => {
+  [trashFab, sideBin].forEach(b => b.addEventListener("click", () => {
     if (trashPop) closeTrash();
     else openTrash(true);
-  });
+  }));
   document.addEventListener("pointerdown", e => {
-    if (trashPop && !e.target.closest("#trash-pop, #trash-fab, .menu")) {
+    if (trashPop && !e.target.closest("#trash-pop, #trash-fab, #side-bin, .menu")) {
       closeTrash();
     }
   });
@@ -2175,32 +2420,40 @@
     }
   });
 
-  // Drop a note on the button to trash it
-  trashFab.addEventListener("dragover", e => {
-    if (!gDrag || gDrag.kind !== "note") return;
-    e.preventDefault();
-    trashFab.classList.add("drop-into");
-  });
-  trashFab.addEventListener("dragleave", () => {
-    trashFab.classList.remove("drop-into");
-  });
-  trashFab.addEventListener("drop", e => {
-    trashFab.classList.remove("drop-into");
-    if (!gDrag || gDrag.kind !== "note") return;
-    e.preventDefault();
-    applyDrop({ trash: true });
+  // Drop a note on the bin to bin it, or on pinned to pin it
+  const pinSection = document.getElementById("pinned-section");
+  [[sideBin, { trash: true }], [pinSection, { pin: true }]].forEach(([el, act]) => {
+    el.addEventListener("dragover", e => {
+      if (!gDrag || gDrag.kind !== "note") return;
+      e.preventDefault();
+      el.classList.add("drop-into");
+    });
+    el.addEventListener("dragleave", e => {
+      if (!el.contains(e.relatedTarget)) el.classList.remove("drop-into");
+    });
+    el.addEventListener("drop", e => {
+      el.classList.remove("drop-into");
+      if (!gDrag || gDrag.kind !== "note") return;
+      e.preventDefault();
+      applyDrop(act);
+    });
   });
 
-  // One open folder per level: opening one slides its open sibling
-  // closed first; clicking an open folder slides it closed
+  // ---- Tree ----
+  //
+  // Folders, then notes, then + new note at each level; opening a folder
+  // reveals the next level beneath it, indented further. Any number of
+  // folders can be open; they start closed on each visit.
   let animateOpen = null, folderBusy = false;
+  const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  function slideClosed(ids) {
-    const els = ids.map(id => galBody.querySelector(
-      '.panel[data-for="' + id + '"]')).filter(Boolean);
-    if (!els.length) return Promise.resolve();
-    els.forEach(el => el.classList.remove("settled", "shown"));
-    return new Promise(done => setTimeout(done, 260));
+  function treeNotes(parent) {
+    return live().filter(n => n.folder === parent).sort(bySort);
+  }
+
+  function treeCount(id) {
+    return treeNotes(id).length
+      + subfolders(id).reduce((sum, f) => sum + treeCount(f.id), 0);
   }
 
   async function toggleFolder(id) {
@@ -2208,14 +2461,15 @@
     folderBusy = true;
     try {
       if (openFolders.has(id)) {
-        await slideClosed([id]);
+        const kids = galBody.querySelector('.tree-children[data-for="' + id + '"]');
+        const row = galBody.querySelector('.folder-row[data-folder="' + id + '"]');
+        if (row) row.classList.remove("open");
+        if (kids && !reducedMotion()) {
+          kids.classList.add("closed");
+          await new Promise(done => setTimeout(done, 240));
+        }
         openFolders.delete(id);
       } else {
-        const f = byFolder(id);
-        const others = subfolders(f ? f.parent : null)
-          .map(x => x.id).filter(x => x !== id && openFolders.has(x));
-        await slideClosed(others);
-        others.forEach(x => openFolders.delete(x));
         openFolders.add(id);
         animateOpen = id;
       }
@@ -2230,51 +2484,119 @@
     const id = animateOpen;
     animateOpen = null;
     if (!id) return;
-    const el = galBody.querySelector('.panel[data-for="' + id + '"]');
-    if (!el) return;
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      el.classList.add("shown");
-      setTimeout(() => {
-        if (el.classList.contains("shown")) el.classList.add("settled");
-      }, 260);
-    }));
+    const kids = galBody.querySelector('.tree-children[data-for="' + id + '"]');
+    if (kids) requestAnimationFrame(() => requestAnimationFrame(() =>
+      kids.classList.remove("closed")));
   }
 
-  // A grid of folder cards, each open folder followed by its panel
-  function folderGrid(parent) {
-    const grid = document.createElement("div");
-    grid.className = "grid folders";
-    grid.dataset.parent = parent || "";
-    subfolders(parent).forEach(f => {
-      grid.appendChild(folderCard(f));
-      if (openFolders.has(f.id)) grid.appendChild(folderPanel(f));
+  function chevron(hidden) {
+    const c = document.createElement("span");
+    c.className = "tree-chev";
+    c.setAttribute("aria-hidden", "true");
+    c.textContent = hidden ? "" : "▶";
+    return c;
+  }
+
+  function folderRow(f, depth) {
+    const row = document.createElement("div");
+    const open = openFolders.has(f.id);
+    row.className = "tree-row folder-row" + (open ? " open" : "");
+    row.dataset.folder = f.id;
+    row.style.setProperty("--depth", depth);
+    row.tabIndex = 0;
+    row.setAttribute("role", "button");
+    row.setAttribute("aria-expanded", String(open));
+    row.draggable = true;
+    const icon = document.createElement("span");
+    icon.className = "tree-icon";
+    icon.innerHTML = ToolkitSidebar.folderIcon(f.icon);
+    const name = document.createElement("span");
+    name.className = "folder-name";
+    name.textContent = f.name;
+    const count = document.createElement("span");
+    count.className = "tree-count";
+    count.textContent = treeCount(f.id);
+    row.append(chevron(false), icon, name, count,
+      moreButton(btn => folderMenu(btn, f, row)));
+    row.addEventListener("click", e => {
+      if (e.target.isContentEditable || e.target.closest(".more-btn")) return;
+      toggleFolder(f.id);
     });
-    if (!parent) grid.appendChild(newFolderCard());
-    return grid;
+    row.addEventListener("keydown", e => {
+      if (e.target !== row || (e.key !== "Enter" && e.key !== " ")) return;
+      e.preventDefault();
+      toggleFolder(f.id);
+    });
+    dragSource(row, "folder", f.id);
+    return row;
   }
 
-  // An open folder: its subfolders, then its notes
-  function folderPanel(f) {
-    const outer = document.createElement("div");
-    outer.className = "panel" + (animateOpen === f.id ? "" : " shown settled");
-    outer.dataset.for = f.id;
-    const panel = document.createElement("div");
-    panel.className = "panel-inner";
-    outer.appendChild(panel);
-    if (subfolders(f.id).length) panel.appendChild(folderGrid(f.id));
-    const grid = document.createElement("div");
-    grid.className = "grid notes-grid";
-    grid.dataset.folder = f.id;
-    if (!folderNotes(f.id).length && !subfolders(f.id).length) {
-      const msg = document.createElement("div");
-      msg.className = "empty-msg";
-      msg.textContent = "no notes here yet";
-      panel.appendChild(msg);
+  // A note's row; in search results it also shows the folder it's in
+  function noteRow(n, depth, path) {
+    const row = document.createElement("div");
+    row.className = "tree-row note-row";
+    row.dataset.id = n.id;
+    row.dataset.parent = n.folder || "";
+    row.style.setProperty("--depth", depth);
+    row.tabIndex = 0;
+    row.setAttribute("role", "link");
+    row.draggable = !n.trashed;
+    const icon = document.createElement("span");
+    icon.className = "tree-icon";
+    icon.innerHTML = n.pinned ? PIN_ICON : ToolkitSidebar.icon("notes");
+    const name = document.createElement("span");
+    name.className = "tree-name" + (n.title.trim() ? "" : " untitled");
+    name.textContent = n.title.trim() || "untitled";
+    let text = name;
+    if (path !== undefined) {
+      text = document.createElement("span");
+      text.className = "result-text";
+      const where = document.createElement("span");
+      where.className = "tree-path";
+      where.textContent = path;
+      text.append(name, where);
     }
-    folderNotes(f.id).forEach(n => grid.appendChild(noteCard(n)));
-    grid.appendChild(newNoteCard(f.id));
-    panel.appendChild(grid);
-    return outer;
+    const date = document.createElement("span");
+    date.className = "tree-date";
+    date.textContent = "@" + fmtLong(fromIso(n.date));
+    row.append(chevron(true), icon, text, date,
+      moreButton(btn => cardMenu(btn, n)));
+    const go = () => { location.hash = n.id; };
+    row.addEventListener("click", e => {
+      if (!e.target.closest(".more-btn")) go();
+    });
+    row.addEventListener("keydown", e => {
+      if (e.target === row && e.key === "Enter") go();
+    });
+    dragSource(row, "note", n.id);
+    return row;
+  }
+
+  function newRow(parent, depth) {
+    const row = document.createElement("button");
+    row.type = "button";
+    row.className = "tree-row new-row";
+    row.style.setProperty("--depth", depth);
+    row.append(chevron(true), document.createTextNode("+ new note"));
+    row.addEventListener("click", () => createNote(parent));
+    return row;
+  }
+
+  function treeLevel(parent, depth) {
+    const level = document.createElement("div");
+    level.className = "tree";
+    subfolders(parent).forEach(f => {
+      level.appendChild(folderRow(f, depth));
+      if (!openFolders.has(f.id)) return;
+      const kids = document.createElement("div");
+      kids.className = "tree-children" + (animateOpen === f.id ? " closed" : "");
+      kids.dataset.for = f.id;
+      kids.appendChild(treeLevel(f.id, depth + 1));
+      level.appendChild(kids);
+    });
+    treeNotes(parent).forEach(n => level.appendChild(noteRow(n, depth)));
+    level.appendChild(newRow(parent, depth));
+    return level;
   }
 
   function trashPanel() {
@@ -2346,123 +2668,152 @@
     x.title = "show all notes";
     x.addEventListener("click", () => {
       tagFilter = "";
-      renderGallery();
+      if (!query) setSearchOpen(false);
+      renderSide();
     });
     chip.appendChild(x);
     bar.appendChild(chip);
     return bar;
   }
 
-  function sortBar() {
-    const bar = document.createElement("div");
-    bar.className = "sort-bar";
-    bar.appendChild(document.createTextNode("sort:"));
-    [["edited", "last edited"], ["date", "date"], ["title", "title"]]
-      .forEach(([key, label]) => {
-        const b = document.createElement("button");
-        b.type = "button";
-        b.textContent = label;
-        b.classList.toggle("on", sortBy === key);
-        b.addEventListener("click", () => {
-          sortBy = key;
-          localStorage.setItem(SORT_KEY, key);
-          renderGallery();
-        });
-        bar.appendChild(b);
-      });
-
-    // Previews on, or just each note's title cell
-    const label = document.createElement("span");
-    label.className = "sort-gap";
-    label.textContent = "previews:";
-    bar.appendChild(label);
-    [[true, "on"], [false, "off"]].forEach(([value, text]) => {
-      const b = document.createElement("button");
-      b.type = "button";
-      b.textContent = text;
-      b.dataset.previews = text;
-      b.classList.toggle("on", previews === value);
-      b.addEventListener("click", () => {
-        previews = value;
-        localStorage.setItem(PREVIEW_KEY, value ? "on" : "off");
-        renderGallery();
-      });
-      bar.appendChild(b);
-    });
-    return bar;
-  }
-
   function renderGallery() {
     renderTrashFab();
     if (trashPop) openTrash();
-    gallery.classList.remove("cards-s", "cards-m", "cards-l");
-    gallery.classList.add("cards-" + cardSize);
-    gallery.classList.toggle("no-previews", !previews);
     galBody.innerHTML = "";
-    const q = query.trim().toLowerCase();
-
-    // Search and tags show one flat list of matching notes
-    if (tagFilter) galBody.appendChild(filterBar());
-    if (q || tagFilter) {
-      const found = live().filter(n => (!q || matches(n, q))
-        && (!tagFilter || n.tags.includes(tagFilter))).sort(bySort);
-      if (!found.length) {
-        const msg = document.createElement("div");
-        msg.className = "empty-msg";
-        msg.textContent = "no notes match";
-        galBody.appendChild(msg);
-        return;
-      }
-      const grid = document.createElement("div");
-      grid.className = "grid";
-      found.forEach(n => grid.appendChild(noteCard(n)));
-      galBody.appendChild(grid);
-      return;
-    }
-
-    const pinned = live().filter(n => n.pinned).sort(byEdited);
-    if (pinned.length) {
-      const grid = document.createElement("div");
-      grid.className = "grid pinned";
-      pinned.forEach(n => grid.appendChild(noteCard(n)));
-      galBody.append(grid, rule());
-    }
-    galBody.appendChild(folderGrid(null));
-    galBody.appendChild(rule());
-    galBody.appendChild(sortBar());
-    const grid = document.createElement("div");
-    grid.className = "grid notes-grid unsorted";
-    grid.dataset.folder = "";
-    folderNotes(null).forEach(n => grid.appendChild(noteCard(n)));
-    grid.appendChild(newNoteCard(null));
-    galBody.appendChild(grid);
-    arrangePanels();
+    const root = treeLevel(null, 0);
+    root.classList.add("tree-root");
+    galBody.appendChild(root);
     playOpen();
+    renderSide();
   }
 
-  // Put each open folder's panel straight after the row holding its card
-  function arrangePanels() {
-    galBody.querySelectorAll(".grid.folders").forEach(grid => {
-      const cols = getComputedStyle(grid).gridTemplateColumns
-        .split(" ").filter(Boolean).length || 1;
-      const kids = [...grid.children];
-      const items = kids.filter(k => !k.classList.contains("panel"));
-      const panels = {};
-      kids.filter(k => k.classList.contains("panel"))
-        .forEach(p => { panels[p.dataset.for] = p; });
-      const order = [];
-      let row = [];
-      items.forEach((item, i) => {
-        order.push(item);
-        row.push(item);
-        if ((i + 1) % cols === 0 || i === items.length - 1) {
-          row.forEach(r => {
-            if (panels[r.dataset.folder]) order.push(panels[r.dataset.folder]);
-          });
-          row = [];
-        }
-      });
-      order.forEach(el => grid.appendChild(el));
+  // ---- Right sidebar ----
+
+
+  function folderPath(id) {
+    const parts = [];
+    for (let f = byFolder(id); f; f = byFolder(f.parent)) parts.unshift(f.name);
+    return parts.join(" / ") || "no folder";
+  }
+
+  function sideOpt(label, on, run) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "side-opt" + (on ? " on" : "");
+    b.textContent = label;
+    b.setAttribute("aria-pressed", String(on));
+    b.addEventListener("click", run);
+    return b;
+  }
+
+  function renderSide() {
+    const sortBox = document.getElementById("sort-opts");
+    sortBox.innerHTML = "";
+    [["edited", "last edited"], ["date", "date"], ["title", "title"]]
+      .forEach(([key, label]) => sortBox.appendChild(sideOpt(label,
+        sortBy === key, () => {
+          sortBy = key;
+          localStorage.setItem(SORT_KEY, key);
+          renderGallery();
+        })));
+
+    // Every tag in use; choosing one lists its notes under the search
+    const tags = [...new Set(live().flatMap(n => n.tags))].sort();
+    const tagBox = document.getElementById("side-tags");
+    tagBox.innerHTML = "";
+    document.getElementById("tags-section").hidden = !tags.length;
+    tags.forEach(t => tagBox.appendChild(sideOpt("#" + t, tagFilter === t, () => {
+      tagFilter = tagFilter === t ? "" : t;
+      setSearchOpen(!!(tagFilter || query));
+      renderSide();
+    })));
+
+    const pinBox = document.getElementById("side-pinned");
+    pinBox.innerHTML = "";
+    const pinned = live().filter(n => n.pinned).sort(byEdited);
+    pinned.forEach(n => pinBox.appendChild(noteRow(n, 0)));
+    if (!pinned.length) {
+      const empty = document.createElement("div");
+      empty.className = "side-empty";
+      empty.textContent = "drag a note here to pin it";
+      pinBox.appendChild(empty);
+    }
+    renderResults();
+  }
+
+  // Matches for the search and chosen tag, listed below the search bar
+  function renderResults() {
+    const box = document.getElementById("search-results");
+    box.innerHTML = "";
+    const q = query.trim().toLowerCase();
+    if (!q && !tagFilter) return;
+    if (tagFilter) box.appendChild(filterBar());
+    const found = live().filter(n => (!q || matches(n, q))
+      && (!tagFilter || n.tags.includes(tagFilter))).sort(bySort);
+    if (!found.length) {
+      const msg = document.createElement("div");
+      msg.className = "side-empty";
+      msg.textContent = "no notes match";
+      box.appendChild(msg);
+      return;
+    }
+    found.slice(0, 60).forEach(n =>
+      box.appendChild(noteRow(n, 0, folderPath(n.folder))));
+  }
+
+  function setSearchOpen(open, focus) {
+    sideSearch.classList.toggle("open", open);
+    searchBtn.setAttribute("aria-expanded", String(open));
+    if (open && focus) searchEl.focus();
+  }
+
+  searchBtn.addEventListener("click", () => {
+    const open = !sideSearch.classList.contains("open");
+    setSearchOpen(open, true);
+    if (!open) {
+      searchEl.value = query = "";
+      tagFilter = "";
+      renderSide();
+    }
+  });
+
+  document.getElementById("new-folder")
+    .addEventListener("click", () => addFolder(null));
+
+  // Resize and fold, as on the dashboard
+  {
+    const wrap = document.getElementById("side-wrap");
+    const SIDE_KEY = "notes-side-width", FOLD_KEY = "notes-side-folded";
+    const sideWidth = w => Math.max(240, Math.min(520, Math.round(w)));
+    const saved = parseInt(localStorage.getItem(SIDE_KEY));
+    if (saved) sideEl.style.flexBasis = sideWidth(saved) + "px";
+    sideEl.classList.toggle("folded", localStorage.getItem(FOLD_KEY) === "1");
+    const setFolded = folded => {
+      sideEl.classList.toggle("folded", folded);
+      try { localStorage.setItem(FOLD_KEY, folded ? "1" : "0"); } catch {}
+    };
+    document.getElementById("fold").addEventListener("click", () => setFolded(true));
+    sideEl.querySelector(".unfold").addEventListener("click", () => setFolded(false));
+    wrap.querySelector(".aside-handle").addEventListener("pointerdown", e => {
+      if (e.button !== 0 || sideEl.classList.contains("folded")) return;
+      e.preventDefault();
+      const right = wrap.getBoundingClientRect().right;
+      sideEl.classList.add("dragging");
+      wrap.classList.add("resizing");
+      document.body.style.cursor = "col-resize";
+      const move = ev => {
+        sideEl.style.flexBasis = sideWidth(right - ev.clientX) + "px";
+      };
+      const up = () => {
+        document.removeEventListener("pointermove", move);
+        document.removeEventListener("pointerup", up);
+        sideEl.classList.remove("dragging");
+        wrap.classList.remove("resizing");
+        document.body.style.cursor = "";
+        try { localStorage.setItem(SIDE_KEY, parseInt(sideEl.style.flexBasis)); } catch {}
+      };
+      document.addEventListener("pointermove", move);
+      document.addEventListener("pointerup", up);
     });
   }
 
@@ -2740,37 +3091,29 @@
     if (!gDrag) return null;
     const note = gDrag.kind === "note";
     const t = e.target;
-    const fCard = t.closest(".folder-card[data-folder]");
-    if (fCard) {
-      const fid = fCard.dataset.folder;
-      if (note) return { cls: "drop-into", el: fCard, into: fid };
+    const intoOk = fid => note || !fid
+      || (fid !== gDrag.id && !isWithin(fid, gDrag.id));
+    const fRow = t.closest(".folder-row[data-folder]");
+    if (fRow) {
+      const fid = fRow.dataset.folder;
+      if (note) return { cls: "drop-into", el: fRow, into: fid };
       if (fid === gDrag.id || isWithin(fid, gDrag.id)) return null;
-      const r = fCard.getBoundingClientRect();
-      const x = (e.clientX - r.left) / r.width;
-      if (x < 0.25) return { before: fid, cls: "drop-before", el: fCard };
-      if (x > 0.75) return { after: fid, cls: "drop-after", el: fCard };
-      return { cls: "drop-into", el: fCard, into: fid };
+      const r = fRow.getBoundingClientRect();
+      const y = (e.clientY - r.top) / r.height;
+      if (y < 0.25) return { before: fid, cls: "drop-before", el: fRow };
+      if (y > 0.75) return { after: fid, cls: "drop-after", el: fRow };
+      return { cls: "drop-into", el: fRow, into: fid };
     }
-    const panel = t.closest(".panel");
-    if (panel) {
-      const fid = panel.dataset.for;
-      if (fid === "_trash") {
-        return note ? { cls: "drop-into", el: panel, trash: true } : null;
-      }
-      if (!note && (fid === gDrag.id || isWithin(fid, gDrag.id))) return null;
-      return { cls: "drop-into", el: panel, into: fid };
+    // Anywhere else in a level drops into that level's folder
+    const kids = t.closest(".tree-children[data-for]");
+    if (kids) {
+      const fid = kids.dataset.for;
+      if (!intoOk(fid)) return null;
+      const row = galBody.querySelector('.folder-row[data-folder="' + fid + '"]');
+      return { cls: "drop-into", el: row || kids, into: fid };
     }
-    const grid = t.closest(".grid");
-    if (!grid) return null;
-    if (grid.classList.contains("pinned")) {
-      return note ? { cls: "drop-into", el: grid, pin: true } : null;
-    }
-    if (grid.classList.contains("unsorted")) {
-      return note ? { cls: "drop-into", el: grid, into: null } : null;
-    }
-    if (grid.classList.contains("folders") && !grid.dataset.parent) {
-      return note ? null : { cls: "drop-into", el: grid, into: null };
-    }
+    const root = t.closest(".tree-root");
+    if (root) return { cls: "drop-into", el: root, into: null };
     return null;
   }
 
@@ -2840,12 +3183,13 @@
 
   searchEl.addEventListener("input", () => {
     query = searchEl.value;
-    renderGallery();
+    renderResults();
   });
   searchEl.addEventListener("keydown", e => {
     if (e.key === "Escape") {
       searchEl.value = query = "";
-      renderGallery();
+      if (!tagFilter) setSearchOpen(false);
+      renderResults();
     }
   });
 
@@ -5782,7 +6126,6 @@
     cancelAnimationFrame(arrangeFrame);
     arrangeFrame = requestAnimationFrame(() => {
       if (current) placeBack();
-      else arrangePanels();
     });
   });
 
@@ -5835,7 +6178,6 @@
         applyClasses();
         setTimeout(() => {
           if (current) placeBack();
-          else arrangePanels();
         }, 270);
       }
     }
