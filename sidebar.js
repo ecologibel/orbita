@@ -336,6 +336,8 @@
       /* The sidebar icon is the only sync control */
       #tool-sync { display: none !important; }
       #tk-sidebar #tk-sync[hidden] { display: none; }
+      #tk-sidebar #tk-ambience[hidden] { display: none; }
+      #tk-sidebar #tk-ambience { color: #7fdbca; }
       #tk-sidebar #tk-sync[data-state="pending"],
       #tk-sidebar #tk-sync[data-state="synced"],
       #tk-sidebar #tk-sync[data-state="syncing"] { color: #7fdbca; }
@@ -672,6 +674,19 @@
     help.innerHTML = helpItem.icon;
     controls.appendChild(help);
 
+    // Shown while ambience plays; clicking it stops the ambience
+    const amb = document.createElement("button");
+    amb.className = "tk-btn";
+    amb.hidden = true;
+    amb.id = "tk-ambience";
+    amb.type = "button";
+    amb.innerHTML = AMBIENCE_ICON;
+    amb.addEventListener("click", () => {
+      if (window.ToolkitSounds) ToolkitSounds.stopAmbience();
+    });
+    controls.appendChild(amb);
+    if (ambienceName) setAmbience(ambienceName);
+
     // Hidden until sync.js reports a state
     const s = document.createElement("button");
     s.className = "tk-btn";
@@ -830,6 +845,23 @@
   }
 
   // Show sync.js's state on the sync icon
+  // A speaker with sound waves, for ambience that is playing
+  const AMBIENCE_ICON = svg('<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/>'
+    + '<path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/>');
+  let ambienceName = null;
+
+  function setAmbience(name) {
+    ambienceName = name || null;
+    if (!nav) return;
+    const b = nav.querySelector("#tk-ambience");
+    if (!b) return;
+    b.hidden = !ambienceName;
+    const label = ambienceName ? "ambience: " + ambienceName + ", click to stop" : "";
+    b.dataset.label = label;
+    b.setAttribute("aria-label", label);
+    updateTip();
+  }
+
   function setSync(state, label) {
     syncState = { label, state };
     if (!nav) return;
@@ -1237,27 +1269,69 @@
     location.href = (cfg && cfg.root || "../") + "focus/index.html";
   }
 
-  // A soft rising chime, made in the browser
-  function chime() {
+  // ---- Chimes ----
+  //
+  // Sounds made in the browser for when the timer runs out. The focus
+  // settings choose one and its volume ("focus-settings" in storage);
+  // chime(name, volume) plays a given one, for previews.
+
+  const SETTINGS_KEY = "focus-settings";
+  // Each chime: notes as [frequency, start (s), length (s), wave, peak]
+  const CHIMES = {
+    // A soft rising triad
+    chime: [[784, 0, 1.8, "sine", 0.16], [1046.5, 0.32, 1.8, "sine", 0.16],
+      [1318.5, 0.64, 1.8, "sine", 0.16]],
+    // One bell strike with a bright overtone
+    ding: [[1318.5, 0, 2.6, "sine", 0.2], [2637, 0, 1.2, "sine", 0.05],
+      [3951, 0, 0.5, "sine", 0.02]],
+    // Quick high notes tumbling upwards
+    sparkle: [[1568, 0, 0.6, "triangle", 0.09], [2093, 0.08, 0.6, "triangle", 0.09],
+      [2637, 0.16, 0.7, "triangle", 0.09], [3136, 0.24, 0.8, "triangle", 0.08],
+      [4186, 0.32, 1.1, "sine", 0.06]],
+    // Two low, slow notes
+    soft: [[523.25, 0, 2.4, "sine", 0.14], [659.25, 0.45, 2.6, "sine", 0.12]]
+  };
+
+  function chimeSettings() {
+    try {
+      const s = JSON.parse(read(SETTINGS_KEY)) || {};
+      return {
+        name: CHIMES[s.chime] ? s.chime : "chime",
+        volume: Number.isFinite(s.chimeVolume)
+          ? Math.min(1, Math.max(0, s.chimeVolume)) : 0.7
+      };
+    } catch {
+      return { name: "chime", volume: 0.7 };
+    }
+  }
+
+  function chime(name, volume) {
+    const saved = chimeSettings();
+    const notes = CHIMES[name] || CHIMES[saved.name];
+    const level = Number.isFinite(volume) ? volume : saved.volume;
+    if (!level) return;
     try {
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return;
       const ctx = new AC();
       if (ctx.state === "suspended") ctx.resume();
-      [[784, 0], [1046.5, 0.32], [1318.5, 0.64]].forEach(([f, t]) => {
+      let end = 0;
+      notes.forEach(([f, t, len, wave, peak]) => {
         const o = ctx.createOscillator(), g = ctx.createGain();
         const at = ctx.currentTime + t;
-        o.type = "sine";
+        o.type = wave;
         o.frequency.value = f;
         g.gain.setValueAtTime(0.0001, at);
-        g.gain.exponentialRampToValueAtTime(0.16, at + 0.03);
-        g.gain.exponentialRampToValueAtTime(0.0001, at + 1.8);
+        g.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak * level * 1.4),
+          at + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, at + len);
         o.connect(g);
         g.connect(ctx.destination);
         o.start(at);
-        o.stop(at + 1.9);
+        o.stop(at + len + 0.1);
+        end = Math.max(end, t + len);
       });
-      setTimeout(() => ctx.close(), 3200);
+      setTimeout(() => ctx.close(), (end + 1) * 1000);
     } catch {}
   }
 
@@ -1625,6 +1699,7 @@
 
   window.ToolkitSidebar = {
     folderIcon, folderIcons: Object.keys(FOLDER_ICONS), icon, init, modal,
+    setAmbience,
     openSwitcher, preserveRecovery, refresh, setActive, setSync, title, toast
   };
 
