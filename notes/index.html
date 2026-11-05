@@ -84,50 +84,48 @@
     --r-str:   #9ccc8a;
   }
   .t-light {
-    --c-white: color-mix(in srgb, #FFFFFF 50%, #000);
-    --c-silver: color-mix(in srgb, #C5C9CE 50%, #000);
-    --c-grey: color-mix(in srgb, #858B93 50%, #000);
-    --c-charcoal: color-mix(in srgb, #41464D 50%, #000);
-    --c-black: color-mix(in srgb, #202327 50%, #000);
-    --c-army-green: color-mix(in srgb, #A4C65A 50%, #000);
-    --c-emerald: color-mix(in srgb, #35B98B 50%, #000);
-    --c-green: color-mix(in srgb, #36B84A 50%, #000);
-    --c-lime: color-mix(in srgb, #91D52E 50%, #000);
-    --c-chartreuse: color-mix(in srgb, #C1D62E 50%, #000);
-    --c-yellow: color-mix(in srgb, #F0D52E 50%, #000);
-    --c-gold: color-mix(in srgb, #E9AD22 50%, #000);
-    --c-amber: color-mix(in srgb, #F49A20 50%, #000);
-    --c-orange: color-mix(in srgb, #F47721 50%, #000);
-    --c-tangerine: color-mix(in srgb, #F05B35 50%, #000);
-    --c-clay: color-mix(in srgb, #D18A70 50%, #000);
-    --c-coral: color-mix(in srgb, #F05261 50%, #000);
-    --c-red: color-mix(in srgb, #E52F42 50%, #000);
-    --c-burgundy: color-mix(in srgb, #C65375 50%, #000);
-    --c-rose: color-mix(in srgb, #E34D91 50%, #000);
-    --c-magenta: color-mix(in srgb, #D62DB5 50%, #000);
-    --c-orchid: color-mix(in srgb, #BD45CF 50%, #000);
-    --c-purple: color-mix(in srgb, #A16BD0 50%, #000);
-    --c-violet: color-mix(in srgb, #A05BE8 50%, #000);
-    --c-indigo: color-mix(in srgb, #7778D5 50%, #000);
-    --c-blue: color-mix(in srgb, #2379E5 50%, #000);
-    --c-azure: color-mix(in srgb, #219FCB 50%, #000);
-    --c-cyan: color-mix(in srgb, #20C4D0 50%, #000);
-    --c-teal: color-mix(in srgb, #238F91 50%, #000);
-    --c-sage: color-mix(in srgb, #91BFA0 50%, #000);
+    --c-white: color-mix(in srgb, #FFFFFF 70%, #000);
+    --c-silver: color-mix(in srgb, #C5C9CE 70%, #000);
+    --c-grey: #6a737d;
+    --c-charcoal: color-mix(in srgb, #41464D 70%, #000);
+    --c-black: color-mix(in srgb, #202327 70%, #000);
+    --c-army-green: color-mix(in srgb, #A4C65A 70%, #000);
+    --c-emerald: color-mix(in srgb, #35B98B 70%, #000);
+    --c-green: #5f8a1c;
+    --c-lime: color-mix(in srgb, #91D52E 70%, #000);
+    --c-chartreuse: color-mix(in srgb, #C1D62E 70%, #000);
+    --c-yellow: #a66f00;
+    --c-gold: color-mix(in srgb, #E9AD22 70%, #000);
+    --c-amber: color-mix(in srgb, #F49A20 70%, #000);
+    --c-orange: #c9532b;
+    --c-tangerine: color-mix(in srgb, #F05B35 70%, #000);
+    --c-clay: color-mix(in srgb, #D18A70 70%, #000);
+    --c-coral: color-mix(in srgb, #F05261 70%, #000);
+    --c-red: #d73a49;
+    --c-burgundy: color-mix(in srgb, #C65375 70%, #000);
+    --c-rose: #c2407c;
+    --c-magenta: color-mix(in srgb, #D62DB5 70%, #000);
+    --c-orchid: color-mix(in srgb, #BD45CF 70%, #000);
+    --c-purple: #8e44c4;
+    --c-violet: color-mix(in srgb, #A05BE8 70%, #000);
+    --c-indigo: color-mix(in srgb, #7778D5 70%, #000);
+    --c-blue: #3b6fd6;
+    --c-azure: color-mix(in srgb, #219FCB 70%, #000);
+    --c-cyan: color-mix(in srgb, #20C4D0 70%, #000);
+    --c-teal: color-mix(in srgb, #238F91 70%, #000);
+    --c-sage: color-mix(in srgb, #91BFA0 70%, #000);
     --c-pink: var(--c-rose);
-    /* Lighter tag tints, so teal text on them stays readable */
-    --tint:       7%;
-    --accent:       #086b69;
+    --accent:       #0c9e9a;
     --bg:           #ecf2f2;
     --bg-surface:   #f6fafa;
     --block-sel:    rgba(12, 158, 154, 0.12);
     --border:       #a3c4c6;
     --code-bg:      rgba(12, 158, 154, 0.08);
     --code-block:   #ebf5f3;
-    --code-fg:      #9a3a17;
+    --code-fg:      #c9532b;
     --drag-bg:      rgba(12, 158, 154, 0.1);
     --fg:           #24292e;
-    --fg-muted:     #5a626a;
+    --fg-muted:     #6a737d;
     --head-tint:    rgba(236, 242, 242, 0.5);
     --hover:        #d9e8ea;
     --mark-bg:      color-mix(in srgb, var(--accent) 16%, transparent);
@@ -552,7 +550,7 @@
   /* Coloured folders and notes: the folder's title and icon, and the
      titles of notes beneath it, readable in either mode */
   .t-dark .coloured { --ink: color-mix(in srgb, var(--pick) 55%, #fff); }
-  .t-light .coloured { --ink: color-mix(in srgb, var(--pick) 50%, #000); }
+  .t-light .coloured { --ink: color-mix(in srgb, var(--pick) 70%, #000); }
   .folder-row.coloured .folder-name, .folder-row.coloured .tree-icon,
   .folder-row.coloured .tree-chev, .note-row.coloured .tree-name {
     color: var(--ink);
@@ -1043,7 +1041,7 @@
   }
   .tag-chip {
     align-items: center;
-    background: color-mix(in srgb, var(--accent) var(--tint, 16%), transparent);
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
     border-radius: 3px;
     color: var(--accent);
     display: inline-flex;
@@ -1062,7 +1060,7 @@
     opacity: 0.6;
     padding: 0 0 0 2px;
   }
-  .tag-chip button:hover, .t-light .tag-chip button { opacity: 1; }
+  .tag-chip button:hover { opacity: 1; }
   .add-tag {
     background: none;
     border: none;
@@ -1076,9 +1074,6 @@
     transition: opacity 0.15s;
   }
   .add-tag:hover { background: var(--hover); opacity: 1; }
-  /* Light mode: the grey alone is faint enough, so no fade */
-  .t-light .add-tag, .t-light .pin-toggle, .t-light .edited,
-  .t-light .word-count { opacity: 1; }
   /* Fields are typed in place, in teal, without a box */
   .tag-input {
     background: none;
@@ -1163,14 +1158,6 @@
   .cm-paren-4 { color: #04bdce !important; }
   .cm-paren-5 { color: #8ea9ec !important; }
   .cm-paren-6 { color: #d891db !important; }
-  /* Light mode: the same rainbow, deep enough to read */
-  .t-light #code-host .cm-paren-0 { color: #b8435a !important; }
-  .t-light #code-host .cm-paren-1 { color: #8f5f12 !important; }
-  .t-light #code-host .cm-paren-2 { color: #4f6b12 !important; }
-  .t-light #code-host .cm-paren-3 { color: #0f7352 !important; }
-  .t-light #code-host .cm-paren-4 { color: #0a6874 !important; }
-  .t-light #code-host .cm-paren-5 { color: #3b5cb5 !important; }
-  .t-light #code-host .cm-paren-6 { color: #9a3fa0 !important; }
 
   #code-host .CodeMirror {
     height: auto !important;
@@ -1226,16 +1213,16 @@
      teal italic comments; strings and numbers get their own colours */
   .t-light #code-host .cm-keyword    { color: #2d68e9 !important; }
   .t-light #code-host .cm-operator   { color: #077a76 !important; }
-  .t-light #code-host .cm-number     { color: #4a51c2 !important; }
+  .t-light #code-host .cm-number     { color: #5e65d9 !important; }
   .t-light #code-host .cm-string     { color: #1f7a45 !important; }
-  .t-light #code-host .cm-comment    { color: #3b6f64 !important;
+  .t-light #code-host .cm-comment    { color: #4f8f82 !important;
     font-style: italic; }
   .t-light #code-host .cm-def        { color: #c43d00 !important; }
   .t-light #code-host .cm-variable   { color: #1b4d42 !important; }
   .t-light #code-host .cm-variable-2 { color: #077a76 !important; }
   .t-light #code-host .cm-variable-3 { color: #1b4d42 !important; }
   .t-light #code-host .cm-arg-is     { color: #077a76 !important; }
-  .t-light #code-host .cm-atom       { color: #4a51c2 !important; }
+  .t-light #code-host .cm-atom       { color: #5e65d9 !important; }
   .t-light #code-host .cm-builtin    { color: #c43d00 !important; }
   .t-light #code-host .cm-fn-call:not(.cm-string):not(.cm-comment):not(.cm-keyword) {
     color: #c43d00 !important;
@@ -1323,7 +1310,7 @@
   }
   .date-token { color: var(--accent); }
   .tag-token {
-    background: color-mix(in srgb, var(--accent) var(--tint, 16%), transparent);
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
     border-radius: 3px;
     color: var(--accent);
   }

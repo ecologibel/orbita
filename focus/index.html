@@ -37,22 +37,20 @@
     --panel:      rgba(19, 85, 92, 0.25);
   }
   .t-light {
-    /* Lighter tag tints, so teal text on them stays readable */
-    --tint:       7%;
-    --accent:     #086b69;
+    --accent:     #0c9e9a;
     --bg:         #ecf2f2;
     --bg-surface: #f6fafa;
     --border:     #a3c4c6;
     --done:       #2f5d69;
     --fg:         #24292e;
-    --fg-muted:   #5a626a;
+    --fg-muted:   #6a737d;
     --hover:      #d9e8ea;
     --shadow:     0 4px 18px rgba(36, 70, 75, 0.14);
     --tint:       rgba(12, 158, 154, 0.1);
     --glow:       rgba(12, 158, 154, 0.4);
     --mark-bg:    color-mix(in srgb, var(--accent) 16%, transparent);
     --code-bg:    rgba(12, 158, 154, 0.08);
-    --code-fg:    #9a3a17;
+    --code-fg:    #c9532b;
     --panel:      #dce7e8;
   }
 
@@ -241,8 +239,6 @@
     z-index: 10;
   }
   #leave:hover, #leave:focus-visible { color: var(--fg); opacity: 1; }
-  /* Light mode: the grey alone is faint enough, so no fade */
-  .t-light #leave { opacity: 1; }
   #leave svg { flex-shrink: 0; }
 
   /* Choose another task: the first item in the settings sidebar */
@@ -403,7 +399,7 @@
   /* Dates and tags, as in the to dos */
   .date-token, .mention-token { color: var(--accent); }
   .tag-token {
-    background: color-mix(in srgb, var(--accent) var(--tint, 16%), transparent);
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
     border-radius: 3px;
     color: var(--accent);
   }
