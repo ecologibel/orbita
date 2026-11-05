@@ -52,7 +52,7 @@
   .mode-tabs { align-items:center;display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px; }
   .visually-hidden { clip:rect(0 0 0 0);height:1px;overflow:hidden;position:absolute;white-space:nowrap;width:1px; }
   @keyframes list-in { from { opacity:0;transform:translateY(6px); } to { opacity:1;transform:none; } }
-  .selection-list { border:1px solid var(--border);border-radius:8px;min-height:145px;padding:12px;transition:opacity .2s,border-color .2s,background .2s; }
+  .selection-list { border:1px solid var(--border);border-radius:8px;padding:12px;transition:opacity .2s,border-color .2s,background .2s; }
   .selection-list.active { background:color-mix(in srgb,var(--accent) 5%,var(--bg));border-color:var(--accent); }
   .selection-list.inactive { display:none; }
   .selection-list.active { animation:list-in .25s ease both; }
@@ -61,7 +61,7 @@
   .event-kinds { display:flex;gap:8px;margin:14px 0 4px; }
   .event-kinds[hidden],.event-words[hidden] { display:none; }
   .event-words { animation:list-in .25s ease both;margin-top:14px; }
-  #event-choices .choice[aria-pressed=true] { background:color-mix(in srgb,var(--word-color) 22%,transparent);border-color:var(--word-color);color:var(--fg); }
+
   .list-heading { align-items:center;background:transparent;border:0;border-bottom:1px solid var(--border);border-radius:0;display:flex;font-weight:600;justify-content:space-between;margin:-2px 0 9px;padding:2px 0 9px;text-align:left;width:100%; }
   .list-heading[aria-pressed=true] { color:var(--accent); }
   .list-head { align-items:center;border-bottom:1px solid var(--border);display:flex;gap:8px;margin:-2px 0 9px;padding:2px 0 9px; }
@@ -71,10 +71,20 @@
   .list-actions button:hover:not(:disabled),.list-actions button:focus-visible { border-color:var(--accent);color:var(--accent); }
   .list-actions button:disabled { cursor:default;opacity:.4; }
   .choice-list { display:flex;flex-wrap:wrap;gap:6px; }
+  /* Pills: text and a light fill in their tag's or calendar's colour (teal
+     when they have none); selected, the fill strengthens, reading lighter
+     in dark mode and darker in light mode */
+  #app .choice { --pill:var(--accent);background:color-mix(in srgb,var(--pill) 14%,transparent);border-color:color-mix(in srgb,var(--pill) 45%,transparent);color:var(--pill); }
+  #app .choice.tag-token { --pill:var(--tag-color); }
+  #app .choice[aria-pressed=true] { background:color-mix(in srgb,var(--pill) 40%,transparent);border-color:var(--pill); }
+  #app.t-light .choice { color:color-mix(in srgb,var(--pill) 72%,#000000)!important; }
+  #app.t-dark .choice[aria-pressed=true] { color:color-mix(in srgb,var(--pill) 55%,#ffffff); }
+  #app.t-dark .choice.tag-color-black,#app.t-dark .choice.tag-color-charcoal { color:color-mix(in srgb,var(--pill) 45%,#ffffff)!important; }
+  #app .choice:hover:not(:disabled),#app .choice:focus-visible { border-color:var(--pill);outline:none; }
   .choice { background:transparent;border:1px solid var(--border);border-radius:999px;font-size:.88em;line-height:1.2;max-width:100%;overflow-wrap:anywhere;padding:6px 10px;text-align:left; }
-  .choice:not(.tag-token)[aria-pressed=true] { background:color-mix(in srgb,var(--accent) 14%,transparent);border-color:var(--accent);color:var(--accent); }
-  .choice.tag-token[aria-pressed=true] { background:color-mix(in srgb,currentColor 25%,transparent);border-color:currentColor; }
-  .choice.tag-token[aria-pressed=false] { background:transparent;border-color:currentColor;opacity:.58; }
+
+
+
   .tag-token { border-radius:999px; }
   .tag-token[class*="tag-color-"] { background:color-mix(in srgb,var(--tag-color) 18%,transparent);color:var(--tag-color); }
   .legend-heading[class*="tag-color-"] { background:color-mix(in srgb,var(--tag-color) 18%,var(--bg-surface));color:var(--tag-color); }
@@ -350,7 +360,7 @@
     $("#calendar-all").disabled=!shownCalendars.length||shownCalendars.every(c=>selectedCalendars.has(c.id));$("#calendar-none").disabled=!selectedCalendars.size;
     $("#tag-all").disabled=!tags.length||tags.every(t=>selectedTags.has(t));$("#tag-none").disabled=!selectedTags.size;
     const cb=$("#calendar-choices");cb.replaceChildren();if(!calendars.length)cb.innerHTML='<span class="muted-list">connect Google Calendar to load calendars.</span>';else if(!includedCalendars().length)cb.innerHTML='<span class="muted-list">all calendars are excluded; re-enable calendars in the sidebar.</span>';
-    includedCalendars().forEach(c=>{const b=document.createElement("button");b.type="button";b.className="choice";b.textContent=c.summary||"untitled calendar";b.setAttribute("aria-pressed",selectedCalendars.has(c.id));b.onclick=()=>{selectionMode="calendars";selectedCalendars.has(c.id)?selectedCalendars.delete(c.id):selectedCalendars.add(c.id);save();render();};cb.append(b);});
+    includedCalendars().forEach(c=>{const b=document.createElement("button");b.type="button";b.className="choice";b.textContent=c.summary||"untitled calendar";b.style.setProperty("--pill",color(c));b.setAttribute("aria-pressed",selectedCalendars.has(c.id));b.onclick=()=>{selectionMode="calendars";selectedCalendars.has(c.id)?selectedCalendars.delete(c.id):selectedCalendars.add(c.id);save();render();};cb.append(b);});
     const tb=$("#tag-choices");tb.replaceChildren();if(!tags.length)tb.innerHTML='<span class="muted-list">create tags in the sidebar.</span>';
     tagsSorted().forEach(t=>{const selected=selectedTags.has(t),b=document.createElement("button");b.type="button";b.className="choice tag-token tag-color-"+tagColor(t);paintTag(b,t);b.textContent=t;b.setAttribute("aria-pressed",selected);b.onclick=()=>{selectionMode="tags";selectedTags.has(t)?selectedTags.delete(t):selectedTags.add(t);save();render();};tb.append(b);});
   }
@@ -411,7 +421,7 @@
     if(calendars.length&&!includedCalendars().length)box.innerHTML='<div class="empty-list">all calendars are excluded.</div>';
     includedCalendars().forEach(c=>{const row=document.createElement("div");row.className="calendar-row";const dot=document.createElement("button");dot.type="button";dot.className="calendar-color-button";dot.style.setProperty("--calendar-color",color(c));dot.title=("change colour for "+(c.summary||"untitled calendar")).toLowerCase();dot.setAttribute("aria-label",dot.title);const dotMark=document.createElement("i");dotMark.className="calendar-dot";dotMark.style.background=color(c);dot.append(dotMark);dot.onclick=()=>openTagPopover(dot,"calendar-colour",c.id);const name=document.createElement("span");name.className="calendar-name";name.textContent=c.summary||"untitled calendar";const tagButton=document.createElement("button");tagButton.type="button";tagButton.className="assign-tag-button";tagButton.setAttribute("aria-label","assign tag for "+name.textContent);const assigned=assignments[c.id];if(assigned&&tags.includes(assigned)){tagButton.style.borderColor=paletteHex(tagColor(assigned));const chip=document.createElement("span");chip.className="assigned-tag tag-token tag-color-"+tagColor(assigned);paintTag(chip,assigned);chip.textContent=assigned;tagButton.append(chip);}else{const none=document.createElement("span");none.className="muted-list";none.textContent="no tag";tagButton.append(none);}const caret=document.createElement("span");caret.className="tag-caret";caret.textContent="▾";tagButton.append(caret);tagButton.onclick=()=>openTagPopover(tagButton,"assign",c.id);row.append(dot,name,tagButton);box.append(row);});
     const excluded=$("#exclude-list");excluded.replaceChildren();if(!calendars.length)excluded.innerHTML='<span class="muted-list">connect Google Calendar to load calendars.</span>';
-    calendarsSorted().forEach(c=>{const b=document.createElement("button");b.type="button";b.className="choice";b.textContent=c.summary||"untitled calendar";b.setAttribute("aria-pressed",!excludedCalendars.has(c.id));b.onclick=()=>{if(excludedCalendars.has(c.id))excludedCalendars.delete(c.id);else excludedCalendars.add(c.id);save();render();};excluded.append(b);});
+    calendarsSorted().forEach(c=>{const b=document.createElement("button");b.type="button";b.className="choice";b.textContent=c.summary||"untitled calendar";b.style.setProperty("--pill",color(c));b.setAttribute("aria-pressed",!excludedCalendars.has(c.id));b.onclick=()=>{if(excludedCalendars.has(c.id))excludedCalendars.delete(c.id);else excludedCalendars.add(c.id);save();render();};excluded.append(b);});
   }
   $("#tag-form").onsubmit=e=>{e.preventDefault();const input=$("#tag-name"),t=input.value.trim();if(!t)return;if(tags.some(x=>x.toLowerCase()===t.toLowerCase())){say("that tag already exists.",true);return;}tags.push(t);tagColors[t]="blue";selectedTags.add(t);input.value="";save();render();};
   // Events: an action is the first word of a title, a topic the rest
@@ -423,14 +433,14 @@
   function renderEvents(){
     const cb=$("#event-calendars");cb.replaceChildren();cb.classList.toggle("has-choice",!!eventCalendar);
     if(!calendars.length)cb.innerHTML='<span class="muted-list">connect Google Calendar to load calendars.</span>';
-    includedCalendars().forEach(c=>{const b=document.createElement("button");b.type="button";b.className="choice";b.textContent=c.summary||"untitled calendar";b.setAttribute("aria-pressed",c.id===eventCalendar);b.onclick=()=>{selectionMode="events";eventCalendar=c.id===eventCalendar?null:c.id;selectedWords={actions:new Set(),topics:new Set()};save();render();};cb.append(b);});
+    includedCalendars().forEach(c=>{const b=document.createElement("button");b.type="button";b.className="choice";b.textContent=c.summary||"untitled calendar";b.style.setProperty("--pill",color(c));b.setAttribute("aria-pressed",c.id===eventCalendar);b.onclick=()=>{selectionMode="events";eventCalendar=c.id===eventCalendar?null:c.id;selectedWords={actions:new Set(),topics:new Set()};save();render();};cb.append(b);});
     $("#event-kinds").hidden=!eventCalendar;$("#kind-actions").setAttribute("aria-pressed",eventKind==="actions");$("#kind-topics").setAttribute("aria-pressed",eventKind==="topics");
     const show=!!(eventCalendar&&eventKind);$("#event-words").hidden=!show;if(!show)return;
     const all=wordsFor(eventKind),picked=selectedWords[eventKind];$("#event-words-label").textContent=eventKind;
     const n=all.filter(w=>picked.has(w)).length;$("#event-count").textContent=n?n+" selected":"";
     $("#event-all").disabled=!all.length||all.every(w=>picked.has(w));$("#event-none").disabled=!n;
     const box=$("#event-choices");box.replaceChildren();if(!all.length){box.innerHTML='<span class="muted-list">no events in this date range.</span>';return;}
-    all.forEach((w,i)=>{const b=document.createElement("button");b.type="button";b.className="choice";b.textContent=w;b.setAttribute("aria-pressed",picked.has(w));b.style.setProperty("--word-color",WORD_PALETTE[i%WORD_PALETTE.length].hex);b.onclick=()=>{selectionMode="events";picked.has(w)?picked.delete(w):picked.add(w);save();render();};box.append(b);});
+    all.forEach((w,i)=>{const b=document.createElement("button");b.type="button";b.className="choice";b.textContent=w;b.setAttribute("aria-pressed",picked.has(w));b.onclick=()=>{selectionMode="events";picked.has(w)?picked.delete(w):picked.add(w);save();render();};box.append(b);});
   }
   function chosen(){if(selectionMode==="events")return eventSeries();return selectionMode==="calendars"?includedCalendars().filter(c=>selectedCalendars.has(c.id)):includedCalendars().filter(c=>selectedTags.has(assignments[c.id]));}
   function chosenTags(){if(selectionMode==="tags")return tagsSorted().filter(t=>selectedTags.has(t));const used=new Set(chosen().map(c=>assignments[c.id]).filter(Boolean));return tagsSorted().filter(t=>used.has(t));}
