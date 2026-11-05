@@ -258,20 +258,75 @@
     return res;
   }
 
-  async function findFile(cfg) {
-    const q = encodeURIComponent("name = '" + cfg.file + "'");
-    const res = await drive(
-      API + "?fields=files(id)&spaces=appDataFolder&q=" + q
-    );
+  // Drive files with this name, oldest first
+  async function listFiles(cfg) {
+    const q = encodeURIComponent("name = '" + cfg.file + "' and trashed = false");
+    const res = await drive(API + "?fields=files(id)&orderBy=createdTime"
+      + "&spaces=appDataFolder&q=" + q);
     const { files } = await res.json();
-    return Array.isArray(files) && files.length
-      && typeof files[0].id === "string" ? files[0].id : null;
+    return Array.isArray(files)
+      ? files.filter(f => f && typeof f.id === "string").map(f => f.id) : [];
+  }
+
+  async function readFile(cfg, id) {
+    try {
+      const res = await drive(API + "/" + id + "?alt=media");
+      const remote = await res.json();
+      return validRemote(cfg, remote) ? remote : null;
+    } catch (err) {
+      if (err.message === "http 404") return null;
+      throw err;
+    }
+  }
+
+  // Two devices syncing for the first time at once can each create a file.
+  // Keep the oldest, so every device settles on the same one; copy in the
+  // newest data from the others, keeping a local backup of each, then delete
+  // them.
+  async function mergeDuplicates(cfg, keepId, extraIds) {
+    let best = await readFile(cfg, keepId), changed = false;
+    for (const id of extraIds) {
+      const extra = await readFile(cfg, id);
+      if (!extra) continue;
+      try {
+        nativeSet.call(localStorage, "sync-backup-" + cfg.file + "-duplicate-"
+          + id, JSON.stringify({ data: extra.data, saved: Date.now(),
+          updated: extra.updated }));
+      } catch (err) {
+        throw new Error("duplicate backup failed");
+      }
+      if (!best || extra.updated > best.updated) {
+        best = extra;
+        changed = true;
+      }
+    }
+    if (changed) await writeRemote(cfg, { fileId: keepId }, best);
+    for (const id of extraIds) {
+      try {
+        await drive(API + "/" + id, { method: "DELETE" });
+      } catch (err) {
+        if (err.message !== "http 404") throw err;
+      }
+    }
+  }
+
+  async function findFile(cfg) {
+    const ids = await listFiles(cfg);
+    if (!ids.length) return null;
+    if (ids.length > 1) await mergeDuplicates(cfg, ids[0], ids.slice(1));
+    return ids[0];
   }
 
   async function readRemote(cfg, m) {
+    const task = runtime.get(cfg.file);
     let retried = false;
     while (true) {
-      if (!m.fileId) m.fileId = await findFile(cfg);
+      // Look the file up once per page load, even when its id is saved, so
+      // duplicates made on other devices are found and merged
+      if (!m.fileId || (task && !task.checked)) {
+        m.fileId = await findFile(cfg);
+        if (task) task.checked = true;
+      }
       if (!m.fileId) return null;
       try {
         const res = await drive(API + "/" + m.fileId + "?alt=media");
@@ -617,7 +672,8 @@
       };
       configs.set(cfg.file, cfg);
       runtime.set(cfg.file, {
-        again: false, busy: false, pushTimer: null, state: null
+        again: false, busy: false, checked: false, pushTimer: null,
+        state: null
       });
     } else {
       cfg.keys = options.keys.slice();

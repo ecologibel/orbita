@@ -64,8 +64,16 @@
     const patches = [];
     const requests = [];
 
+    const fileIds = { [todoFile]: todoId, [notesFile]: notesId };
+
     window.fetch = async (url, options = {}) => {
       const method = options.method || "GET";
+      if (method === "GET" && url.includes("spaces=appDataFolder")) {
+        const name = decodeURIComponent(url).match(/name = '([^']+)'/);
+        const id = name && fileIds[name[1]];
+        return { ok: true, status: 200,
+          json: async () => ({ files: id ? [{ id }] : [] }) };
+      }
       for (const [id, remote] of remotes) {
         if (url.includes("/files/" + id + "?alt=media") && method === "GET") {
           requests.push({ id, method });
