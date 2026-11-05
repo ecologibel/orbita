@@ -42,14 +42,14 @@
 
   // Hover labels for the sidebar's sync icon
   const SIDEBAR = {
-    error:       "sync: failed, click to retry",
-    conflict:    "sync: conflict, click to resolve",
+    error:       "sync failed, click to retry",
+    conflict:    "conflict",
     noClient:    "sync: no client ID in sync.js",
-    pending:     "sync: saving…",
-    reconnect:   "sync: signed out, click to reconnect",
-    signedOut:   "sync: signed out, click to sign in",
-    synced:      "sync: synced",
-    syncing:     "sync: syncing…",
+    pending:     "syncing",
+    reconnect:   "sign in to sync",
+    signedOut:   "sign in to sync",
+    synced:      "synced",
+    syncing:     "syncing",
     unavailable: "sync: unavailable on local files"
   };
 
@@ -506,13 +506,7 @@
   function notify() {
     if (!state) return;
     if (window.ToolkitSidebar && ToolkitSidebar.setSync) {
-      const conflict = state === "conflict"
-        ? Array.from(configs.values()).find(cfg =>
-          runtime.get(cfg.file).state === "conflict") : null;
-      const label = conflict
-        ? "sync: conflict in " + conflict.file + ", click to resolve"
-        : SIDEBAR[state];
-      ToolkitSidebar.setSync(state, label);
+      ToolkitSidebar.setSync(state, SIDEBAR[state]);
     }
   }
 
@@ -531,19 +525,58 @@
     if (cfg) resolveConflict(cfg);
   }
 
+  const TOOL_NAMES = { "notes.json": "notes", "to-dos.json": "to dos",
+    "r-codepad.json": "codepad", "timekeeper.json": "timekeeper settings" };
+
+  function toolName(cfg) {
+    return TOOL_NAMES[cfg.file] || cfg.file.replace(/\.json$/, "");
+  }
+
+  // Ask which copy to keep: "LOCAL", "DRIVE", or null to decide later
+  async function chooseCopy(cfg) {
+    const name = toolName(cfg);
+    if (!(window.ToolkitSidebar && ToolkitSidebar.modal)) {
+      const answer = window.prompt(
+        "Sync conflict in " + name + ": type LOCAL to keep this device's "
+        + "copy, or DRIVE to use Drive's copy. Cancel to leave both unchanged."
+      );
+      if (answer === null) return null;
+      const choice = answer.trim().toUpperCase();
+      if (choice === "LOCAL" || choice === "DRIVE") return choice;
+      window.alert("Type LOCAL or DRIVE. The conflict is still saved.");
+      return null;
+    }
+
+    const when = t => t ? new Date(t).toLocaleString() : "an unknown time";
+    const remote = savedConflictRemote(cfg);
+    const body = document.createElement("div");
+    const intro = document.createElement("p");
+    intro.textContent = name + " changed on this device and in Google Drive "
+      + "since they last synced. Choose which copy to keep.";
+    const times = document.createElement("p");
+    times.className = "tkm-muted";
+    times.textContent = "this device: last changed " + when(loadMeta(cfg).updated)
+      + " · drive: last changed " + when(remote && remote.updated);
+    const kept = document.createElement("p");
+    kept.className = "tkm-muted";
+    kept.textContent = "The other copy is kept in backups on the help page.";
+    body.append(intro, times, kept);
+    return ToolkitSidebar.modal({
+      title: "sync conflict in " + name,
+      body,
+      buttons: [
+        { label: "local", detail: "keep this device's copy", value: "LOCAL" },
+        { label: "drive", detail: "use Google Drive's copy", value: "DRIVE" }
+      ]
+    });
+  }
+
   async function resolveConflict(cfg) {
     const task = runtime.get(cfg.file);
     if (!task || task.busy) return;
-    const answer = window.prompt(
-      "Sync conflict in " + cfg.file + ": type LOCAL to keep this device's "
-      + "copy, or DRIVE to use Drive's copy. Cancel to leave both unchanged."
-    );
-    if (answer === null) return;
-    const choice = answer.trim().toUpperCase();
-    if (choice !== "LOCAL" && choice !== "DRIVE") {
-      window.alert("Type LOCAL or DRIVE. The conflict is still saved.");
-      return;
-    }
+    const choice = await chooseCopy(cfg);
+    if (choice !== "LOCAL" && choice !== "DRIVE") return;
+    if (task.busy) return;
 
     const savedRemote = savedConflictRemote(cfg);
     if (!savedRemote) {
