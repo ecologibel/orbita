@@ -260,7 +260,7 @@
       #tk-sidebar .tk-home {
         align-items: center;
         border-radius: 8px;
-        color: #6c7a89;
+        color: #7d8b9a;
         display: flex;
         flex-direction: column;
         gap: 3px;
@@ -298,7 +298,7 @@
         background: none;
         border: none;
         border-radius: 8px;
-        color: #6c7a89;
+        color: #7d8b9a;
         cursor: pointer;
         display: flex;
         height: 40px;
@@ -490,7 +490,7 @@
         padding: 12px 14px;
         width: 100%;
       }
-      #tk-switch input::placeholder { color: #6c7a89; }
+      #tk-switch input::placeholder { color: #7d8b9a; }
       #tk-switch .tk-sw-list {
         max-height: 50vh;
         overflow-y: auto;
@@ -521,7 +521,7 @@
       }
       #tk-switch .tk-sw-kind,
       #tk-switch .tk-sw-empty {
-        color: #6c7a89;
+        color: #7d8b9a;
         font-size: 12px;
         text-transform: lowercase;
       }
@@ -657,7 +657,7 @@
       #tk-focus-banner .tk-fb-close {
         background: none;
         border: none;
-        color: #6c7a89;
+        color: #7d8b9a;
         cursor: pointer;
         font-size: 18px;
         line-height: 1;

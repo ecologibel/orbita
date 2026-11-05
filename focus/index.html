@@ -35,39 +35,25 @@
     --code-bg:    rgba(127, 219, 202, 0.08);
     --code-fg:    #f78c6c;
     --panel:      rgba(19, 85, 92, 0.25);
-    --c-blue: #82aaff;
-    --c-green: #addb67;
-    --c-grey: #8a96a3;
-    --c-orange: #f78c6c;
-    --c-pink: #ff8bb4;
-    --c-purple: #c792ea;
-    --c-red: #ef5350;
-    --c-yellow: #ecc48d;
   }
   .t-light {
-    --accent:     #0c9e9a;
+    /* Lighter tag tints, so teal text on them stays readable */
+    --tint:       7%;
+    --accent:     #086b69;
     --bg:         #ecf2f2;
     --bg-surface: #f6fafa;
     --border:     #a3c4c6;
     --done:       #2f5d69;
     --fg:         #24292e;
-    --fg-muted:   #6a737d;
+    --fg-muted:   #5a626a;
     --hover:      #d9e8ea;
     --shadow:     0 4px 18px rgba(36, 70, 75, 0.14);
     --tint:       rgba(12, 158, 154, 0.1);
     --glow:       rgba(12, 158, 154, 0.4);
     --mark-bg:    color-mix(in srgb, var(--accent) 16%, transparent);
     --code-bg:    rgba(12, 158, 154, 0.08);
-    --code-fg:    #c9532b;
+    --code-fg:    #9a3a17;
     --panel:      #dce7e8;
-    --c-blue: #3b6fd6;
-    --c-green: #5f8a1c;
-    --c-grey: #6a737d;
-    --c-orange: #c9532b;
-    --c-pink: #c2407c;
-    --c-purple: #8e44c4;
-    --c-red: #d73a49;
-    --c-yellow: #a66f00;
   }
 
   #app {
@@ -255,6 +241,8 @@
     z-index: 10;
   }
   #leave:hover, #leave:focus-visible { color: var(--fg); opacity: 1; }
+  /* Light mode: the grey alone is faint enough, so no fade */
+  .t-light #leave { opacity: 1; }
   #leave svg { flex-shrink: 0; }
 
   /* Choose another task: the first item in the settings sidebar */
@@ -415,7 +403,7 @@
   /* Dates and tags, as in the to dos */
   .date-token, .mention-token { color: var(--accent); }
   .tag-token {
-    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    background: color-mix(in srgb, var(--accent) var(--tint, 16%), transparent);
     border-radius: 3px;
     color: var(--accent);
   }
@@ -556,14 +544,37 @@
     padding: 0 1px;
   }
   #focal-text a { color: var(--accent); }
-  #focal-text mark[data-c="blue"] { background: color-mix(in srgb, var(--c-blue) 28%, transparent); }
-  #focal-text mark[data-c="green"] { background: color-mix(in srgb, var(--c-green) 28%, transparent); }
-  #focal-text mark[data-c="grey"] { background: color-mix(in srgb, var(--c-grey) 28%, transparent); }
-  #focal-text mark[data-c="orange"] { background: color-mix(in srgb, var(--c-orange) 28%, transparent); }
-  #focal-text mark[data-c="pink"] { background: color-mix(in srgb, var(--c-pink) 28%, transparent); }
-  #focal-text mark[data-c="purple"] { background: color-mix(in srgb, var(--c-purple) 28%, transparent); }
-  #focal-text mark[data-c="red"] { background: color-mix(in srgb, var(--c-red) 28%, transparent); }
-  #focal-text mark[data-c="yellow"] { background: color-mix(in srgb, var(--c-yellow) 28%, transparent); }
+  #focal-text mark[data-c="white"] { background: color-mix(in srgb, #FFFFFF 30%, transparent); }
+  #focal-text mark[data-c="silver"] { background: color-mix(in srgb, #C5C9CE 30%, transparent); }
+  #focal-text mark[data-c="grey"] { background: color-mix(in srgb, #858B93 30%, transparent); }
+  #focal-text mark[data-c="charcoal"] { background: color-mix(in srgb, #41464D 30%, transparent); }
+  #focal-text mark[data-c="black"] { background: color-mix(in srgb, #202327 30%, transparent); }
+  #focal-text mark[data-c="army-green"] { background: color-mix(in srgb, #A4C65A 30%, transparent); }
+  #focal-text mark[data-c="emerald"] { background: color-mix(in srgb, #35B98B 30%, transparent); }
+  #focal-text mark[data-c="green"] { background: color-mix(in srgb, #36B84A 30%, transparent); }
+  #focal-text mark[data-c="lime"] { background: color-mix(in srgb, #91D52E 30%, transparent); }
+  #focal-text mark[data-c="chartreuse"] { background: color-mix(in srgb, #C1D62E 30%, transparent); }
+  #focal-text mark[data-c="yellow"] { background: color-mix(in srgb, #F0D52E 30%, transparent); }
+  #focal-text mark[data-c="gold"] { background: color-mix(in srgb, #E9AD22 30%, transparent); }
+  #focal-text mark[data-c="amber"] { background: color-mix(in srgb, #F49A20 30%, transparent); }
+  #focal-text mark[data-c="orange"] { background: color-mix(in srgb, #F47721 30%, transparent); }
+  #focal-text mark[data-c="tangerine"] { background: color-mix(in srgb, #F05B35 30%, transparent); }
+  #focal-text mark[data-c="clay"] { background: color-mix(in srgb, #D18A70 30%, transparent); }
+  #focal-text mark[data-c="coral"] { background: color-mix(in srgb, #F05261 30%, transparent); }
+  #focal-text mark[data-c="red"] { background: color-mix(in srgb, #E52F42 30%, transparent); }
+  #focal-text mark[data-c="burgundy"] { background: color-mix(in srgb, #C65375 30%, transparent); }
+  #focal-text mark[data-c="rose"] { background: color-mix(in srgb, #E34D91 30%, transparent); }
+  #focal-text mark[data-c="magenta"] { background: color-mix(in srgb, #D62DB5 30%, transparent); }
+  #focal-text mark[data-c="orchid"] { background: color-mix(in srgb, #BD45CF 30%, transparent); }
+  #focal-text mark[data-c="purple"] { background: color-mix(in srgb, #A16BD0 30%, transparent); }
+  #focal-text mark[data-c="violet"] { background: color-mix(in srgb, #A05BE8 30%, transparent); }
+  #focal-text mark[data-c="indigo"] { background: color-mix(in srgb, #7778D5 30%, transparent); }
+  #focal-text mark[data-c="blue"] { background: color-mix(in srgb, #2379E5 30%, transparent); }
+  #focal-text mark[data-c="azure"] { background: color-mix(in srgb, #219FCB 30%, transparent); }
+  #focal-text mark[data-c="cyan"] { background: color-mix(in srgb, #20C4D0 30%, transparent); }
+  #focal-text mark[data-c="teal"] { background: color-mix(in srgb, #238F91 30%, transparent); }
+  #focal-text mark[data-c="sage"] { background: color-mix(in srgb, #91BFA0 30%, transparent); }
+  #focal-text mark[data-c="pink"] { background: color-mix(in srgb, #E34D91 30%, transparent); }
   .focal.done #focal-text,
   .focal.done #focal-text span {
     color: var(--done);
@@ -1013,8 +1024,8 @@
       .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
 
-  const NOTE_COLOURS = ["grey", "red", "orange", "yellow", "green",
-    "blue", "purple", "pink"];
+  // Highlight colours from notes: the 30-colour menu, older names mapped
+  const noteColour = c => ToolkitSidebar.colourKey(c);
 
   function safeHref(href) {
     const h = String(href || "").trim();
@@ -1764,8 +1775,8 @@
             return;
           }
           const tag = TAGS[n.tagName];
-          const col = tag === "mark" && NOTE_COLOURS.includes(n.dataset.c)
-            ? ' data-c="' + n.dataset.c + '"' : "";
+          const ck = tag === "mark" && noteColour(n.dataset.c);
+          const col = ck ? ' data-c="' + ck + '"' : "";
           out += tag ? "<" + tag + col + ">" + inner + "</" + tag + ">"
             : inner;
         }

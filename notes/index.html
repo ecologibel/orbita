@@ -25,6 +25,38 @@
 
   /* ---- Modes ---- */
   .t-dark {
+    /* Note colours, from the 30-colour menu: text in each mode */
+    --c-white: color-mix(in srgb, #FFFFFF 55%, #fff);
+    --c-silver: color-mix(in srgb, #C5C9CE 55%, #fff);
+    --c-grey: #8a96a3;
+    --c-charcoal: color-mix(in srgb, #41464D 55%, #fff);
+    --c-black: color-mix(in srgb, #202327 55%, #fff);
+    --c-army-green: color-mix(in srgb, #A4C65A 55%, #fff);
+    --c-emerald: color-mix(in srgb, #35B98B 55%, #fff);
+    --c-green: #addb67;
+    --c-lime: color-mix(in srgb, #91D52E 55%, #fff);
+    --c-chartreuse: color-mix(in srgb, #C1D62E 55%, #fff);
+    --c-yellow: #ecc48d;
+    --c-gold: color-mix(in srgb, #E9AD22 55%, #fff);
+    --c-amber: color-mix(in srgb, #F49A20 55%, #fff);
+    --c-orange: #f78c6c;
+    --c-tangerine: color-mix(in srgb, #F05B35 55%, #fff);
+    --c-clay: color-mix(in srgb, #D18A70 55%, #fff);
+    --c-coral: color-mix(in srgb, #F05261 55%, #fff);
+    --c-red: #ef5350;
+    --c-burgundy: color-mix(in srgb, #C65375 55%, #fff);
+    --c-rose: #ff8bb4;
+    --c-magenta: color-mix(in srgb, #D62DB5 55%, #fff);
+    --c-orchid: color-mix(in srgb, #BD45CF 55%, #fff);
+    --c-purple: #c792ea;
+    --c-violet: color-mix(in srgb, #A05BE8 55%, #fff);
+    --c-indigo: color-mix(in srgb, #7778D5 55%, #fff);
+    --c-blue: #82aaff;
+    --c-azure: color-mix(in srgb, #219FCB 55%, #fff);
+    --c-cyan: color-mix(in srgb, #20C4D0 55%, #fff);
+    --c-teal: color-mix(in srgb, #238F91 55%, #fff);
+    --c-sage: color-mix(in srgb, #91BFA0 55%, #fff);
+    --c-pink: var(--c-rose);
     --accent:       #7fdbca;
     --bg:           #011627;
     --bg-surface:   #01111f;
@@ -42,14 +74,6 @@
     --past-bg:      rgba(19, 85, 92, 0.25);
     --scroll-thumb: #1e3a52;
     --shadow:       0 2px 10px rgba(0, 0, 0, 0.45);
-    --c-blue:   #82aaff;
-    --c-green:  #addb67;
-    --c-grey:   #8a96a3;
-    --c-orange: #f78c6c;
-    --c-pink:   #ff8bb4;
-    --c-purple: #c792ea;
-    --c-red:    #ef5350;
-    --c-yellow: #ecc48d;
     --r-com:   #5a9a8e;
     --r-const: #9ea3ec;
     --r-fg:    #d6deeb;
@@ -60,31 +84,56 @@
     --r-str:   #9ccc8a;
   }
   .t-light {
-    --accent:       #0c9e9a;
+    --c-white: color-mix(in srgb, #FFFFFF 50%, #000);
+    --c-silver: color-mix(in srgb, #C5C9CE 50%, #000);
+    --c-grey: color-mix(in srgb, #858B93 50%, #000);
+    --c-charcoal: color-mix(in srgb, #41464D 50%, #000);
+    --c-black: color-mix(in srgb, #202327 50%, #000);
+    --c-army-green: color-mix(in srgb, #A4C65A 50%, #000);
+    --c-emerald: color-mix(in srgb, #35B98B 50%, #000);
+    --c-green: color-mix(in srgb, #36B84A 50%, #000);
+    --c-lime: color-mix(in srgb, #91D52E 50%, #000);
+    --c-chartreuse: color-mix(in srgb, #C1D62E 50%, #000);
+    --c-yellow: color-mix(in srgb, #F0D52E 50%, #000);
+    --c-gold: color-mix(in srgb, #E9AD22 50%, #000);
+    --c-amber: color-mix(in srgb, #F49A20 50%, #000);
+    --c-orange: color-mix(in srgb, #F47721 50%, #000);
+    --c-tangerine: color-mix(in srgb, #F05B35 50%, #000);
+    --c-clay: color-mix(in srgb, #D18A70 50%, #000);
+    --c-coral: color-mix(in srgb, #F05261 50%, #000);
+    --c-red: color-mix(in srgb, #E52F42 50%, #000);
+    --c-burgundy: color-mix(in srgb, #C65375 50%, #000);
+    --c-rose: color-mix(in srgb, #E34D91 50%, #000);
+    --c-magenta: color-mix(in srgb, #D62DB5 50%, #000);
+    --c-orchid: color-mix(in srgb, #BD45CF 50%, #000);
+    --c-purple: color-mix(in srgb, #A16BD0 50%, #000);
+    --c-violet: color-mix(in srgb, #A05BE8 50%, #000);
+    --c-indigo: color-mix(in srgb, #7778D5 50%, #000);
+    --c-blue: color-mix(in srgb, #2379E5 50%, #000);
+    --c-azure: color-mix(in srgb, #219FCB 50%, #000);
+    --c-cyan: color-mix(in srgb, #20C4D0 50%, #000);
+    --c-teal: color-mix(in srgb, #238F91 50%, #000);
+    --c-sage: color-mix(in srgb, #91BFA0 50%, #000);
+    --c-pink: var(--c-rose);
+    /* Lighter tag tints, so teal text on them stays readable */
+    --tint:       7%;
+    --accent:       #086b69;
     --bg:           #ecf2f2;
     --bg-surface:   #f6fafa;
     --block-sel:    rgba(12, 158, 154, 0.12);
     --border:       #a3c4c6;
     --code-bg:      rgba(12, 158, 154, 0.08);
     --code-block:   #ebf5f3;
-    --code-fg:      #c9532b;
+    --code-fg:      #9a3a17;
     --drag-bg:      rgba(12, 158, 154, 0.1);
     --fg:           #24292e;
-    --fg-muted:     #6a737d;
+    --fg-muted:     #5a626a;
     --head-tint:    rgba(236, 242, 242, 0.5);
     --hover:        #d9e8ea;
     --mark-bg:      color-mix(in srgb, var(--accent) 16%, transparent);
     --past-bg:      #dce7e8;
     --scroll-thumb: #bccfd2;
     --shadow:       0 2px 8px rgba(36, 70, 75, 0.14);
-    --c-blue:   #3b6fd6;
-    --c-green:  #5f8a1c;
-    --c-grey:   #6a737d;
-    --c-orange: #c9532b;
-    --c-pink:   #c2407c;
-    --c-purple: #8e44c4;
-    --c-red:    #d73a49;
-    --c-yellow: #a66f00;
     --r-com:   #4f8f82;
     --r-const: #5e65d9;
     --r-fg:    #1b4d42;
@@ -101,6 +150,38 @@
   .size-l { --fs: 18px; }
 
   #app {
+    /* The 30 colours as they are, for tints and highlights */
+    --h-white: #FFFFFF;
+    --h-silver: #C5C9CE;
+    --h-grey: #858B93;
+    --h-charcoal: #41464D;
+    --h-black: #202327;
+    --h-army-green: #A4C65A;
+    --h-emerald: #35B98B;
+    --h-green: #36B84A;
+    --h-lime: #91D52E;
+    --h-chartreuse: #C1D62E;
+    --h-yellow: #F0D52E;
+    --h-gold: #E9AD22;
+    --h-amber: #F49A20;
+    --h-orange: #F47721;
+    --h-tangerine: #F05B35;
+    --h-clay: #D18A70;
+    --h-coral: #F05261;
+    --h-red: #E52F42;
+    --h-burgundy: #C65375;
+    --h-rose: #E34D91;
+    --h-magenta: #D62DB5;
+    --h-orchid: #BD45CF;
+    --h-purple: #A16BD0;
+    --h-violet: #A05BE8;
+    --h-indigo: #7778D5;
+    --h-blue: #2379E5;
+    --h-azure: #219FCB;
+    --h-cyan: #20C4D0;
+    --h-teal: #238F91;
+    --h-sage: #91BFA0;
+    --h-pink: var(--h-rose);
     background: var(--bg);
     color: var(--fg);
     display: flex;
@@ -470,8 +551,8 @@
 
   /* Coloured folders and notes: the folder's title and icon, and the
      titles of notes beneath it, readable in either mode */
-  .t-dark .coloured { --ink: color-mix(in srgb, var(--pick) 62%, #fff); }
-  .t-light .coloured { --ink: color-mix(in srgb, var(--pick) 70%, #000); }
+  .t-dark .coloured { --ink: color-mix(in srgb, var(--pick) 55%, #fff); }
+  .t-light .coloured { --ink: color-mix(in srgb, var(--pick) 50%, #000); }
   .folder-row.coloured .folder-name, .folder-row.coloured .tree-icon,
   .folder-row.coloured .tree-chev, .note-row.coloured .tree-name {
     color: var(--ink);
@@ -962,7 +1043,7 @@
   }
   .tag-chip {
     align-items: center;
-    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    background: color-mix(in srgb, var(--accent) var(--tint, 16%), transparent);
     border-radius: 3px;
     color: var(--accent);
     display: inline-flex;
@@ -981,7 +1062,7 @@
     opacity: 0.6;
     padding: 0 0 0 2px;
   }
-  .tag-chip button:hover { opacity: 1; }
+  .tag-chip button:hover, .t-light .tag-chip button { opacity: 1; }
   .add-tag {
     background: none;
     border: none;
@@ -995,6 +1076,9 @@
     transition: opacity 0.15s;
   }
   .add-tag:hover { background: var(--hover); opacity: 1; }
+  /* Light mode: the grey alone is faint enough, so no fade */
+  .t-light .add-tag, .t-light .pin-toggle, .t-light .edited,
+  .t-light .word-count { opacity: 1; }
   /* Fields are typed in place, in teal, without a box */
   .tag-input {
     background: none;
@@ -1079,6 +1163,14 @@
   .cm-paren-4 { color: #04bdce !important; }
   .cm-paren-5 { color: #8ea9ec !important; }
   .cm-paren-6 { color: #d891db !important; }
+  /* Light mode: the same rainbow, deep enough to read */
+  .t-light #code-host .cm-paren-0 { color: #b8435a !important; }
+  .t-light #code-host .cm-paren-1 { color: #8f5f12 !important; }
+  .t-light #code-host .cm-paren-2 { color: #4f6b12 !important; }
+  .t-light #code-host .cm-paren-3 { color: #0f7352 !important; }
+  .t-light #code-host .cm-paren-4 { color: #0a6874 !important; }
+  .t-light #code-host .cm-paren-5 { color: #3b5cb5 !important; }
+  .t-light #code-host .cm-paren-6 { color: #9a3fa0 !important; }
 
   #code-host .CodeMirror {
     height: auto !important;
@@ -1134,16 +1226,16 @@
      teal italic comments; strings and numbers get their own colours */
   .t-light #code-host .cm-keyword    { color: #2d68e9 !important; }
   .t-light #code-host .cm-operator   { color: #077a76 !important; }
-  .t-light #code-host .cm-number     { color: #5e65d9 !important; }
+  .t-light #code-host .cm-number     { color: #4a51c2 !important; }
   .t-light #code-host .cm-string     { color: #1f7a45 !important; }
-  .t-light #code-host .cm-comment    { color: #4f8f82 !important;
+  .t-light #code-host .cm-comment    { color: #3b6f64 !important;
     font-style: italic; }
   .t-light #code-host .cm-def        { color: #c43d00 !important; }
   .t-light #code-host .cm-variable   { color: #1b4d42 !important; }
   .t-light #code-host .cm-variable-2 { color: #077a76 !important; }
   .t-light #code-host .cm-variable-3 { color: #1b4d42 !important; }
   .t-light #code-host .cm-arg-is     { color: #077a76 !important; }
-  .t-light #code-host .cm-atom       { color: #5e65d9 !important; }
+  .t-light #code-host .cm-atom       { color: #4a51c2 !important; }
   .t-light #code-host .cm-builtin    { color: #c43d00 !important; }
   .t-light #code-host .cm-fn-call:not(.cm-string):not(.cm-comment):not(.cm-keyword) {
     color: #c43d00 !important;
@@ -1231,7 +1323,7 @@
   }
   .date-token { color: var(--accent); }
   .tag-token {
-    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    background: color-mix(in srgb, var(--accent) var(--tint, 16%), transparent);
     border-radius: 3px;
     color: var(--accent);
   }
@@ -1402,30 +1494,37 @@
   }
   .ntable .cell mark { background: var(--mark-bg); color: inherit; }
   .ntable .cell a { color: var(--accent); }
-  .ntable .bg-blue {
-    background-color: color-mix(in srgb, var(--c-blue) 18%, transparent);
-  }
-  .ntable .bg-green {
-    background-color: color-mix(in srgb, var(--c-green) 18%, transparent);
-  }
-  .ntable .bg-grey {
-    background-color: color-mix(in srgb, var(--c-grey) 18%, transparent);
-  }
-  .ntable .bg-orange {
-    background-color: color-mix(in srgb, var(--c-orange) 18%, transparent);
-  }
-  .ntable .bg-pink {
-    background-color: color-mix(in srgb, var(--c-pink) 18%, transparent);
-  }
-  .ntable .bg-purple {
-    background-color: color-mix(in srgb, var(--c-purple) 18%, transparent);
-  }
-  .ntable .bg-red {
-    background-color: color-mix(in srgb, var(--c-red) 18%, transparent);
-  }
-  .ntable .bg-yellow {
-    background-color: color-mix(in srgb, var(--c-yellow) 18%, transparent);
-  }
+  .ntable .bg-white { background-color: color-mix(in srgb, var(--h-white) 20%, transparent); }
+  .ntable .bg-silver { background-color: color-mix(in srgb, var(--h-silver) 20%, transparent); }
+  .ntable .bg-grey { background-color: color-mix(in srgb, var(--h-grey) 20%, transparent); }
+  .ntable .bg-charcoal { background-color: color-mix(in srgb, var(--h-charcoal) 20%, transparent); }
+  .ntable .bg-black { background-color: color-mix(in srgb, var(--h-black) 20%, transparent); }
+  .ntable .bg-army-green { background-color: color-mix(in srgb, var(--h-army-green) 20%, transparent); }
+  .ntable .bg-emerald { background-color: color-mix(in srgb, var(--h-emerald) 20%, transparent); }
+  .ntable .bg-green { background-color: color-mix(in srgb, var(--h-green) 20%, transparent); }
+  .ntable .bg-lime { background-color: color-mix(in srgb, var(--h-lime) 20%, transparent); }
+  .ntable .bg-chartreuse { background-color: color-mix(in srgb, var(--h-chartreuse) 20%, transparent); }
+  .ntable .bg-yellow { background-color: color-mix(in srgb, var(--h-yellow) 20%, transparent); }
+  .ntable .bg-gold { background-color: color-mix(in srgb, var(--h-gold) 20%, transparent); }
+  .ntable .bg-amber { background-color: color-mix(in srgb, var(--h-amber) 20%, transparent); }
+  .ntable .bg-orange { background-color: color-mix(in srgb, var(--h-orange) 20%, transparent); }
+  .ntable .bg-tangerine { background-color: color-mix(in srgb, var(--h-tangerine) 20%, transparent); }
+  .ntable .bg-clay { background-color: color-mix(in srgb, var(--h-clay) 20%, transparent); }
+  .ntable .bg-coral { background-color: color-mix(in srgb, var(--h-coral) 20%, transparent); }
+  .ntable .bg-red { background-color: color-mix(in srgb, var(--h-red) 20%, transparent); }
+  .ntable .bg-burgundy { background-color: color-mix(in srgb, var(--h-burgundy) 20%, transparent); }
+  .ntable .bg-rose { background-color: color-mix(in srgb, var(--h-rose) 20%, transparent); }
+  .ntable .bg-magenta { background-color: color-mix(in srgb, var(--h-magenta) 20%, transparent); }
+  .ntable .bg-orchid { background-color: color-mix(in srgb, var(--h-orchid) 20%, transparent); }
+  .ntable .bg-purple { background-color: color-mix(in srgb, var(--h-purple) 20%, transparent); }
+  .ntable .bg-violet { background-color: color-mix(in srgb, var(--h-violet) 20%, transparent); }
+  .ntable .bg-indigo { background-color: color-mix(in srgb, var(--h-indigo) 20%, transparent); }
+  .ntable .bg-blue { background-color: color-mix(in srgb, var(--h-blue) 20%, transparent); }
+  .ntable .bg-azure { background-color: color-mix(in srgb, var(--h-azure) 20%, transparent); }
+  .ntable .bg-cyan { background-color: color-mix(in srgb, var(--h-cyan) 20%, transparent); }
+  .ntable .bg-teal { background-color: color-mix(in srgb, var(--h-teal) 20%, transparent); }
+  .ntable .bg-sage { background-color: color-mix(in srgb, var(--h-sage) 20%, transparent); }
+  .ntable .bg-pink { background-color: color-mix(in srgb, var(--h-pink) 20%, transparent); }
 
   /* Row and column grips sit on the table's edges, shown on hover */
   .row-grip, .col-grip {
@@ -1493,14 +1592,37 @@
   }
 
   /* Text colours */
-  .c-blue > .content   { color: var(--c-blue); }
-  .c-green > .content  { color: var(--c-green); }
-  .c-grey > .content   { color: var(--c-grey); }
-  .c-orange > .content { color: var(--c-orange); }
-  .c-pink > .content   { color: var(--c-pink); }
-  .c-purple > .content { color: var(--c-purple); }
-  .c-red > .content    { color: var(--c-red); }
+  .c-white > .content { color: var(--c-white); }
+  .c-silver > .content { color: var(--c-silver); }
+  .c-grey > .content { color: var(--c-grey); }
+  .c-charcoal > .content { color: var(--c-charcoal); }
+  .c-black > .content { color: var(--c-black); }
+  .c-army-green > .content { color: var(--c-army-green); }
+  .c-emerald > .content { color: var(--c-emerald); }
+  .c-green > .content { color: var(--c-green); }
+  .c-lime > .content { color: var(--c-lime); }
+  .c-chartreuse > .content { color: var(--c-chartreuse); }
   .c-yellow > .content { color: var(--c-yellow); }
+  .c-gold > .content { color: var(--c-gold); }
+  .c-amber > .content { color: var(--c-amber); }
+  .c-orange > .content { color: var(--c-orange); }
+  .c-tangerine > .content { color: var(--c-tangerine); }
+  .c-clay > .content { color: var(--c-clay); }
+  .c-coral > .content { color: var(--c-coral); }
+  .c-red > .content { color: var(--c-red); }
+  .c-burgundy > .content { color: var(--c-burgundy); }
+  .c-rose > .content { color: var(--c-rose); }
+  .c-magenta > .content { color: var(--c-magenta); }
+  .c-orchid > .content { color: var(--c-orchid); }
+  .c-purple > .content { color: var(--c-purple); }
+  .c-violet > .content { color: var(--c-violet); }
+  .c-indigo > .content { color: var(--c-indigo); }
+  .c-blue > .content { color: var(--c-blue); }
+  .c-azure > .content { color: var(--c-azure); }
+  .c-cyan > .content { color: var(--c-cyan); }
+  .c-teal > .content { color: var(--c-teal); }
+  .c-sage > .content { color: var(--c-sage); }
+  .c-pink > .content { color: var(--c-pink); }
 
   /* Six-dot handle: drag to move, click for the block menu */
   .handle {
@@ -1628,9 +1750,9 @@
   .menu-item.danger { color: var(--c-red); }
   .menu-rule { border-top: 1px solid var(--border); margin: 4px 0; }
   .swatches {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
     gap: 4px;
+    grid-template-columns: repeat(11, 22px);
     padding: 4px 8px 6px;
   }
   .swatch {
@@ -1638,10 +1760,10 @@
     border: 1px solid var(--border);
     border-radius: 4px;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
-    height: 24px;
-    width: 24px;
+    height: 22px;
+    width: 22px;
   }
   .swatch:hover, .swatch.active { border-color: var(--accent); }
   .linkbox { min-width: 280px; padding: 6px; }
@@ -1678,14 +1800,37 @@
   }
 
   /* Highlights in the block colours */
-  mark[data-c="grey"] { background: color-mix(in srgb, var(--c-grey) 28%, transparent) !important; }
-  mark[data-c="red"] { background: color-mix(in srgb, var(--c-red) 28%, transparent) !important; }
-  mark[data-c="orange"] { background: color-mix(in srgb, var(--c-orange) 28%, transparent) !important; }
-  mark[data-c="yellow"] { background: color-mix(in srgb, var(--c-yellow) 30%, transparent) !important; }
-  mark[data-c="green"] { background: color-mix(in srgb, var(--c-green) 28%, transparent) !important; }
-  mark[data-c="blue"] { background: color-mix(in srgb, var(--c-blue) 28%, transparent) !important; }
-  mark[data-c="purple"] { background: color-mix(in srgb, var(--c-purple) 28%, transparent) !important; }
-  mark[data-c="pink"] { background: color-mix(in srgb, var(--c-pink) 28%, transparent) !important; }
+  mark[data-c="white"] { background: color-mix(in srgb, var(--h-white) 30%, transparent) !important; }
+  mark[data-c="silver"] { background: color-mix(in srgb, var(--h-silver) 30%, transparent) !important; }
+  mark[data-c="grey"] { background: color-mix(in srgb, var(--h-grey) 30%, transparent) !important; }
+  mark[data-c="charcoal"] { background: color-mix(in srgb, var(--h-charcoal) 30%, transparent) !important; }
+  mark[data-c="black"] { background: color-mix(in srgb, var(--h-black) 30%, transparent) !important; }
+  mark[data-c="army-green"] { background: color-mix(in srgb, var(--h-army-green) 30%, transparent) !important; }
+  mark[data-c="emerald"] { background: color-mix(in srgb, var(--h-emerald) 30%, transparent) !important; }
+  mark[data-c="green"] { background: color-mix(in srgb, var(--h-green) 30%, transparent) !important; }
+  mark[data-c="lime"] { background: color-mix(in srgb, var(--h-lime) 30%, transparent) !important; }
+  mark[data-c="chartreuse"] { background: color-mix(in srgb, var(--h-chartreuse) 30%, transparent) !important; }
+  mark[data-c="yellow"] { background: color-mix(in srgb, var(--h-yellow) 30%, transparent) !important; }
+  mark[data-c="gold"] { background: color-mix(in srgb, var(--h-gold) 30%, transparent) !important; }
+  mark[data-c="amber"] { background: color-mix(in srgb, var(--h-amber) 30%, transparent) !important; }
+  mark[data-c="orange"] { background: color-mix(in srgb, var(--h-orange) 30%, transparent) !important; }
+  mark[data-c="tangerine"] { background: color-mix(in srgb, var(--h-tangerine) 30%, transparent) !important; }
+  mark[data-c="clay"] { background: color-mix(in srgb, var(--h-clay) 30%, transparent) !important; }
+  mark[data-c="coral"] { background: color-mix(in srgb, var(--h-coral) 30%, transparent) !important; }
+  mark[data-c="red"] { background: color-mix(in srgb, var(--h-red) 30%, transparent) !important; }
+  mark[data-c="burgundy"] { background: color-mix(in srgb, var(--h-burgundy) 30%, transparent) !important; }
+  mark[data-c="rose"] { background: color-mix(in srgb, var(--h-rose) 30%, transparent) !important; }
+  mark[data-c="magenta"] { background: color-mix(in srgb, var(--h-magenta) 30%, transparent) !important; }
+  mark[data-c="orchid"] { background: color-mix(in srgb, var(--h-orchid) 30%, transparent) !important; }
+  mark[data-c="purple"] { background: color-mix(in srgb, var(--h-purple) 30%, transparent) !important; }
+  mark[data-c="violet"] { background: color-mix(in srgb, var(--h-violet) 30%, transparent) !important; }
+  mark[data-c="indigo"] { background: color-mix(in srgb, var(--h-indigo) 30%, transparent) !important; }
+  mark[data-c="blue"] { background: color-mix(in srgb, var(--h-blue) 30%, transparent) !important; }
+  mark[data-c="azure"] { background: color-mix(in srgb, var(--h-azure) 30%, transparent) !important; }
+  mark[data-c="cyan"] { background: color-mix(in srgb, var(--h-cyan) 30%, transparent) !important; }
+  mark[data-c="teal"] { background: color-mix(in srgb, var(--h-teal) 30%, transparent) !important; }
+  mark[data-c="sage"] { background: color-mix(in srgb, var(--h-sage) 30%, transparent) !important; }
+  mark[data-c="pink"] { background: color-mix(in srgb, var(--h-pink) 30%, transparent) !important; }
   #fmt .f-markc { font-size: 10px; padding-left: 2px; padding-right: 4px; }
 
   /* Menu items with a teal symbol column, names lined up, and a dim
@@ -1943,8 +2088,9 @@
     todo: ["to", "todo", "to do", "check", "box", "task"],
     toggle: ["tog", "toggle", "collapse"]
   };
-  const COLOURS = ["grey", "red", "orange", "yellow", "green", "blue",
-    "purple", "pink"];
+  // Text, highlight and table colours: the 30-colour menu
+  const COLOURS = ToolkitSidebar.palette.map(c => c.key);
+  const colourKey = c => ToolkitSidebar.colourKey(c);
   const LIST_TYPES = ["bullet", "number", "todo", "toggle"];
   const PLACEHOLDER = {
     bullet: "list", callout: "callout", code: "r code", h1: "heading 1",
@@ -2016,8 +2162,8 @@
             return;
           }
           const tag = TAGS[n.tagName];
-          const col = tag === "mark" && COLOURS.includes(n.dataset.c)
-            ? ' data-c="' + n.dataset.c + '"' : "";
+          const ck = tag === "mark" && colourKey(n.dataset.c);
+          const col = ck ? ' data-c="' + ck + '"' : "";
           out += tag ? "<" + tag + col + ">" + inner + "</" + tag + ">"
             : inner;
         }
@@ -2148,7 +2294,7 @@
     const type = TYPES[b.type] ? b.type : "text";
     const out = {
       checked: !!b.checked,
-      color: COLOURS.includes(b.color) ? b.color : null,
+      color: colourKey(b.color),
       html: type === "code"
         ? escapeHtml(codeText({ html: String(b.html || "") }))
         : clean(String(b.html || "")),
@@ -2175,10 +2321,10 @@
     const cols = Math.max(1, ...rows.map(r => r.length));
     rows.forEach(r => { while (r.length < cols) r.push(""); });
     const pick = (list, n) => Array.from({ length: n }, (_, i) =>
-      Array.isArray(list) && COLOURS.includes(list[i]) ? list[i] : null);
+      Array.isArray(list) ? colourKey(list[i]) : null);
     const cellColors = {};
     Object.entries(b.cellColors || {}).forEach(([k, v]) => {
-      if (COLOURS.includes(v)) cellColors[k] = v;
+      if (colourKey(v)) cellColors[k] = colourKey(v);
     });
     return {
       cellColors,
@@ -6166,10 +6312,11 @@
       const s = document.createElement("button");
       s.className = "swatch" + (active === col ? " active" : "");
       s.type = "button";
-      s.title = col || "default";
+      s.title = col ? ToolkitSidebar.palette.find(c => c.key === col).name
+        : "default";
       if (tint) {
         s.style.background = col
-          ? "color-mix(in srgb, var(--c-" + col + ") 30%, var(--bg))"
+          ? "color-mix(in srgb, var(--h-" + col + ") 30%, var(--bg))"
           : "var(--past-bg)";
       } else {
         s.textContent = "A";

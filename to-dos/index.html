@@ -50,12 +50,14 @@
     --shadow:     0 2px 10px rgba(0, 0, 0, 0.45);
   }
   .t-light {
+    /* Lighter tag tints, so teal text on them stays readable */
+    --tint:       7%;
     --bg:         #ecf2f2;
     --bg-surface: #dce7e8;
     --fg:         #24292e;
-    --fg-muted:   #6a737d;
+    --fg-muted:   #5a626a;
     --border:     #a3c4c6;
-    --accent:     #0c9e9a;
+    --accent:     #086b69;
     --done:       #2f5d69;
     --scroll-thumb: #bccfd2;
     --head-tint:  rgba(236, 242, 242, 0.5);
@@ -78,7 +80,7 @@
     --bg-surface: #01111f;
     --border:     #1e3a52;
     --fg:         #d6deeb;
-    --fg-muted:   #6c7a89;
+    --fg-muted:   #7d8b9a;
     --hover:      #012a3f;
     --sel-bdr:    #1e3a52;
     --sel-bg:     #012a3f;
@@ -260,7 +262,7 @@
     color: var(--accent);
   }
   .task-highlight .tag-token {
-    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    background: color-mix(in srgb, var(--accent) var(--tint, 16%), transparent);
     border-radius: 3px;
     color: var(--accent);
   }
@@ -280,7 +282,7 @@
   }
   .task-tags:empty { display: none; }
   .tag-chip {
-    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    background: color-mix(in srgb, var(--accent) var(--tint, 16%), transparent);
     border-radius: 3px;
     color: var(--accent);
     padding: 0 4px;
@@ -664,6 +666,7 @@
     opacity: 0.75;
   }
   .hide-counts .toggle-count { visibility: hidden; }
+  .t-light .toggle-count { opacity: 1; }
   .add-row { display: flex; gap: 10px; margin-bottom: 32px; }
   .add-row .add-section-btn { margin-bottom: 0; }
   .add-row .counts-btn { flex-shrink: 0; width: auto; }
@@ -797,7 +800,7 @@
 
   /* Today's header carries a small label */
   .today-tag {
-    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    background: color-mix(in srgb, var(--accent) var(--tint, 16%), transparent);
     border-radius: 3px;
     color: var(--accent);
     font-size: 11px;
