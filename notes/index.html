@@ -290,6 +290,11 @@
   /* Folders are smaller rows than notes */
   .folder-row { font-size: 13.5px; min-height: 30px; }
   .folder-row .folder-name { font-weight: 600; }
+  /* Folders are toggles: teal, like toggles in a note, and dimmed when
+     there's nothing in them */
+  .folder-row .tree-chev, .folder-row .folder-name { color: var(--accent); }
+  .folder-row.empty .tree-chev { opacity: 0.35; }
+  .folder-row.empty .folder-name, .folder-row.empty .tree-icon { opacity: 0.6; }
   .folder-row .folder-name[contenteditable="true"] {
     border-bottom: 1px solid var(--accent);
     cursor: text;
@@ -1544,6 +1549,7 @@
 
   .gone { display: none !important; }
 </style>
+<link rel="stylesheet" href="../ui.css">
 </head>
 <body>
 <div id="app" class="t-dark size-m width-normal">
@@ -2501,7 +2507,8 @@
   function folderRow(f, depth) {
     const row = document.createElement("div");
     const open = openFolders.has(f.id);
-    row.className = "tree-row folder-row" + (open ? " open" : "");
+    row.className = "tree-row folder-row" + (open ? " open" : "")
+      + (!treeCount(f.id) && !subfolders(f.id).length ? " empty" : "");
     row.dataset.folder = f.id;
     row.style.setProperty("--depth", depth);
     row.tabIndex = 0;

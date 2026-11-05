@@ -140,6 +140,7 @@
   .fold-btn:hover { background:var(--hover);color:var(--accent); }
   .unfold { display:none;left:6px;position:absolute;top:102px; }
   .side-heading { align-items:last baseline;border-bottom:1px solid var(--border);display:flex;font-size:1.35em;font-weight:600;justify-content:space-between;margin:0;padding:0 0 8px; }
+  .side-section.empty > .side-section-heading::after { opacity:.35; }
   .side-section-heading { color:var(--accent);cursor:pointer;font-size:1em;font-weight:600;list-style:none;margin-bottom:10px; }.side-section-heading::-webkit-details-marker { display:none; }.side-section-heading::after { color:var(--accent);content:"+";float:right; }.side-section[open] > .side-section-heading::after { content:"-"; }
   #right-sidebar > .side-heading + details { margin-top:14px; }
   #google-calendar-settings { border-top:0;margin-bottom:-8px;padding-top:0; }
@@ -205,6 +206,7 @@
   @media(max-width:620px) { .selection-columns,.chart-output { grid-template-columns:1fr; }.selection-list { min-height:0; }.legend { border-left:0;border-top:1px solid var(--border);grid-template-columns:repeat(auto-fit,minmax(180px,1fr));padding:14px 0 0; }.button-row { flex-wrap:wrap; } }
   @media(prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important; } }
 </style>
+<link rel="stylesheet" href="../ui.css">
 </head>
 <body>
 <div id="app" class="t-dark size-m width-wide">
@@ -401,6 +403,8 @@
     $("#app").append(pop);tagPopover=pop;const r=anchor.getBoundingClientRect(),p=pop.getBoundingClientRect(),left=Math.max(8,Math.min(r.left,innerWidth-p.width-8)),top=r.bottom+p.height+8<=innerHeight?r.bottom+6:Math.max(8,r.top-p.height-6);pop.style.left=left+"px";pop.style.top=top+"px";document.addEventListener("pointerdown",tagPopoverOutside,true);document.addEventListener("keydown",tagPopoverEscape,true);
   }
   function renderAssignments(){
+    // Sections with nothing in them yet show a dimmed sign, like empty toggles
+    ["assign-tags","exclude-calendars"].forEach(id=>$("#"+id).classList.toggle("empty",!calendars.length));
     const tagsBox=$("#tag-admin-list");tagsBox.replaceChildren();
     tagsSorted().forEach(t=>{const b=document.createElement("button");b.type="button";b.className="tag-admin-button tag-token tag-color-"+tagColor(t);paintTag(b,t);b.textContent=t;b.title=("change colour for "+t).toLowerCase();b.setAttribute("aria-label","change colour for tag "+t);b.onclick=()=>openTagPopover(b,"colour",t);tagsBox.append(b);});
     const box=$("#calendar-list");box.replaceChildren();if(!calendars.length){box.innerHTML='<div class="muted-list">connect Google Calendar to assign tags.</div>';return;}

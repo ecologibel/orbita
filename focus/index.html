@@ -289,7 +289,7 @@
   /* Pick a task: a rounded button under the timer while picking */
   #c-pick { display: none; }
   #focus.picking #c-pick {
-    background: transparent;
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
     border: 1px solid var(--accent);
     border-radius: 999px;
     color: var(--accent);
@@ -304,8 +304,7 @@
   }
   #focus.picking #c-pick:hover,
   #focus.picking #c-pick:focus-visible {
-    background: var(--accent);
-    color: var(--bg);
+    background: color-mix(in srgb, var(--accent) 24%, transparent);
     outline: none;
   }
   /* The search bar glows when pick a task sends the cursor there */
@@ -381,17 +380,6 @@
   }
   .pick-row .pr-text { flex: 1; min-width: 0; }
 
-  /* The focus symbol beside each task: click to focus on it */
-  .pick-row .pr-focus {
-    align-self: center;
-    color: var(--accent);
-    display: flex;
-    flex-shrink: 0;
-    opacity: 0.6;
-    transition: opacity 0.15s;
-  }
-  .pick-row .pr-focus svg { height: 15px; width: 15px; }
-  .pick-row:hover .pr-focus, .pick-row.active .pr-focus { opacity: 1; }
   .pick-row .pr-src {
     color: var(--fg-muted);
     flex-shrink: 0;
@@ -820,6 +808,7 @@
     #c-cheer { font-size: 28px; max-width: 190px; }
   }
 </style>
+<link rel="stylesheet" href="../ui.css">
 </head>
 <body>
 <div id="app" class="t-dark">
@@ -1192,7 +1181,7 @@
     }
     rows.sort((a, b) => (a.r ? +a.r.start : 9e15) - (b.r ? +b.r.start : 9e15));
     rows = rows.slice(0, 40);
-    $("pick-label").textContent = q ? "matching to dos" : "maybe one of these?";
+    $("pick-label").textContent = q ? "matching to dos" : "suggested";
 
     const box = $("pick-list");
     box.innerHTML = "";
@@ -1201,8 +1190,7 @@
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "pick-row";
-      btn.innerHTML = '<span class="pr-focus" aria-hidden="true">'
-        + ToolkitSidebar.icon("focus") + '</span><span class="pr-text">'
+      btn.innerHTML = '<span class="pr-text">'
         + D.highlight(c.text, c.anchorAt) + "</span>";
       if (c.kind === "note") {
         const src = document.createElement("span");
