@@ -3,29 +3,39 @@
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy"
-  content="default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/ https://cdnjs.cloudflare.com/ajax/libs/codemirror/; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com/ajax/libs/codemirror/ https://accounts.google.com/gsi/style; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' https://www.googleapis.com https://oauth2.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; object-src 'none'; base-uri 'self'; form-action 'self'">
+  content="default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/ https://cdnjs.cloudflare.com/ajax/libs/codemirror/; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com/ajax/libs/codemirror/ https://accounts.google.com/gsi/style; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' https://www.googleapis.com https://oauth2.googleapis.com https://accounts.google.com/gsi/; frame-src 'self' https://accounts.google.com/gsi/; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>orbita</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M18 7a26 26 0 1 1-11 13' fill='none' stroke='%237fdbca' stroke-width='4.5' stroke-linecap='round'/%3E%3Ccircle cx='32' cy='32' r='13' fill='%237fdbca'/%3E%3Ccircle cx='14' cy='12' r='5' fill='%237fdbca'/%3E%3C/svg%3E">
 <style>
-  body {
-    background: #011627;
-    color: #d6deeb;
-    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-    margin: 0;
-    padding: 40px;
-  }
-  a { color: #7fdbca; }
+  /* The app shell: one page that stays open while the tools load in a
+     frame, so ambience keeps playing between them */
+  @view-transition { navigation: auto; }
+  html, body { height: 100%; margin: 0; }
+  body { background: #011627; overflow: hidden; }
+  body.t-light { background: #ecf2f2; }
+  #frame { border: 0; display: block; height: 100%; width: 100%; }
+  noscript { color: #d6deeb; display: block; font-family: sans-serif; padding: 40px; }
+  noscript a { color: #7fdbca; }
 </style>
 <script>
-  // orbita opens on its dashboard
-  location.replace("dashboard/index.html");
+  // Match the tools' mode before the first one loads, to avoid a flash
+  try {
+    if (localStorage.getItem("toolkit-mode") === "light") {
+      document.documentElement.classList.add("t-light");
+    }
+  } catch {}
 </script>
 </head>
 <body>
-  <p>opening orbita&hellip; <a href="dashboard/index.html">dashboard</a>
-    &middot; <a href="notes/index.html">notes</a>
-    &middot; <a href="to-dos/index.html">to-dos</a>
-    &middot; <a href="timekeeper/index.html">timekeeper</a>
-    &middot; <a href="codepad/index.html">codepad</a></p>
+<iframe id="frame" title="orbita"></iframe>
+<noscript>orbita needs JavaScript. <a href="dashboard/index.html?standalone">open the dashboard</a></noscript>
+<script>
+  if (document.documentElement.classList.contains("t-light")) {
+    document.body.classList.add("t-light");
+  }
+</script>
+<script src="sounds.js"></script>
+<script src="shell.js"></script>
 </body>
 </html>

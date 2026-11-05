@@ -682,10 +682,12 @@
     amb.type = "button";
     amb.innerHTML = AMBIENCE_ICON;
     amb.addEventListener("click", () => {
-      if (window.ToolkitSounds) ToolkitSounds.stopAmbience();
+      const S = sounds();
+      if (S) S.stopAmbience();
     });
     controls.appendChild(amb);
-    if (ambienceName) setAmbience(ambienceName);
+    const playingNow = sounds() && sounds().current();
+    if (playingNow || ambienceName) setAmbience(playingNow || ambienceName);
 
     // Hidden until sync.js reports a state
     const s = document.createElement("button");
@@ -894,6 +896,22 @@
   // "week · to dos · orbita"
   function title(...parts) {
     document.title = parts.filter(Boolean).concat("orbita").join(" · ");
+    // Inside the app shell, the shell's tab shows this title too
+    try {
+      if (window.parent !== window && window.parent.ToolkitShell) {
+        window.parent.ToolkitShell.mirror();
+      }
+    } catch {}
+  }
+
+  // The ambience player: this page's, or the app shell's around it
+  function sounds() {
+    if (window.ToolkitSounds) return window.ToolkitSounds;
+    try {
+      return window.parent !== window ? window.parent.ToolkitSounds || null : null;
+    } catch {
+      return null;
+    }
   }
 
   // ---- Undo toast ----
