@@ -15,6 +15,15 @@
 (function () {
   "use strict";
 
+  // Inside the app shell, use the shell's player, which stays open while
+  // pages change, so ambience keeps playing
+  try {
+    if (window.parent !== window && window.parent.ToolkitSounds) {
+      window.ToolkitSounds = window.parent.ToolkitSounds;
+      return;
+    }
+  } catch {}
+
   const SETTINGS_KEY = "focus-settings";
   const NAMES = ["cafe", "fireplace", "nature", "rain", "waves"];
   // Recordings sit in the sounds folder beside this script
@@ -158,11 +167,21 @@
     stopFns.push(() => { el.pause(); el.src = ""; });
   }
 
+  // Tell this page's sidebar, and the page in the shell's frame, so the
+  // sidebar's ambience icon shows or hides
   function notify() {
-    if (window.ToolkitSidebar && ToolkitSidebar.setAmbience) {
-      ToolkitSidebar.setAmbience(playing);
-    }
-    listeners.forEach(fn => fn(playing));
+    const wins = [window];
+    document.querySelectorAll("iframe").forEach(f => {
+      try { if (f.contentWindow) wins.push(f.contentWindow); } catch {}
+    });
+    wins.forEach(w => {
+      try {
+        if (w.ToolkitSidebar && w.ToolkitSidebar.setAmbience) {
+          w.ToolkitSidebar.setAmbience(playing);
+        }
+      } catch {}
+    });
+    listeners.slice().forEach(fn => { try { fn(playing); } catch {} });
   }
 
   function stopNodes() {
@@ -209,6 +228,11 @@
     current: () => playing,
     names: NAMES,
     onChange: fn => listeners.push(fn),
+    // A page that leaves the shell's frame stops listening
+    offChange: fn => {
+      const i = listeners.indexOf(fn);
+      if (i !== -1) listeners.splice(i, 1);
+    },
     play,
     setVolume,
     stopAmbience
