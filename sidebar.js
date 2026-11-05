@@ -336,8 +336,68 @@
       /* The sidebar icon is the only sync control */
       #tool-sync { display: none !important; }
       #tk-sidebar #tk-sync[hidden] { display: none; }
-      #tk-sidebar #tk-ambience[hidden] { display: none; }
-      #tk-sidebar #tk-ambience { color: #7fdbca; }
+      /* Ambience: teal while something plays */
+      #tk-sidebar #tk-ambience.playing { color: #7fdbca; }
+      #tk-amb-pop {
+        background: #01111f;
+        border: 1px solid #1e3a52;
+        border-radius: 8px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        color: #d6deeb;
+        display: flex;
+        flex-direction: column;
+        font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+        font-size: 13px;
+        gap: 10px;
+        left: 64px;
+        opacity: 0;
+        padding: 12px;
+        position: fixed;
+        transform: translateX(-6px);
+        transition: opacity 0.15s ease, transform 0.15s ease;
+        width: 236px;
+        z-index: 960;
+      }
+      #tk-amb-pop.show { opacity: 1; transform: none; }
+      #tk-amb-pop .tk-ap-head {
+        align-items: center;
+        display: flex;
+        justify-content: space-between;
+        text-transform: lowercase;
+      }
+      #tk-amb-pop .tk-ap-head > span { color: #7fdbca; font-weight: 600; }
+      #tk-amb-pop .tk-ap-sounds { display: flex; flex-wrap: wrap; gap: 6px; }
+      #tk-amb-pop .tk-ap-pill {
+        background: rgba(127, 219, 202, 0.12);
+        border: 1px solid rgba(127, 219, 202, 0.38);
+        border-radius: 999px;
+        color: #7fdbca;
+        cursor: pointer;
+        font: inherit;
+        padding: 3px 10px;
+      }
+      #tk-amb-pop .tk-ap-pill:hover:not(:disabled),
+      #tk-amb-pop .tk-ap-pill:focus-visible {
+        background: rgba(127, 219, 202, 0.2);
+        border-color: #7fdbca;
+        outline: none;
+      }
+      #tk-amb-pop .tk-ap-pill[aria-pressed="true"] {
+        background: rgba(127, 219, 202, 0.4);
+        border-color: #7fdbca;
+        color: #d6deeb;
+      }
+      #tk-amb-pop .tk-ap-pill:disabled { cursor: default; opacity: 0.5; }
+      #tk-amb-pop .tk-ap-vol {
+        color: #8291a5;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      #tk-amb-pop .tk-ap-vol input { accent-color: #7fdbca; width: 100%; }
+      @media (prefers-reduced-motion: reduce) {
+        #tk-amb-pop { transition: none; }
+      }
       #tk-sidebar #tk-sync[data-state="pending"],
       #tk-sidebar #tk-sync[data-state="synced"],
       #tk-sidebar #tk-sync[data-state="syncing"] { color: #7fdbca; }
@@ -674,20 +734,23 @@
     help.innerHTML = helpItem.icon;
     controls.appendChild(help);
 
-    // Shown while ambience plays; clicking it stops the ambience
+    // Ambience: always here; hovering or clicking opens its panel
     const amb = document.createElement("button");
     amb.className = "tk-btn";
-    amb.hidden = true;
     amb.id = "tk-ambience";
     amb.type = "button";
     amb.innerHTML = AMBIENCE_ICON;
+    amb.setAttribute("aria-haspopup", "dialog");
+    amb.setAttribute("aria-expanded", "false");
     amb.addEventListener("click", () => {
-      const S = sounds();
-      if (S) S.stopAmbience();
+      if (ambPinned) closeAmbience();
+      else openAmbience(true);
     });
+    amb.addEventListener("mouseenter", () => openAmbience(false));
+    amb.addEventListener("mouseleave", e => leaveAmbience(e));
     controls.appendChild(amb);
     const playingNow = sounds() && sounds().current();
-    if (playingNow || ambienceName) setAmbience(playingNow || ambienceName);
+    setAmbience(playingNow || ambienceName);
 
     // Hidden until sync.js reports a state
     const s = document.createElement("button");
@@ -708,7 +771,8 @@
     document.body.appendChild(tip);
     nav.addEventListener("mouseover", e => {
       const b = e.target.closest(".tk-btn");
-      if (b) showTip(b);
+      // The ambience panel stands in for its label
+      if (b && b.id !== "tk-ambience") showTip(b);
     });
     nav.addEventListener("mouseout", e => {
       const b = e.target.closest(".tk-btn");
@@ -850,19 +914,159 @@
   // A speaker with sound waves, for ambience that is playing
   const AMBIENCE_ICON = svg('<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/>'
     + '<path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/>');
-  let ambienceName = null;
+  let ambienceName = null, ambPop = null, ambPinned = false, ambTimer = 0;
+  const AMBIENCE_NAMES = ["cafe", "fireplace", "nature", "rain", "waves"];
 
+  // Called by the player whenever ambience starts, stops or changes
   function setAmbience(name) {
     ambienceName = name || null;
     if (!nav) return;
     const b = nav.querySelector("#tk-ambience");
     if (!b) return;
-    b.hidden = !ambienceName;
-    const label = ambienceName ? "ambience: " + ambienceName + ", click to stop" : "";
+    const S = sounds();
+    const label = ambienceName
+      ? "ambience: " + (S ? S.label(ambienceName) : ambienceName) : "ambience";
+    b.classList.toggle("playing", !!ambienceName);
     b.dataset.label = label;
     b.setAttribute("aria-label", label);
-    updateTip();
+    if (ambPop) renderAmbience();
   }
+
+  // ---- Ambience panel ----
+  //
+  // Opens to the right of the ambience icon: play or stop, the sounds,
+  // and volume. Hovering opens it until the pointer leaves; clicking pins
+  // it open until a click elsewhere or Esc.
+
+  function ensurePlayer(then) {
+    if (sounds()) return then();
+    // A page opened outside the app shell may not have the player yet
+    if (!document.getElementById("tk-sounds-script")) {
+      const sc = document.createElement("script");
+      sc.id = "tk-sounds-script";
+      sc.src = (cfg && cfg.root || "../") + "sounds.js";
+      sc.addEventListener("load", then);
+      document.head.appendChild(sc);
+    }
+  }
+
+  function openAmbience(pin) {
+    clearTimeout(ambTimer);
+    if (pin) ambPinned = true;
+    const b = nav && nav.querySelector("#tk-ambience");
+    if (!b) return;
+    b.setAttribute("aria-expanded", "true");
+    if (!ambPop) {
+      ambPop = document.createElement("div");
+      ambPop.id = "tk-amb-pop";
+      ambPop.setAttribute("role", "dialog");
+      ambPop.setAttribute("aria-label", "ambience");
+      ambPop.addEventListener("mouseenter", () => clearTimeout(ambTimer));
+      ambPop.addEventListener("mouseleave", e => leaveAmbience(e));
+      document.body.appendChild(ambPop);
+      requestAnimationFrame(() => ambPop && ambPop.classList.add("show"));
+    }
+    const r = b.getBoundingClientRect();
+    ambPop.style.top = Math.max(8, Math.min(innerHeight - 200, r.top - 8)) + "px";
+    ensurePlayer(renderAmbience);
+    renderAmbience();
+    if (pin) {
+      const first = ambPop.querySelector("button");
+      if (first) first.focus();
+    }
+  }
+
+  function closeAmbience() {
+    clearTimeout(ambTimer);
+    ambPinned = false;
+    const b = nav && nav.querySelector("#tk-ambience");
+    if (b) b.setAttribute("aria-expanded", "false");
+    if (ambPop) ambPop.remove();
+    ambPop = null;
+  }
+
+  // Leaving the icon or panel closes a hovered panel, after a moment to
+  // move between them
+  function leaveAmbience(e) {
+    if (ambPinned) return;
+    const to = e.relatedTarget;
+    if (to && ((ambPop && ambPop.contains(to)) || to.closest && to.closest("#tk-ambience"))) {
+      return;
+    }
+    clearTimeout(ambTimer);
+    ambTimer = setTimeout(closeAmbience, 250);
+  }
+
+  function renderAmbience() {
+    if (!ambPop) return;
+    const S = sounds();
+    const playing = S ? S.current() : null;
+    let vol = 0.5;
+    try {
+      const v = (JSON.parse(read("focus-settings")) || {}).ambienceVolume;
+      if (Number.isFinite(v)) vol = v;
+    } catch {}
+    ambPop.innerHTML = "";
+
+    const head = document.createElement("div");
+    head.className = "tk-ap-head";
+    const title = document.createElement("span");
+    title.textContent = "ambience";
+    const play = document.createElement("button");
+    play.type = "button";
+    play.className = "tk-ap-pill tk-ap-play";
+    play.textContent = playing ? "■ stop" : "▶ play";
+    play.disabled = !S;
+    play.addEventListener("click", () => {
+      if (!S) return;
+      if (S.current()) S.stopAmbience();
+      else S.play();
+    });
+    head.append(title, play);
+
+    const list = document.createElement("div");
+    list.className = "tk-ap-sounds";
+    (S ? S.names : AMBIENCE_NAMES).forEach(name => {
+      const p = document.createElement("button");
+      p.type = "button";
+      p.className = "tk-ap-pill";
+      p.textContent = S ? S.label(name) : name;
+      p.setAttribute("aria-pressed", String(name === playing));
+      p.disabled = !S;
+      p.addEventListener("click", () => {
+        if (S.current() === name) S.stopAmbience();
+        else S.play(name);
+      });
+      list.appendChild(p);
+    });
+
+    const vl = document.createElement("label");
+    vl.className = "tk-ap-vol";
+    const vt = document.createElement("span");
+    vt.textContent = "volume";
+    const range = document.createElement("input");
+    range.type = "range";
+    range.min = "0";
+    range.max = "100";
+    range.value = String(Math.round(vol * 100));
+    range.addEventListener("input", () => {
+      if (S) S.setVolume(range.value / 100);
+    });
+    vl.append(vt, range);
+    ambPop.append(head, list, vl);
+  }
+
+  document.addEventListener("pointerdown", e => {
+    if (ambPop && !ambPop.contains(e.target)
+        && !e.target.closest("#tk-ambience")) closeAmbience();
+  });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && ambPop) {
+      const b = nav && nav.querySelector("#tk-ambience");
+      closeAmbience();
+      if (b) b.focus();
+    }
+  });
 
   function setSync(state, label) {
     syncState = { label, state };
