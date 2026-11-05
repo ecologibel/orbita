@@ -511,6 +511,7 @@
     border-radius: 5px;
   }
 </style>
+<link rel="stylesheet" href="../ui.css">
 </head>
 <body>
 <div id="app" class="t-dark size-m width-normal">
@@ -584,25 +585,25 @@
 
   // One quote a day, in this order
   const QUOTES = [
-    ["Above all, don't fear difficult moments.\nThe best comes from them.",
+    ["Above all, don't fear difficult moments. The best comes from them.",
       "Rita Levi-Montalcini, Nobel neurobiologist"],
-    ["All sorts of things can happen\nwhen you're open to new ideas and\n"
+    ["All sorts of things can happen when you're open to new ideas and "
       + "playing around with things.",
       "Stephanie Kwolek, chemist and inventor"],
-    ["An ugly baby is better than no baby at all.\nIf you wait and wait "
-      + "and wait for your product\nto be perfect before you release it "
-      + "into the world,\nyou will never get there.",
+    ["An ugly baby is better than no baby at all. If you wait and wait "
+      + "and wait for your product to be perfect before you release it "
+      + "into the world, you will never get there.",
       "Kathryn Minshew, entrepreneur"],
     ["Be focused. Be determined. Be hopeful. Be empowered.",
       "Michelle Obama, attorney and author"],
-    ["Courage is like — it's a habitus, a habit, a virtue:\nyou get it by "
-      + "courageous acts.\nIt's like you learn to swim by swimming.\n"
+    ["Courage is like — it's a habitus, a habit, a virtue: you get it by "
+      + "courageous acts. It's like you learn to swim by swimming. "
       + "You learn courage by couraging.",
       "Mary Daly, feminist philosopher and theologian"],
-    ["Forgive yourself for staying too long,\nsaying the wrong thing,\n"
-      + "holding onto the past,\nnot allowing yourself to grow,\nnot "
-      + "knowing all the answers,\nletting an opportunity pass,\njudging "
-      + "yourself,\nfollowing old patterns -\nbeing human.", "Unknown"],
+    ["Forgive yourself for staying too long, saying the wrong thing, "
+      + "holding onto the past, not allowing yourself to grow, not "
+      + "knowing all the answers, letting an opportunity pass, judging "
+      + "yourself, following old patterns - being human.", "Unknown"],
     ["Humans are not wired to be constantly wired.",
       "Cal Newport, computer scientist and author"],
     ["If you haven't failed yet, you haven't tried anything.",
@@ -616,23 +617,23 @@
       "Margaret Mead, anthropologist"],
     ["Prioritise a clear sense of why over an excessively detailed sense "
       + "of how.", "Auftragstaktik, mission command principle"],
-    ["Small deeds done are better\nthan great deeds planned.",
+    ["Small deeds done are better than great deeds planned.",
       "Peter Marshall, preacher and US Senate chaplain"],
-    ["Success has nothing\nto do with perfection.",
+    ["Success has nothing to do with perfection.",
       "Michelle Obama, attorney and author"],
-    ["The more clearly we can focus our attention\non the wonders and "
-      + "realities of the universe about us,\nthe less taste we shall "
+    ["The more clearly we can focus our attention on the wonders and "
+      + "realities of the universe about us, the less taste we shall "
       + "have for destruction.", "Rachel Carson, conservationist"],
     ["The way of progress is neither swift nor easy.",
       "Marie Curie, physicist"],
-    ["This job is a great scientific adventure.\nBut it's also a great "
-      + "human adventure.\nHumankind has made giant steps forward.\n"
-      + "However, what we know is really very,\nvery little compared to "
+    ["This job is a great scientific adventure. But it's also a great "
+      + "human adventure. Humankind has made giant steps forward. "
+      + "However, what we know is really very, very little compared to "
       + "what we still have to know.", "Fabiola Gianotti, physicist"],
-    ["We are what we repeatedly do.\nExcellence, then, is not an act, but "
+    ["We are what we repeatedly do. Excellence, then, is not an act, but "
       + "a habit.", "Will Durant, historian and philosopher"],
-    ["What you do makes a difference,\nand you have to decide what kind "
-      + "of\ndifference you want to make.", "Jane Goodall, primatologist"]
+    ["What you do makes a difference, and you have to decide what kind "
+      + "of difference you want to make.", "Jane Goodall, primatologist"]
   ];
 
   function read(key) {
@@ -1079,7 +1080,7 @@
   // list, and the simple view opens with it sliding into place
   function addNewTodo() {
     ToolkitSidebar.modal({
-      title: "new to do",
+      label: "new to do",
       input: { placeholder: "what needs doing? add @friday to give it a date" }
     }).then(text => {
       if (!text) return;

@@ -1499,6 +1499,7 @@
         text-transform: lowercase;
       }
       .tk-modal .tkm-body { font-size: 14px; line-height: 1.55; }
+      .tk-modal .untitled .tkm-body { margin-right: 30px; }
       .tk-modal .tkm-body p { margin: 0 0 8px; }
       .tk-modal .tkm-muted { color: var(--tkm-muted); font-size: 13px; }
       .tk-modal .tkm-input {
@@ -1596,11 +1597,17 @@
     box.className = "tkm-box";
     box.setAttribute("role", "dialog");
     box.setAttribute("aria-modal", "true");
-    box.setAttribute("aria-labelledby", "tkm-title");
+    // Without a title, opts.label names the window for screen readers
+    if (opts.title) box.setAttribute("aria-labelledby", "tkm-title");
+    else box.setAttribute("aria-label", opts.label || "");
 
     const title = document.createElement("h2");
     title.id = "tkm-title";
     title.textContent = opts.title || "";
+    if (!opts.title) {
+      title.hidden = true;
+      box.classList.add("untitled");
+    }
     const body = document.createElement("div");
     body.className = "tkm-body";
     if (typeof opts.body === "string") {
@@ -1618,7 +1625,8 @@
       input.className = "tkm-input";
       input.autocomplete = "off";
       input.placeholder = opts.input.placeholder || "";
-      input.setAttribute("aria-label", opts.input.label || opts.title || "");
+      input.setAttribute("aria-label", opts.input.label || opts.title
+        || opts.label || "");
       input.addEventListener("keydown", e => {
         if (e.key !== "Enter" || e.isComposing) return;
         e.preventDefault();
