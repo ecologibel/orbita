@@ -29,6 +29,7 @@ TIMEOUT_MS = 15000
 CLICK_TESTS = [
     ("multi-file sync", "tests/multi-file-sync-test.html", None),
     ("duplicate Drive files", "tests/duplicate-files-test.html", None),
+    ("clock skew", "tests/clock-skew-test.html", None),
     ("sync conflict: detect", "tests/sync-conflict-test.html", "detect"),
     ("sync conflict: keep local", "tests/sync-conflict-test.html", "LOCAL"),
     ("sync conflict: use Drive", "tests/sync-conflict-test.html", "DRIVE"),
