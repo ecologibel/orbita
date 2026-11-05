@@ -131,6 +131,40 @@
   section[hidden] { display: none; }
   #focus.picking #panel,
   #focus.picking #c-btns { display: none; }
+
+  /* Pick a task: a rounded button under the timer while picking */
+  #c-pick { display: none; }
+  #focus.picking #c-pick {
+    background: transparent;
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    color: var(--accent);
+    cursor: pointer;
+    display: inline-block;
+    font: inherit;
+    font-size: 14px;
+    margin-top: 6px;
+    padding: 5px 16px;
+    text-transform: lowercase;
+    transition: background 0.15s, color 0.15s;
+  }
+  #focus.picking #c-pick:hover,
+  #focus.picking #c-pick:focus-visible {
+    background: var(--accent);
+    color: var(--bg);
+    outline: none;
+  }
+  /* The search bar glows when pick a task sends the cursor there */
+  #pick-input.glow { animation: pick-glow 1.6s ease-out; }
+  @keyframes pick-glow {
+    0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); }
+    35% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 30%, transparent),
+      0 0 22px color-mix(in srgb, var(--accent) 45%, transparent); }
+    100% { box-shadow: 0 0 0 0 transparent, var(--shadow); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #pick-input.glow { animation: none; }
+  }
   #picker { margin-top: 0; }
 
   /* Entrance */
@@ -334,6 +368,20 @@
     white-space: pre-wrap;
   }
   #focal-text:hover { background: var(--tint); }
+  /* Brings the step field back once its + line has been deleted */
+  #focal-add {
+    background: none;
+    border: none;
+    color: var(--accent);
+    cursor: pointer;
+    flex-shrink: 0;
+    font: inherit;
+    font-size: 22px;
+    line-height: 1.4;
+    margin-left: auto;
+    padding: 0 4px;
+  }
+  #focal-add[hidden] { display: none; }
   #focal-text:focus { background: var(--tint); box-shadow: 0 0 0 1px var(--border); }
   #focal-text code {
     background: var(--code-bg);
@@ -364,6 +412,24 @@
     text-decoration: line-through;
   }
   .focal.done #focal-text .date-token { color: var(--accent); }
+
+  /* Ticking the task: a line sweeps across each line of text in turn,
+     then the usual strike-through takes over */
+  .focal { position: relative; }
+  .focal.striking #focal-text,
+  .focal.striking #focal-text span { text-decoration: none; }
+  .strike-line {
+    animation: strike-across 0.35s ease-out both;
+    background: var(--done);
+    height: 2px;
+    pointer-events: none;
+    position: absolute;
+    transform-origin: left center;
+  }
+  @keyframes strike-across {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+  }
 
   /* Timer: a ring that drains as time passes, centred, with its
      controls inside, beneath the time */
@@ -524,32 +590,45 @@
   .add-sub[hidden] { display: none; }
 
   /* ---- Finished: the ring fills and the cheer sits inside ---- */
-  /* A wide stroke on a half-radius circle draws a disc that sweeps in
-     from 12 o'clock towards 9, following the timer's moving edge, then
-     breathes. The mirror reverses the stroke's direction; the long gap
-     keeps it hidden until it starts, and the dash runs a little past
-     the start so no seam shows once it's full */
-  #ring-fill {
-    stroke: var(--accent);
-    stroke-dasharray: 101 200;
-    stroke-dashoffset: 101;
-    stroke-width: 95 !important;
-    transform: scaleY(-1);
-    transform-origin: 100px 100px;
+  /* A glow starts just inside the ring's edge, then grows inwards and
+     loses its transparency until it fills the circle (about 2s), then
+     breathes */
+  @property --glow-in {
+    syntax: '<percentage>';
+    inherits: false;
+    initial-value: 100%;
   }
-  #ring.finished #ring-fill {
-    stroke-dashoffset: 0;
-    transition: stroke-dashoffset 2.5s ease-in-out;
+  #ring-fill { display: none; }
+  .ring-body { position: relative; }
+  .ring-glow {
+    --glow-in: 100%;
+    background: radial-gradient(circle closest-side,
+      transparent calc(var(--glow-in) - 28%), var(--accent) var(--glow-in));
+    border-radius: 50%;
+    inset: 4%;
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+  }
+  #ring.finished .ring-glow {
+    animation: ring-glow 2s ease-in-out forwards;
+  }
+  @keyframes ring-glow {
+    0% { --glow-in: 100%; opacity: 0.2; }
+    100% { --glow-in: 0%; opacity: 1; }
   }
   #ring.finished .ring-body {
-    animation: breathe 3.2s ease-in-out 2.5s infinite;
+    animation: breathe 3.2s ease-in-out 2s infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #ring.finished .ring-glow { animation: none; --glow-in: 0%; opacity: 1; }
   }
   #c-cheer, #c-back { display: none; }
   #ring.finished #c-time, #ring.finished #c-state,
   #ring.finished #c-btns { display: none; }
   #ring.finished #c-cheer { display: block; }
   #ring.finished .face-main, #ring.finished .face-below {
-    animation: rise 0.5s ease 2.1s both;
+    animation: rise 0.5s ease 1.7s both;
   }
   #c-cheer {
     color: var(--bg);
@@ -608,6 +687,7 @@
       <div class="timer">
         <div id="ring">
           <div class="ring-body">
+            <div class="ring-glow"></div>
             <svg viewBox="0 0 200 200" aria-hidden="true">
               <circle id="ring-fill" cx="100" cy="100" r="47.5" pathLength="100"/>
               <circle class="ring-track" cx="100" cy="100" r="92"/>
@@ -623,6 +703,7 @@
             <div class="face-below">
               <div id="c-state"></div>
               <div id="c-btns"></div>
+              <button id="c-pick" type="button">pick a task</button>
               <button id="c-back" type="button">
                 <svg viewBox="0 0 24 24" width="15" height="15" fill="none"
                   stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -639,6 +720,8 @@
         <div class="focal">
           <input type="checkbox" id="focal-done" aria-label="done">
           <div id="focal-text" spellcheck="true" title="click to edit"></div>
+          <button id="focal-add" class="plus" type="button" hidden
+            title="break it down" aria-label="add a step">+</button>
         </div>
         <div id="subs"></div>
         <div class="add-sub" id="add-sub-row" style="margin-left: 32px">
@@ -1051,6 +1134,18 @@
     render();
   }
 
+  // Pick a task: put the cursor in the search bar and make it glow
+  $("c-pick").addEventListener("click", () => {
+    const input = $("pick-input");
+    input.focus();
+    input.classList.remove("glow");
+    void input.offsetWidth;
+    input.classList.add("glow");
+  });
+  $("pick-input").addEventListener("animationend", e => {
+    if (e.animationName === "pick-glow") e.target.classList.remove("glow");
+  });
+
   $("pick-input").addEventListener("input", renderPicker);
   $("pick-input").addEventListener("keydown", e => {
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
@@ -1197,7 +1292,7 @@
       input.addEventListener("keydown", e => {
         if (e.key === "Enter") {
           e.preventDefault();
-          $("add-sub").focus();
+          openAddRow();
         } else if (e.key === "Backspace" && input.value === "") {
           e.preventDefault();
           removeStep(k);
@@ -1213,6 +1308,51 @@
       box.appendChild(row);
     });
     $("add-sub").placeholder = box.children.length ? "" : "break it down";
+    const closed = addRowClosed();
+    $("add-sub-row").hidden = closed;
+    $("focal-add").hidden = !closed;
+  }
+
+  // Whether this task's + line has been deleted with Backspace
+  const CLOSED_KEY = "focus-steps-closed";
+  function addRowClosed() {
+    const ref = F.get().task;
+    try {
+      return !!(ref && (JSON.parse(read(CLOSED_KEY)) || {})[stepKey(ref)]);
+    } catch { return false; }
+  }
+  function setAddRowClosed(closed) {
+    const ref = F.get().task;
+    if (!ref) return;
+    let all = {};
+    try { all = JSON.parse(read(CLOSED_KEY)) || {}; } catch {}
+    if (closed) all[stepKey(ref)] = true;
+    else delete all[stepKey(ref)];
+    store(CLOSED_KEY, JSON.stringify(all));
+  }
+
+  // The cursor goes to the end of the line above: a step, or the task
+  function focusLineAbove(k) {
+    const rows = $("subs").querySelectorAll(".sub-text");
+    const target = k > 0 ? rows[k - 1] : null;
+    if (target) {
+      target.focus();
+      target.setSelectionRange(target.value.length, target.value.length);
+      return;
+    }
+    focalEl.focus();
+    const range = document.createRange();
+    range.selectNodeContents(focalEl);
+    range.collapse(false);
+    const sel = getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+
+  function openAddRow() {
+    setAddRowClosed(false);
+    renderSubs();
+    $("add-sub").focus();
   }
 
   function removeStep(k) {
@@ -1220,11 +1360,21 @@
     list.splice(k, 1);
     setSteps(list);
     renderSubs();
-    $("add-sub").focus();
+    focusLineAbove(k);
   }
 
-  // A new step takes the field's place; a fresh + opens beneath
+  $("focal-add").addEventListener("click", openAddRow);
+
+  // A new step takes the field's place; a fresh + opens beneath.
+  // Backspace on the empty field deletes the + line itself.
   $("add-sub").addEventListener("keydown", e => {
+    if (e.key === "Backspace" && $("add-sub").value === "") {
+      e.preventDefault();
+      setAddRowClosed(true);
+      renderSubs();
+      focusLineAbove(getSteps().length);
+      return;
+    }
     if (e.key !== "Enter") return;
     e.preventDefault();
     const text = $("add-sub").value.trim();
@@ -1238,10 +1388,51 @@
   });
 
   // Tick the focal task: the timer stops and a cheer comes up
+  // Draw a line across each line of the task's text, one after another
+  function strikeAcross() {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const focal = document.querySelector(".focal");
+    const box = focal.getBoundingClientRect();
+    const range = document.createRange();
+    range.selectNodeContents(focalEl);
+    // One rectangle per text line, merging fragments on the same line
+    const lines = [];
+    Array.from(range.getClientRects()).forEach(r => {
+      if (!r.width) return;
+      const line = lines.find(l => Math.abs(l.top - r.top) < r.height / 2);
+      if (line) {
+        line.left = Math.min(line.left, r.left);
+        line.right = Math.max(line.right, r.right);
+      } else {
+        lines.push({ top: r.top, height: r.height, left: r.left, right: r.right });
+      }
+    });
+    if (!lines.length) return;
+    focal.classList.add("striking");
+    // Each line takes 0.35s, but a long task sweeps faster to finish
+    // within about 1.2s
+    const step = Math.min(0.35, 1.2 / lines.length);
+    lines.forEach((l, i) => {
+      const bar = document.createElement("div");
+      bar.className = "strike-line";
+      bar.style.left = (l.left - box.left) + "px";
+      bar.style.top = (l.top - box.top + l.height * 0.55) + "px";
+      bar.style.width = (l.right - l.left) + "px";
+      bar.style.animationDelay = (i * step) + "s";
+      bar.style.animationDuration = step + "s";
+      focal.appendChild(bar);
+    });
+    setTimeout(() => {
+      focal.classList.remove("striking");
+      focal.querySelectorAll(".strike-line").forEach(b => b.remove());
+    }, (lines.length * step) * 1000 + 50);
+  }
+
   $("focal-done").addEventListener("change", () => {
     const loc = locate(F.get().task);
     if (!loc) return;
     const done = $("focal-done").checked;
+    if (done) strikeAcross();
     setDone(loc, loc.item, done);
     save(loc);
     const s = F.get();
