@@ -945,6 +945,11 @@
             <span>volume</span>
             <input id="ambience-volume" type="range" min="0" max="100" step="1">
           </label>
+          <div class="set-row">
+            <button type="button" class="set-opt" id="ambience-auto"
+              aria-pressed="false"
+              title="start your last ambience when the timer starts">with the timer</button>
+          </div>
         </div></div>
       </section>
     </div>
@@ -1975,6 +1980,8 @@
   }
 
   function start() {
+    const set = settingsGet();
+    if (set.ambienceAuto && !S.current()) S.play();
     update(s => {
       // A finish time (from the settings) ends the countdown at that time
       const until = s.finishAt && s.finishAt > Date.now()
@@ -2227,13 +2234,20 @@
     // Ambience: one at a time; clicking the playing one stops it
     const ambBox = $("ambience-options"), playing = S.current();
     ambBox.innerHTML = "";
-    S.names.forEach(name => optionButton(ambBox, name, name === playing, () => {
+    S.names.forEach(name => optionButton(ambBox, S.label(name), name === playing, () => {
       if (S.current() === name) S.stopAmbience();
       else S.play(name);
     }));
     $("ambience-volume").value = Math.round((Number.isFinite(set.ambienceVolume)
       ? set.ambienceVolume : 0.5) * 100);
+    $("ambience-auto").setAttribute("aria-pressed", String(!!set.ambienceAuto));
   }
+
+  // With the timer: starting the countdown starts the last ambience
+  $("ambience-auto").addEventListener("click", () => {
+    settingsSet({ ambienceAuto: !settingsGet().ambienceAuto });
+    renderSettings();
+  });
 
   // Chime volume: the chime plays again once the slider is let go
   $("chime-volume").addEventListener("change", e => {

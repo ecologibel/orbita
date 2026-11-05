@@ -1294,20 +1294,24 @@
   // chime(name, volume) plays a given one, for previews.
 
   const SETTINGS_KEY = "focus-settings";
-  // Each chime: notes as [frequency, start (s), length (s), wave, peak]
+  // Each chime: notes as [frequency, start (s), length (s), wave, peak,
+  // attack (s, default 0.03)]
   const CHIMES = {
-    // A soft rising triad
-    chime: [[784, 0, 1.8, "sine", 0.16], [1046.5, 0.32, 1.8, "sine", 0.16],
-      [1318.5, 0.64, 1.8, "sine", 0.16]],
     // One bell strike with a bright overtone
-    ding: [[1318.5, 0, 2.6, "sine", 0.2], [2637, 0, 1.2, "sine", 0.05],
+    chime: [[1318.5, 0, 2.6, "sine", 0.2], [2637, 0, 1.2, "sine", 0.05],
       [3951, 0, 0.5, "sine", 0.02]],
+    // A quick, bright two-note chirp that jumps up a fourth
+    ding: [[1568, 0, 0.09, "triangle", 0.16, 0.005],
+      [2093, 0.075, 0.55, "triangle", 0.16, 0.005],
+      [4186, 0.075, 0.25, "sine", 0.03, 0.005]],
     // Quick high notes tumbling upwards
     sparkle: [[1568, 0, 0.6, "triangle", 0.09], [2093, 0.08, 0.6, "triangle", 0.09],
       [2637, 0.16, 0.7, "triangle", 0.09], [3136, 0.24, 0.8, "triangle", 0.08],
       [4186, 0.32, 1.1, "sine", 0.06]],
-    // Two low, slow notes
-    soft: [[523.25, 0, 2.4, "sine", 0.14], [659.25, 0.45, 2.6, "sine", 0.12]]
+    // A singing bowl: a low tone that blooms slowly and shimmers (two
+    // slightly different pitches beat against each other) as it fades
+    soft: [[392, 0, 4.5, "sine", 0.13, 0.12], [393.4, 0, 4.5, "sine", 0.1, 0.12],
+      [1082, 0, 2.8, "sine", 0.035, 0.1], [2117, 0, 1.6, "sine", 0.015, 0.1]]
   };
 
   function chimeSettings() {
@@ -1334,14 +1338,14 @@
       const ctx = new AC();
       if (ctx.state === "suspended") ctx.resume();
       let end = 0;
-      notes.forEach(([f, t, len, wave, peak]) => {
+      notes.forEach(([f, t, len, wave, peak, attack = 0.03]) => {
         const o = ctx.createOscillator(), g = ctx.createGain();
         const at = ctx.currentTime + t;
         o.type = wave;
         o.frequency.value = f;
         g.gain.setValueAtTime(0.0001, at);
         g.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak * level * 1.4),
-          at + 0.03);
+          at + attack);
         g.gain.exponentialRampToValueAtTime(0.0001, at + len);
         o.connect(g);
         g.connect(ctx.destination);
@@ -1424,7 +1428,16 @@
       s.alerted = true;
       s.bannerOff = false;
       store(FOCUS_KEY, JSON.stringify(s));
-      if (first) chime();
+      if (first) {
+        // Ambience fades out, and the chime sounds as it fades
+        const S = sounds();
+        if (S && S.current()) {
+          S.fadeOut(2);
+          setTimeout(() => chime(), 1200);
+        } else {
+          chime();
+        }
+      }
     }
     renderChip(s);
     renderBanner(s);

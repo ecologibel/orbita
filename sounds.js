@@ -1,16 +1,19 @@
 // ---- Ambience ----
 //
-// Background sound on loop while focusing. Rain, waves and fireplace are
-// made in the browser from noise; cafe and nature play recordings from
-// the sounds folder. One plays at a time.
+// Background sound on loop while focusing. Café, fire, nature and rain
+// play recordings from the sounds folder (sources in sounds/README.md);
+// waves is made in the browser from noise. One plays at a time.
 //
 //   ToolkitSounds.play("rain")   start (or switch to) an ambience
-//   ToolkitSounds.stopAmbience() stop it
+//   ToolkitSounds.play()         start the last one played
+//   ToolkitSounds.stopAmbience() stop it (fadeOut(s) stops it slowly)
 //   ToolkitSounds.setVolume(0.5) change the volume while it plays
 //   ToolkitSounds.current()      the name playing, or null
+//   ToolkitSounds.label("cafe")  "café", for showing
 //
-// The chosen volume is kept with the focus settings ("focus-settings").
-// The left sidebar shows a small icon while ambience plays.
+// The volume and last sound are kept with the focus settings
+// ("focus-settings"). Each sound has a level that brings it to about the
+// same loudness, so the volume slider means the same for all of them.
 
 (function () {
   "use strict";
@@ -26,19 +29,36 @@
 
   const SETTINGS_KEY = "focus-settings";
   const NAMES = ["cafe", "fireplace", "nature", "rain", "waves"];
+  const LABELS = { cafe: "café", fireplace: "fire", nature: "nature",
+    rain: "rain", waves: "waves" };
+  // Gain for each sound, measured so they start at a similar loudness
+  // (fire and rain are quiet recordings; a limiter catches their peaks)
+  const LEVELS = { cafe: 0.54, fireplace: 5.2, nature: 0.74, rain: 8.3,
+    waves: 0.31 };
+
   // Recordings sit in the sounds folder beside this script
   const BASE = new URL(".", document.currentScript.src);
   const FILES = {
     cafe: new URL("sounds/cafe.ogg", BASE).href,
-    nature: new URL("sounds/nature.ogg", BASE).href
+    fireplace: new URL("sounds/fire.ogg", BASE).href,
+    nature: new URL("sounds/nature.ogg", BASE).href,
+    rain: new URL("sounds/rain.mp3", BASE).href
   };
 
-  let ctx = null, master = null, playing = null, stopFns = [];
+  let ctx = null, master = null, meterNode = null, playing = null;
+  let stopFns = [];
   const listeners = [];
 
   function settings() {
     try { return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}; }
     catch { return {}; }
+  }
+
+  function saveSetting(patch) {
+    try {
+      localStorage.setItem(SETTINGS_KEY,
+        JSON.stringify(Object.assign(settings(), patch)));
+    } catch {}
   }
 
   function volume() {
@@ -52,14 +72,27 @@
       ctx = new AC();
       master = ctx.createGain();
       master.gain.value = 0;
-      master.connect(ctx.destination);
+      meterNode = ctx.createAnalyser();
+      meterNode.fftSize = 2048;
+      // A limiter, so raised quiet recordings never clip on loud moments
+      const limit = ctx.createDynamicsCompressor();
+      limit.threshold.value = -6;
+      limit.knee.value = 3;
+      limit.ratio.value = 20;
+      limit.attack.value = 0.003;
+      limit.release.value = 0.25;
+      master.connect(limit);
+      limit.connect(ctx.destination);
+      limit.connect(meterNode);
     }
     if (ctx.state === "suspended") ctx.resume();
     return ctx;
   }
 
-  // Seconds of looping noise: white, or brown (deeper, like distant surf)
-  function noise(kind, seconds = 4) {
+  // ---- Waves, made from noise ----
+
+  // Seconds of looping brown noise (deeper, like distant surf) or white
+  function noise(kind, seconds) {
     const len = ctx.sampleRate * seconds;
     const buf = ctx.createBuffer(1, len, ctx.sampleRate);
     const d = buf.getChannelData(0);
@@ -93,7 +126,7 @@
     return g;
   }
 
-  // A slow wobble on a value: [node.param, centre, depth, seconds per cycle]
+  // A slow wobble on a value: [param, centre, depth, seconds per cycle]
   function wobble(param, centre, depth, period) {
     const lfo = ctx.createOscillator(), amt = gain(depth);
     lfo.frequency.value = 1 / period;
@@ -109,66 +142,37 @@
     return nodes[nodes.length - 1];
   }
 
-  const MAKERS = {
-    // Steady hiss, plus a brighter patter that rises and falls
-    rain() {
-      const hiss = noise("white"), patter = noise("white");
-      chain(hiss, filter("lowpass", 5200), filter("highpass", 500), gain(0.32), master);
-      const pg = gain(0.12);
-      chain(patter, filter("bandpass", 3200, 0.9), pg, master);
-      wobble(pg.gain, 0.12, 0.05, 7);
-      hiss.start();
-      patter.start();
-      stopFns.push(() => { hiss.stop(); patter.stop(); });
-    },
-    // Deep surf that swells and draws back every 9 seconds
-    waves() {
-      const surf = noise("brown", 6), spray = noise("white", 4);
-      const sg = gain(0.6), lp = filter("lowpass", 700);
-      chain(surf, lp, sg, master);
-      wobble(sg.gain, 0.55, 0.45, 9);
-      wobble(lp.frequency, 700, 350, 9);
-      const fg = gain(0.04);
-      chain(spray, filter("highpass", 2500), fg, master);
-      wobble(fg.gain, 0.04, 0.035, 9);
-      surf.start();
-      spray.start();
-      stopFns.push(() => { surf.stop(); spray.stop(); });
-    },
-    // A low rumble with random crackles
-    fireplace() {
-      const rumble = noise("brown", 5);
-      chain(rumble, filter("lowpass", 320), gain(0.55), master);
-      rumble.start();
-      const crackle = noise("white", 2);
-      const env = gain(0);
-      chain(crackle, filter("bandpass", 2600, 1.2), env, master);
-      crackle.start();
-      let timer = 0;
-      const pop = () => {
-        const at = ctx.currentTime, size = 0.15 + Math.random() * 0.5;
-        env.gain.cancelScheduledValues(at);
-        env.gain.setValueAtTime(size, at);
-        env.gain.exponentialRampToValueAtTime(0.0001, at + 0.02 + Math.random() * 0.05);
-        timer = setTimeout(pop, 40 + Math.random() * (Math.random() < 0.2 ? 900 : 260));
-      };
-      pop();
-      stopFns.push(() => { clearTimeout(timer); rumble.stop(); crackle.stop(); });
-    }
-  };
+  // Deep surf that swells and draws back every 9 seconds
+  function waves(out) {
+    const surf = noise("brown", 6), spray = noise("white", 4);
+    const sg = gain(0.6), lp = filter("lowpass", 700);
+    chain(surf, lp, sg, out);
+    wobble(sg.gain, 0.55, 0.45, 9);
+    wobble(lp.frequency, 700, 350, 9);
+    const fg = gain(0.04);
+    chain(spray, filter("highpass", 2500), fg, out);
+    wobble(fg.gain, 0.04, 0.035, 9);
+    surf.start();
+    spray.start();
+    stopFns.push(() => { surf.stop(); spray.stop(); });
+  }
 
-  // Cafe and nature: a recording on loop, through the same volume
-  function playFile(name) {
+  // ---- Recordings ----
+
+  // A recording on loop, through the same volume
+  function playFile(name, out) {
     const el = new Audio(FILES[name]);
     el.loop = true;
     const src = ctx.createMediaElementSource(el);
-    src.connect(master);
+    src.connect(out);
     el.play().catch(() => stopAmbience());
     stopFns.push(() => { el.pause(); el.src = ""; });
   }
 
+  // ---- Playing ----
+
   // Tell this page's sidebar, and the page in the shell's frame, so the
-  // sidebar's ambience icon shows or hides
+  // sidebar's ambience controls follow
   function notify() {
     const wins = [window];
     document.querySelectorAll("iframe").forEach(f => {
@@ -189,7 +193,12 @@
     stopFns = [];
   }
 
+  function last() {
+    return NAMES.includes(settings().ambience) ? settings().ambience : "rain";
+  }
+
   function play(name) {
+    name = name || last();
     if (!NAMES.includes(name)) return;
     audio();
     stopNodes();
@@ -198,34 +207,60 @@
     master.gain.cancelScheduledValues(at);
     master.gain.setValueAtTime(0, at);
     master.gain.linearRampToValueAtTime(volume(), at + 0.6);
-    if (FILES[name]) playFile(name);
-    else MAKERS[name]();
+    const level = gain(LEVELS[name]);
+    level.connect(master);
+    stopFns.push(() => level.disconnect());
+    if (FILES[name]) playFile(name, level);
+    else waves(level);
     playing = name;
+    saveSetting({ ambience: name });
     notify();
   }
 
-  function stopAmbience() {
+  // Stop, fading out over the given seconds
+  function fadeOut(seconds) {
     if (!playing) return;
     const at = ctx.currentTime;
     master.gain.cancelScheduledValues(at);
     master.gain.setValueAtTime(master.gain.value, at);
-    master.gain.linearRampToValueAtTime(0, at + 0.3);
+    master.gain.linearRampToValueAtTime(0, at + seconds);
     const fns = stopFns;
     stopFns = [];
-    setTimeout(() => fns.forEach(fn => { try { fn(); } catch {} }), 350);
+    setTimeout(() => fns.forEach(fn => { try { fn(); } catch {} }),
+      seconds * 1000 + 50);
     playing = null;
     notify();
   }
 
+  function stopAmbience() {
+    fadeOut(0.3);
+  }
+
   function setVolume(v) {
+    v = Math.min(1, Math.max(0, v));
+    saveSetting({ ambienceVolume: v });
     if (!ctx || !playing) return;
     const at = ctx.currentTime;
     master.gain.cancelScheduledValues(at);
-    master.gain.setTargetAtTime(Math.min(1, Math.max(0, v)), at, 0.05);
+    master.gain.setTargetAtTime(v, at, 0.05);
+  }
+
+  // Loudness of what's playing now (root mean square, 0 to 1)
+  function meter() {
+    if (!meterNode) return 0;
+    const d = new Float32Array(meterNode.fftSize);
+    meterNode.getFloatTimeDomainData(d);
+    let sum = 0;
+    for (let i = 0; i < d.length; i++) sum += d[i] * d[i];
+    return Math.sqrt(sum / d.length);
   }
 
   window.ToolkitSounds = {
     current: () => playing,
+    fadeOut,
+    label: name => LABELS[name] || name,
+    last,
+    meter,
     names: NAMES,
     onChange: fn => listeners.push(fn),
     // A page that leaves the shell's frame stops listening
