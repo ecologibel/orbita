@@ -35,12 +35,14 @@
     --shadow:     0 2px 10px rgba(0, 0, 0, 0.45);
   }
   .t-light {
-    --accent:     #0c9e9a;
+    /* Lighter tag tints, so teal text on them stays readable */
+    --tint:       7%;
+    --accent:     #086b69;
     --bg:         #ecf2f2;
     --border:     #a3c4c6;
     --done:       #2f5d69;
     --fg:         #24292e;
-    --fg-muted:   #6a737d;
+    --fg-muted:   #5a626a;
     --hover:      #d9e8ea;
     --head-tint:  rgba(236, 242, 242, 0.5);
     --panel:      #dce7e8;
@@ -203,7 +205,7 @@
   .recent {
     display: grid;
     gap: 12px;
-    grid-template-columns: repeat(6, 5.5em);
+    grid-template-columns: repeat(7, 5.5em);
   }
 
   /* A recent note: its title, then its date */
@@ -332,26 +334,25 @@
   .today-title { font-size: 1.35em; font-weight: 600; }
 
   /* At a glance: today, tomorrow, rest of this week, next week */
-  .peek + .peek .peek-head { margin-top: 18px; }
+  /* Sections as in the timekeeper's sidebar: a teal heading with + or -
+     on the right, a line beneath each, and a dimmed sign when empty */
+  .peek { border-bottom: 1px solid var(--border); padding: 10px 0; }
   .peek-head {
     align-items: center;
     color: var(--accent);
     cursor: pointer;
     display: flex;
-    font-size: 0.9em;
+    font-size: 1em;
     font-weight: 600;
     gap: 8px;
     user-select: none;
   }
-  .peek-arrow {
-    display: inline-block;
-    font-size: 12px;
-    transition: transform 0.2s ease;
-    width: 12px;
-  }
-  .peek:not(.open) .peek-arrow { transform: rotate(-90deg); }
-  .peek-arrow.empty { opacity: 0.35; }
+  .peek-head:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .peek-count { color: var(--fg-muted); font-size: 0.8em; font-weight: 400; }
+  .peek-sign { font-weight: 400; margin-left: auto; }
+  .peek-sign::before { content: "+"; }
+  .peek.open .peek-sign::before { content: "\2212"; }
+  .peek-sign.empty { opacity: 0.35; }
   .peek-body {
     display: grid;
     grid-template-rows: 0fr;
@@ -412,7 +413,7 @@
   .date-token, .mention-token { color: var(--accent); }
   .task.done .task-text .date-token { color: var(--accent); }
   .tag-token {
-    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    background: color-mix(in srgb, var(--accent) var(--tint, 16%), transparent);
     border-radius: 3px;
     color: var(--accent);
   }
@@ -511,6 +512,7 @@
     border-radius: 5px;
   }
 </style>
+<link rel="stylesheet" href="../ui.css">
 </head>
 <body>
 <div id="app" class="t-dark size-m width-normal">
@@ -524,7 +526,6 @@
           aria-expanded="false"></button>
         <button class="tool" type="button" data-tool="todos"
           aria-expanded="false"></button>
-        <a class="tool" href="../codepad/index.html" data-tool="codepad"></a>
         <a class="tool" href="../focus/index.html" data-tool="focus"></a>
         <a class="tool" href="../timekeeper/index.html" data-tool="timekeeper"></a>
       </div>
@@ -584,25 +585,25 @@
 
   // One quote a day, in this order
   const QUOTES = [
-    ["Above all, don't fear difficult moments.\nThe best comes from them.",
+    ["Above all, don't fear difficult moments. The best comes from them.",
       "Rita Levi-Montalcini, Nobel neurobiologist"],
-    ["All sorts of things can happen\nwhen you're open to new ideas and\n"
+    ["All sorts of things can happen when you're open to new ideas and "
       + "playing around with things.",
       "Stephanie Kwolek, chemist and inventor"],
-    ["An ugly baby is better than no baby at all.\nIf you wait and wait "
-      + "and wait for your product\nto be perfect before you release it "
-      + "into the world,\nyou will never get there.",
+    ["An ugly baby is better than no baby at all. If you wait and wait "
+      + "and wait for your product to be perfect before you release it "
+      + "into the world, you will never get there.",
       "Kathryn Minshew, entrepreneur"],
     ["Be focused. Be determined. Be hopeful. Be empowered.",
       "Michelle Obama, attorney and author"],
-    ["Courage is like — it's a habitus, a habit, a virtue:\nyou get it by "
-      + "courageous acts.\nIt's like you learn to swim by swimming.\n"
+    ["Courage is like — it's a habitus, a habit, a virtue: you get it by "
+      + "courageous acts. It's like you learn to swim by swimming. "
       + "You learn courage by couraging.",
       "Mary Daly, feminist philosopher and theologian"],
-    ["Forgive yourself for staying too long,\nsaying the wrong thing,\n"
-      + "holding onto the past,\nnot allowing yourself to grow,\nnot "
-      + "knowing all the answers,\nletting an opportunity pass,\njudging "
-      + "yourself,\nfollowing old patterns -\nbeing human.", "Unknown"],
+    ["Forgive yourself for staying too long, saying the wrong thing, "
+      + "holding onto the past, not allowing yourself to grow, not "
+      + "knowing all the answers, letting an opportunity pass, judging "
+      + "yourself, following old patterns - being human.", "Unknown"],
     ["Humans are not wired to be constantly wired.",
       "Cal Newport, computer scientist and author"],
     ["If you haven't failed yet, you haven't tried anything.",
@@ -616,23 +617,23 @@
       "Margaret Mead, anthropologist"],
     ["Prioritise a clear sense of why over an excessively detailed sense "
       + "of how.", "Auftragstaktik, mission command principle"],
-    ["Small deeds done are better\nthan great deeds planned.",
+    ["Small deeds done are better than great deeds planned.",
       "Peter Marshall, preacher and US Senate chaplain"],
-    ["Success has nothing\nto do with perfection.",
+    ["Success has nothing to do with perfection.",
       "Michelle Obama, attorney and author"],
-    ["The more clearly we can focus our attention\non the wonders and "
-      + "realities of the universe about us,\nthe less taste we shall "
+    ["The more clearly we can focus our attention on the wonders and "
+      + "realities of the universe about us, the less taste we shall "
       + "have for destruction.", "Rachel Carson, conservationist"],
     ["The way of progress is neither swift nor easy.",
       "Marie Curie, physicist"],
-    ["This job is a great scientific adventure.\nBut it's also a great "
-      + "human adventure.\nHumankind has made giant steps forward.\n"
-      + "However, what we know is really very,\nvery little compared to "
+    ["This job is a great scientific adventure. But it's also a great "
+      + "human adventure. Humankind has made giant steps forward. "
+      + "However, what we know is really very, very little compared to "
       + "what we still have to know.", "Fabiola Gianotti, physicist"],
-    ["We are what we repeatedly do.\nExcellence, then, is not an act, but "
+    ["We are what we repeatedly do. Excellence, then, is not an act, but "
       + "a habit.", "Will Durant, historian and philosopher"],
-    ["What you do makes a difference,\nand you have to decide what kind "
-      + "of\ndifference you want to make.", "Jane Goodall, primatologist"]
+    ["What you do makes a difference, and you have to decide what kind "
+      + "of difference you want to make.", "Jane Goodall, primatologist"]
   ];
 
   function read(key) {
@@ -662,7 +663,7 @@
 
   function renderTools() {
     const icon = id => ToolkitSidebar.icon(id);
-    const label = { codepad: "codepad", focus: "focus", timekeeper: "timekeeper", notes: "notes",
+    const label = { focus: "focus", timekeeper: "timekeeper", notes: "notes",
       todos: "to dos" };
     document.querySelectorAll(".tool").forEach(t => {
       const id = t.dataset.tool;
@@ -911,15 +912,17 @@
       head.className = "peek-head";
       head.setAttribute("role", "button");
       head.tabIndex = 0;
-      head.innerHTML = '<span class="peek-arrow'
-        + (groups[sec.id].length ? "" : " empty") + '">▼</span>'
-        + '<span class="peek-label"></span><span class="peek-count"></span>';
+      head.innerHTML = '<span class="peek-label"></span>'
+        + '<span class="peek-count"></span><span class="peek-sign'
+        + (groups[sec.id].length ? "" : " empty") + '" aria-hidden="true"></span>';
       head.querySelector(".peek-label").textContent = sec.label;
       head.querySelector(".peek-count").textContent = groups[sec.id].length;
+      head.setAttribute("aria-expanded", String(!!open[sec.id]));
       const toggle = () => {
         const st = glanceOpen();
         st[sec.id] = !st[sec.id];
         wrapEl.classList.toggle("open", st[sec.id]);
+        head.setAttribute("aria-expanded", String(st[sec.id]));
       };
       head.addEventListener("click", toggle);
       head.addEventListener("keydown", e => {
@@ -1079,7 +1082,7 @@
   // list, and the simple view opens with it sliding into place
   function addNewTodo() {
     ToolkitSidebar.modal({
-      title: "new to do",
+      label: "new to do",
       input: { placeholder: "what needs doing? add @friday to give it a date" }
     }).then(text => {
       if (!text) return;
@@ -1147,12 +1150,18 @@
     const data = loadNotes();
     const list = (data ? data.notes : []).filter(n => !n.trashed)
       .sort((a, b) => (b.updated || 0) - (a.updated || 0)).slice(0, 4);
-    // + new note first, then recent notes (newest first), then all notes
+    // + new note and + new code first, then recent notes (newest first),
+    // then all notes
     const add = document.createElement("a");
     add.className = "note-card new";
     add.href = "../notes/index.html#new";
     add.innerHTML = '<span class="nc-plus">+</span><span>new note</span>';
     box.appendChild(add);
+    const addCode = document.createElement("a");
+    addCode.className = "note-card new";
+    addCode.href = "../notes/index.html#new-code";
+    addCode.innerHTML = '<span class="nc-plus">+</span><span>new code</span>';
+    box.appendChild(addCode);
     list.forEach(n => {
       const a = document.createElement("a");
       a.className = "note-card";

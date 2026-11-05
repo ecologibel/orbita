@@ -35,39 +35,25 @@
     --code-bg:    rgba(127, 219, 202, 0.08);
     --code-fg:    #f78c6c;
     --panel:      rgba(19, 85, 92, 0.25);
-    --c-blue: #82aaff;
-    --c-green: #addb67;
-    --c-grey: #8a96a3;
-    --c-orange: #f78c6c;
-    --c-pink: #ff8bb4;
-    --c-purple: #c792ea;
-    --c-red: #ef5350;
-    --c-yellow: #ecc48d;
   }
   .t-light {
-    --accent:     #0c9e9a;
+    /* Lighter tag tints, so teal text on them stays readable */
+    --tint:       7%;
+    --accent:     #086b69;
     --bg:         #ecf2f2;
     --bg-surface: #f6fafa;
     --border:     #a3c4c6;
     --done:       #2f5d69;
     --fg:         #24292e;
-    --fg-muted:   #6a737d;
+    --fg-muted:   #5a626a;
     --hover:      #d9e8ea;
     --shadow:     0 4px 18px rgba(36, 70, 75, 0.14);
     --tint:       rgba(12, 158, 154, 0.1);
     --glow:       rgba(12, 158, 154, 0.4);
     --mark-bg:    color-mix(in srgb, var(--accent) 16%, transparent);
     --code-bg:    rgba(12, 158, 154, 0.08);
-    --code-fg:    #c9532b;
+    --code-fg:    #9a3a17;
     --panel:      #dce7e8;
-    --c-blue: #3b6fd6;
-    --c-green: #5f8a1c;
-    --c-grey: #6a737d;
-    --c-orange: #c9532b;
-    --c-pink: #c2407c;
-    --c-purple: #8e44c4;
-    --c-red: #d73a49;
-    --c-yellow: #a66f00;
   }
 
   #app {
@@ -79,8 +65,7 @@
   .main-col { flex: 1 1 auto; min-width: 0; padding: 0 20px 140px; }
 
   /* ---- Settings sidebar: as the dashboard's, resizable and folding to
-     a slim strip. Shown only while picking a task ---- */
-  body.focus-bare .aside-wrap { display: none; }
+     a slim strip. It stays while focusing, folded unless opened ---- */
   aside {
     display: flex;
     flex: 0 0 320px;
@@ -236,9 +221,8 @@
       color 0.25s ease !important;
   }
 
-  /* Leave focus mode (top left) and choose another task (top right):
-     dim until hovered */
-  #leave, #switch {
+  /* Leave focus mode (top left): dim until hovered */
+  #leave {
     align-items: center;
     background: none;
     border: none;
@@ -256,10 +240,30 @@
     transition: opacity 0.15s, color 0.15s;
     z-index: 10;
   }
-  #leave:hover, #leave:focus-visible,
-  #switch:hover, #switch:focus-visible { color: var(--fg); opacity: 1; }
-  #leave svg, #switch svg { flex-shrink: 0; }
-  #switch { left: auto; right: 16px; }
+  #leave:hover, #leave:focus-visible { color: var(--fg); opacity: 1; }
+  /* Light mode: the grey alone is faint enough, so no fade */
+  .t-light #leave { opacity: 1; }
+  #leave svg { flex-shrink: 0; }
+
+  /* Choose another task: the first item in the settings sidebar */
+  #switch {
+    align-items: center;
+    align-self: flex-start;
+    background: none;
+    border: none;
+    border-radius: 6px;
+    color: var(--accent);
+    cursor: pointer;
+    display: flex;
+    font: inherit;
+    font-size: 14px;
+    gap: 6px;
+    margin: -10px 0 6px -6px;
+    padding: 4px 6px;
+    text-transform: lowercase;
+  }
+  #switch:hover, #switch:focus-visible { background: var(--hover); outline: none; }
+  #switch svg { flex-shrink: 0; }
   #switch[hidden] { display: none; }
 
   /* The left sidebar shows only while picking a task */
@@ -289,7 +293,7 @@
   /* Pick a task: a rounded button under the timer while picking */
   #c-pick { display: none; }
   #focus.picking #c-pick {
-    background: transparent;
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
     border: 1px solid var(--accent);
     border-radius: 999px;
     color: var(--accent);
@@ -304,8 +308,7 @@
   }
   #focus.picking #c-pick:hover,
   #focus.picking #c-pick:focus-visible {
-    background: var(--accent);
-    color: var(--bg);
+    background: color-mix(in srgb, var(--accent) 24%, transparent);
     outline: none;
   }
   /* The search bar glows when pick a task sends the cursor there */
@@ -381,17 +384,6 @@
   }
   .pick-row .pr-text { flex: 1; min-width: 0; }
 
-  /* The focus symbol beside each task: click to focus on it */
-  .pick-row .pr-focus {
-    align-self: center;
-    color: var(--accent);
-    display: flex;
-    flex-shrink: 0;
-    opacity: 0.6;
-    transition: opacity 0.15s;
-  }
-  .pick-row .pr-focus svg { height: 15px; width: 15px; }
-  .pick-row:hover .pr-focus, .pick-row.active .pr-focus { opacity: 1; }
   .pick-row .pr-src {
     color: var(--fg-muted);
     flex-shrink: 0;
@@ -411,7 +403,7 @@
   /* Dates and tags, as in the to dos */
   .date-token, .mention-token { color: var(--accent); }
   .tag-token {
-    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    background: color-mix(in srgb, var(--accent) var(--tint, 16%), transparent);
     border-radius: 3px;
     color: var(--accent);
   }
@@ -552,14 +544,37 @@
     padding: 0 1px;
   }
   #focal-text a { color: var(--accent); }
-  #focal-text mark[data-c="blue"] { background: color-mix(in srgb, var(--c-blue) 28%, transparent); }
-  #focal-text mark[data-c="green"] { background: color-mix(in srgb, var(--c-green) 28%, transparent); }
-  #focal-text mark[data-c="grey"] { background: color-mix(in srgb, var(--c-grey) 28%, transparent); }
-  #focal-text mark[data-c="orange"] { background: color-mix(in srgb, var(--c-orange) 28%, transparent); }
-  #focal-text mark[data-c="pink"] { background: color-mix(in srgb, var(--c-pink) 28%, transparent); }
-  #focal-text mark[data-c="purple"] { background: color-mix(in srgb, var(--c-purple) 28%, transparent); }
-  #focal-text mark[data-c="red"] { background: color-mix(in srgb, var(--c-red) 28%, transparent); }
-  #focal-text mark[data-c="yellow"] { background: color-mix(in srgb, var(--c-yellow) 28%, transparent); }
+  #focal-text mark[data-c="white"] { background: color-mix(in srgb, #FFFFFF 30%, transparent); }
+  #focal-text mark[data-c="silver"] { background: color-mix(in srgb, #C5C9CE 30%, transparent); }
+  #focal-text mark[data-c="grey"] { background: color-mix(in srgb, #858B93 30%, transparent); }
+  #focal-text mark[data-c="charcoal"] { background: color-mix(in srgb, #41464D 30%, transparent); }
+  #focal-text mark[data-c="black"] { background: color-mix(in srgb, #202327 30%, transparent); }
+  #focal-text mark[data-c="army-green"] { background: color-mix(in srgb, #A4C65A 30%, transparent); }
+  #focal-text mark[data-c="emerald"] { background: color-mix(in srgb, #35B98B 30%, transparent); }
+  #focal-text mark[data-c="green"] { background: color-mix(in srgb, #36B84A 30%, transparent); }
+  #focal-text mark[data-c="lime"] { background: color-mix(in srgb, #91D52E 30%, transparent); }
+  #focal-text mark[data-c="chartreuse"] { background: color-mix(in srgb, #C1D62E 30%, transparent); }
+  #focal-text mark[data-c="yellow"] { background: color-mix(in srgb, #F0D52E 30%, transparent); }
+  #focal-text mark[data-c="gold"] { background: color-mix(in srgb, #E9AD22 30%, transparent); }
+  #focal-text mark[data-c="amber"] { background: color-mix(in srgb, #F49A20 30%, transparent); }
+  #focal-text mark[data-c="orange"] { background: color-mix(in srgb, #F47721 30%, transparent); }
+  #focal-text mark[data-c="tangerine"] { background: color-mix(in srgb, #F05B35 30%, transparent); }
+  #focal-text mark[data-c="clay"] { background: color-mix(in srgb, #D18A70 30%, transparent); }
+  #focal-text mark[data-c="coral"] { background: color-mix(in srgb, #F05261 30%, transparent); }
+  #focal-text mark[data-c="red"] { background: color-mix(in srgb, #E52F42 30%, transparent); }
+  #focal-text mark[data-c="burgundy"] { background: color-mix(in srgb, #C65375 30%, transparent); }
+  #focal-text mark[data-c="rose"] { background: color-mix(in srgb, #E34D91 30%, transparent); }
+  #focal-text mark[data-c="magenta"] { background: color-mix(in srgb, #D62DB5 30%, transparent); }
+  #focal-text mark[data-c="orchid"] { background: color-mix(in srgb, #BD45CF 30%, transparent); }
+  #focal-text mark[data-c="purple"] { background: color-mix(in srgb, #A16BD0 30%, transparent); }
+  #focal-text mark[data-c="violet"] { background: color-mix(in srgb, #A05BE8 30%, transparent); }
+  #focal-text mark[data-c="indigo"] { background: color-mix(in srgb, #7778D5 30%, transparent); }
+  #focal-text mark[data-c="blue"] { background: color-mix(in srgb, #2379E5 30%, transparent); }
+  #focal-text mark[data-c="azure"] { background: color-mix(in srgb, #219FCB 30%, transparent); }
+  #focal-text mark[data-c="cyan"] { background: color-mix(in srgb, #20C4D0 30%, transparent); }
+  #focal-text mark[data-c="teal"] { background: color-mix(in srgb, #238F91 30%, transparent); }
+  #focal-text mark[data-c="sage"] { background: color-mix(in srgb, #91BFA0 30%, transparent); }
+  #focal-text mark[data-c="pink"] { background: color-mix(in srgb, #E34D91 30%, transparent); }
   .focal.done #focal-text,
   .focal.done #focal-text span {
     color: var(--done);
@@ -820,6 +835,7 @@
     #c-cheer { font-size: 28px; max-width: 190px; }
   }
 </style>
+<link rel="stylesheet" href="../ui.css">
 </head>
 <body>
 <div id="app" class="t-dark">
@@ -829,12 +845,6 @@
       stroke="currentColor" stroke-width="2" stroke-linecap="round"
       stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
     <span>leave focus</span>
-  </button>
-  <button id="switch" type="button" hidden>
-    <span>choose another task</span>
-    <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
-      stroke="currentColor" stroke-width="2" stroke-linecap="round"
-      stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
   </button>
 
   <main>
@@ -913,6 +923,12 @@
         <button class="fold-btn" id="fold" type="button"
           title="fold away" aria-label="fold away">&gt;</button>
       </div>
+      <button id="switch" type="button" hidden>
+        <span>choose another task</span>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
 
       <section class="set-group" data-group="timer">
         <button class="set-head" type="button" aria-expanded="true">
@@ -956,6 +972,11 @@
             <span>volume</span>
             <input id="ambience-volume" type="range" min="0" max="100" step="1">
           </label>
+          <div class="set-row">
+            <button type="button" class="set-opt" id="ambience-auto"
+              aria-pressed="false"
+              title="start your last ambience when the timer starts">with the timer</button>
+          </div>
         </div></div>
       </section>
     </div>
@@ -1003,8 +1024,8 @@
       .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
 
-  const NOTE_COLOURS = ["grey", "red", "orange", "yellow", "green",
-    "blue", "purple", "pink"];
+  // Highlight colours from notes: the 30-colour menu, older names mapped
+  const noteColour = c => ToolkitSidebar.colourKey(c);
 
   function safeHref(href) {
     const h = String(href || "").trim();
@@ -1192,7 +1213,7 @@
     }
     rows.sort((a, b) => (a.r ? +a.r.start : 9e15) - (b.r ? +b.r.start : 9e15));
     rows = rows.slice(0, 40);
-    $("pick-label").textContent = q ? "matching to dos" : "maybe one of these?";
+    $("pick-label").textContent = q ? "matching to dos" : "suggested";
 
     const box = $("pick-list");
     box.innerHTML = "";
@@ -1201,8 +1222,7 @@
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "pick-row";
-      btn.innerHTML = '<span class="pr-focus" aria-hidden="true">'
-        + ToolkitSidebar.icon("focus") + '</span><span class="pr-text">'
+      btn.innerHTML = '<span class="pr-text">'
         + D.highlight(c.text, c.anchorAt) + "</span>";
       if (c.kind === "note") {
         const src = document.createElement("span");
@@ -1395,6 +1415,7 @@
     firstRender = false;
     const picking = !loc;
     document.body.classList.toggle("focus-bare", !picking);
+    applySideFold();
     $("picker").hidden = !picking;
     $("focus").hidden = false;
     $("focus").classList.toggle("picking", picking);
@@ -1754,8 +1775,8 @@
             return;
           }
           const tag = TAGS[n.tagName];
-          const col = tag === "mark" && NOTE_COLOURS.includes(n.dataset.c)
-            ? ' data-c="' + n.dataset.c + '"' : "";
+          const ck = tag === "mark" && noteColour(n.dataset.c);
+          const col = ck ? ' data-c="' + ck + '"' : "";
           out += tag ? "<" + tag + col + ">" + inner + "</" + tag + ">"
             : inner;
         }
@@ -1987,6 +2008,8 @@
   }
 
   function start() {
+    const set = settingsGet();
+    if (set.ambienceAuto && !S.current()) S.play();
     update(s => {
       // A finish time (from the settings) ends the countdown at that time
       const until = s.finishAt && s.finishAt > Date.now()
@@ -2105,6 +2128,20 @@
   window.addEventListener("storage", e => {
     if (e.key === "toolkit-width" || e.key === "toolkit-size") applyShared();
   });
+
+  // The settings sidebar folds separately while picking and while
+  // focusing; focusing starts folded until it's opened
+  function sideFoldKey() {
+    return "focus-settings-folded"
+      + (document.body.classList.contains("focus-bare") ? "-focusing" : "");
+  }
+  function applySideFold() {
+    const side = document.getElementById("settings");
+    if (!side) return;
+    const v = read(sideFoldKey());
+    side.classList.toggle("folded",
+      document.body.classList.contains("focus-bare") ? v !== "0" : v === "1");
+  }
 
   // ---- Settings sidebar ----
   //
@@ -2239,13 +2276,20 @@
     // Ambience: one at a time; clicking the playing one stops it
     const ambBox = $("ambience-options"), playing = S.current();
     ambBox.innerHTML = "";
-    S.names.forEach(name => optionButton(ambBox, name, name === playing, () => {
+    S.names.forEach(name => optionButton(ambBox, S.label(name), name === playing, () => {
       if (S.current() === name) S.stopAmbience();
       else S.play(name);
     }));
     $("ambience-volume").value = Math.round((Number.isFinite(set.ambienceVolume)
       ? set.ambienceVolume : 0.5) * 100);
+    $("ambience-auto").setAttribute("aria-pressed", String(!!set.ambienceAuto));
   }
+
+  // With the timer: starting the countdown starts the last ambience
+  $("ambience-auto").addEventListener("click", () => {
+    settingsSet({ ambienceAuto: !settingsGet().ambienceAuto });
+    renderSettings();
+  });
 
   // Chime volume: the chime plays again once the slider is let go
   $("chime-volume").addEventListener("change", e => {
@@ -2287,14 +2331,14 @@
 
   // Resize and fold, as on the dashboard
   const aside = $("settings"), sideWrap = $("settings-wrap");
-  const SIDE_KEY = "focus-settings-width", FOLD_KEY = "focus-settings-folded";
+  const SIDE_KEY = "focus-settings-width";
   const sideWidth = w => Math.max(240, Math.min(520, Math.round(w)));
   const savedWidth = parseInt(read(SIDE_KEY));
   if (savedWidth) aside.style.flexBasis = sideWidth(savedWidth) + "px";
-  aside.classList.toggle("folded", read(FOLD_KEY) === "1");
+  applySideFold();
   const setFolded = folded => {
     aside.classList.toggle("folded", folded);
-    store(FOLD_KEY, folded ? "1" : "0");
+    store(sideFoldKey(), folded ? "1" : "0");
   };
   $("fold").addEventListener("click", () => setFolded(true));
   aside.querySelector(".unfold").addEventListener("click", () => setFolded(false));
@@ -2382,7 +2426,8 @@
   // Every button gives a little when pressed
   document.addEventListener("pointerdown", e => {
     const b = e.target.closest("button");
-    if (!b || b.disabled) return;
+    // Settings toggle titles open and close without the squish
+    if (!b || b.disabled || b.matches(".set-head")) return;
     b.classList.remove("press");
     void b.offsetWidth;
     b.classList.add("press");

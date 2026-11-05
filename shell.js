@@ -15,8 +15,8 @@
 (function () {
   "use strict";
 
-  const TOOLS = ["dashboard", "notes", "to-dos", "focus", "codepad",
-    "timekeeper", "help"];
+  const TOOLS = ["dashboard", "notes", "to-dos", "focus", "timekeeper",
+    "help"];
   const frame = document.getElementById("frame");
   const base = new URL(".", location.href);
 
