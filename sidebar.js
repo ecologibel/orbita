@@ -329,19 +329,23 @@
       }
       #tk-sidebar .tk-btn.has-active { color: #7fdbca; }
 
-      /* Sync icon: dim when signed out, teal when signed in, red on error */
+      /* Sync icon: teal while sync runs, orange when it isn't running
+         (signed out or failed), yellow for a conflict */
       /* The sidebar icon is the only sync control */
       #tool-sync { display: none !important; }
-      #tk-sidebar #tk-sync { opacity: 0.55; }
-      #tk-sidebar #tk-sync:hover { opacity: 1; }
       #tk-sidebar #tk-sync[hidden] { display: none; }
       #tk-sidebar #tk-sync[data-state="pending"],
       #tk-sidebar #tk-sync[data-state="synced"],
       #tk-sidebar #tk-sync[data-state="syncing"] { color: #7fdbca; }
-      #tk-sidebar #tk-sync[data-state="error"] { color: #e06c75; }
-       #tk-sidebar #tk-sync[data-state="conflict"] { color: #e5c07b; }
+      #tk-sidebar #tk-sync[data-state="signedOut"],
+      #tk-sidebar #tk-sync[data-state="reconnect"],
+      #tk-sidebar #tk-sync[data-state="error"] { color: #ff9a3c; }
+      #tk-sidebar #tk-sync[data-state="conflict"] { color: #f5d547; }
       #tk-sidebar #tk-sync[data-state="noClient"],
-      #tk-sidebar #tk-sync[data-state="unavailable"] { cursor: default; }
+      #tk-sidebar #tk-sync[data-state="unavailable"] {
+        cursor: default;
+        opacity: 0.55;
+      }
 
       /* Name of each icon, shown to the right on hover. It sits outside
          the bar, so the bar can scroll in a short window */
@@ -600,6 +604,8 @@
     const items = nav.querySelector(".tk-items");
     let sub = null;
     ITEMS.forEach(item => {
+      // Help sits with the controls at the bottom of the bar
+      if (item.id === "help") return;
       if (item.id === "todos") {
         items.appendChild(todosButton(item));
         sub = document.createElement("div");
@@ -652,6 +658,17 @@
       b.addEventListener("click", () => cycle(kind));
       controls.appendChild(b);
     });
+
+    // Help, between the width control and sync
+    const helpItem = ITEMS.find(x => x.id === "help");
+    const help = document.createElement("a");
+    help.className = "tk-btn";
+    help.dataset.id = helpItem.id;
+    help.dataset.label = helpItem.label;
+    help.setAttribute("aria-label", helpItem.label);
+    help.href = root + helpItem.page;
+    help.innerHTML = helpItem.icon;
+    controls.appendChild(help);
 
     // Hidden until sync.js reports a state
     const s = document.createElement("button");
@@ -1103,7 +1120,7 @@
 
   function setActive(id) {
     if (!nav) return;
-    nav.querySelectorAll(".tk-items .tk-btn").forEach(a => {
+    nav.querySelectorAll(".tk-items .tk-btn, .tk-controls a.tk-btn").forEach(a => {
       if (a.dataset.id === "todos") return;
       a.classList.toggle("active", a.dataset.id === id);
     });
@@ -1323,6 +1340,243 @@
     checkFocus();
   }
 
+  // ---- Modal window ----
+  //
+  // A window in the middle of the screen over a dimmed page, in the current
+  // light or dark mode. Resolves with the chosen button's value, or null when
+  // closed with Esc, the close button or a click on the dimmed page.
+  //   ToolkitSidebar.modal({
+  //     title: "sync conflict",
+  //     body: "Text or a DOM node",
+  //     buttons: [{ label: "local", detail: "keep this device's copy",
+  //                 value: "LOCAL" }, ...]
+  //   }).then(value => ...)
+
+  const MODAL_THEMES = {
+    dark: { bg: "#01111f", line: "#1e3a52", fg: "#d6deeb", muted: "#8291a5",
+      accent: "#7fdbca", hover: "#012a3f", dim: "rgba(1, 10, 18, 0.6)" },
+    light: { bg: "#ffffff", line: "#d7e0e8", fg: "#233044", muted: "#607086",
+      accent: "#147d70", hover: "#eef3f6", dim: "rgba(35, 48, 68, 0.35)" }
+  };
+  let modalClose = null;
+
+  function addModalStyles() {
+    if (document.getElementById("tk-modal-style")) return;
+    const style = document.createElement("style");
+    style.id = "tk-modal-style";
+    style.textContent = `
+      .tk-modal {
+        align-items: center;
+        background: var(--tkm-dim);
+        display: flex;
+        font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+        inset: 0;
+        justify-content: center;
+        opacity: 0;
+        padding: 16px;
+        position: fixed;
+        transition: opacity 0.2s ease;
+        z-index: 2100;
+      }
+      .tk-modal.show { opacity: 1; }
+      .tk-modal .tkm-box {
+        background: var(--tkm-bg);
+        border: 1px solid var(--tkm-line);
+        border-radius: 10px;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+        color: var(--tkm-fg);
+        max-width: 100%;
+        padding: 20px 22px 18px;
+        position: relative;
+        transform: translateY(10px) scale(0.97);
+        transition: transform 0.22s ease;
+        width: 440px;
+      }
+      .tk-modal.show .tkm-box { transform: none; }
+      .tk-modal h2 {
+        font-size: 17px;
+        font-weight: 600;
+        margin: 0 28px 10px 0;
+        text-transform: lowercase;
+      }
+      .tk-modal .tkm-body { font-size: 14px; line-height: 1.55; }
+      .tk-modal .tkm-body p { margin: 0 0 8px; }
+      .tk-modal .tkm-muted { color: var(--tkm-muted); font-size: 13px; }
+      .tk-modal .tkm-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 16px;
+      }
+      .tk-modal .tkm-choice {
+        background: transparent;
+        border: 1px solid var(--tkm-line);
+        border-radius: 8px;
+        color: var(--tkm-fg);
+        cursor: pointer;
+        flex: 1 1 160px;
+        font: inherit;
+        padding: 10px 12px;
+        text-align: left;
+        transition: border-color 0.15s, background 0.15s;
+      }
+      .tk-modal .tkm-choice:hover,
+      .tk-modal .tkm-choice:focus-visible {
+        background: var(--tkm-hover);
+        border-color: var(--tkm-accent);
+        outline: none;
+      }
+      .tk-modal .tkm-label {
+        color: var(--tkm-accent);
+        display: block;
+        font-size: 15px;
+        font-weight: 600;
+      }
+      .tk-modal .tkm-detail {
+        color: var(--tkm-muted);
+        display: block;
+        font-size: 12.5px;
+        margin-top: 2px;
+      }
+      .tk-modal .tkm-close {
+        background: none;
+        border: none;
+        border-radius: 6px;
+        color: var(--tkm-muted);
+        cursor: pointer;
+        font-size: 20px;
+        height: 30px;
+        line-height: 1;
+        position: absolute;
+        right: 10px;
+        top: 10px;
+        width: 30px;
+      }
+      .tk-modal .tkm-close:hover,
+      .tk-modal .tkm-close:focus-visible {
+        background: var(--tkm-hover);
+        color: var(--tkm-fg);
+        outline: none;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .tk-modal, .tk-modal .tkm-box { transition: none; }
+        .tk-modal .tkm-box { transform: none; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function modal(opts) {
+    if (modalClose) modalClose(null);
+    addModalStyles();
+    const theme = MODAL_THEMES[read(MODE_KEY) || mode] || MODAL_THEMES.dark;
+    const before = document.activeElement;
+
+    const wrap = document.createElement("div");
+    wrap.id = "tk-modal";
+    wrap.className = "tk-modal";
+    Object.entries(theme).forEach(([k, v]) =>
+      wrap.style.setProperty("--tkm-" + k, v));
+    const box = document.createElement("div");
+    box.className = "tkm-box";
+    box.setAttribute("role", "dialog");
+    box.setAttribute("aria-modal", "true");
+    box.setAttribute("aria-labelledby", "tkm-title");
+
+    const title = document.createElement("h2");
+    title.id = "tkm-title";
+    title.textContent = opts.title || "";
+    const body = document.createElement("div");
+    body.className = "tkm-body";
+    if (typeof opts.body === "string") {
+      const p = document.createElement("p");
+      p.textContent = opts.body;
+      body.appendChild(p);
+    } else if (opts.body) {
+      body.appendChild(opts.body);
+    }
+
+    const close = document.createElement("button");
+    close.type = "button";
+    close.className = "tkm-close";
+    close.setAttribute("aria-label", "close");
+    close.textContent = "×";
+
+    const row = document.createElement("div");
+    row.className = "tkm-buttons";
+    (opts.buttons || []).forEach(btn => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "tkm-choice";
+      b.dataset.value = btn.value;
+      const label = document.createElement("span");
+      label.className = "tkm-label";
+      label.textContent = btn.label;
+      b.appendChild(label);
+      if (btn.detail) {
+        const detail = document.createElement("span");
+        detail.className = "tkm-detail";
+        detail.textContent = btn.detail;
+        b.appendChild(detail);
+      }
+      b.addEventListener("click", () => done(btn.value));
+      row.appendChild(b);
+    });
+
+    box.append(close, title, body, row);
+    wrap.appendChild(box);
+    document.body.appendChild(wrap);
+    // Fade in only if it wasn't closed before the next frame
+    requestAnimationFrame(() => {
+      if (modalClose === done) wrap.classList.add("show");
+    });
+
+    let resolve;
+    const result = new Promise(r => { resolve = r; });
+    function done(value) {
+      if (modalClose !== done) return;
+      modalClose = null;
+      document.removeEventListener("keydown", onKey, true);
+      // A closing window fades out without blocking a new one
+      wrap.removeAttribute("id");
+      title.removeAttribute("id");
+      box.removeAttribute("aria-labelledby");
+      wrap.classList.remove("show");
+      wrap.style.pointerEvents = "none";
+      const remove = () => wrap.remove();
+      if (matchMedia("(prefers-reduced-motion: reduce)").matches) remove();
+      else setTimeout(remove, 220);
+      if (before && before.focus) before.focus();
+      resolve(value);
+    }
+    function onKey(e) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        done(null);
+      } else if (e.key === "Tab") {
+        // Keep keyboard focus inside the window
+        const items = Array.from(box.querySelectorAll("button, input, "
+          + "textarea, select, [tabindex]:not([tabindex='-1'])"));
+        const first = items[0], last = items[items.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    }
+    modalClose = done;
+    close.addEventListener("click", () => done(null));
+    wrap.addEventListener("pointerdown", e => {
+      if (e.target === wrap) done(null);
+    });
+    document.addEventListener("keydown", onKey, true);
+    (row.querySelector("button") || close).focus();
+    return result;
+  }
+
   // A view's icon, for pages that link to the tools
   function icon(id) {
     const item = ITEMS.find(x => x.id === id);
@@ -1330,7 +1584,7 @@
   }
 
   window.ToolkitSidebar = {
-    folderIcon, folderIcons: Object.keys(FOLDER_ICONS), icon, init,
+    folderIcon, folderIcons: Object.keys(FOLDER_ICONS), icon, init, modal,
     openSwitcher, preserveRecovery, refresh, setActive, setSync, title, toast
   };
 
