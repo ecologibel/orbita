@@ -1143,6 +1143,20 @@
     font-size: 12px;
     padding: 6px 8px 2px;
   }
+  /* What's been typed into the block menu, e.g. "/tog → toggle" */
+  .menu-typed {
+    border-bottom: 1px solid var(--border);
+    color: var(--accent);
+    font-size: 13px;
+    margin-bottom: 4px;
+    padding: 6px 8px;
+  }
+  .menu-typed[hidden] { display: none; }
+  .menu-tip {
+    color: var(--fg-muted);
+    font-size: 11.5px;
+    padding: 2px 8px 6px;
+  }
   .menu-item {
     background: none;
     border: none;
@@ -5456,9 +5470,46 @@
       menu.appendChild(d);
     };
 
+    // Typing works while the menu is open: /tog then space turns the
+    // block into a toggle, Enter adds a block beneath, Backspace deletes
+    const typedLine = document.createElement("div");
+    typedLine.className = "menu-typed";
+    typedLine.hidden = true;
+    menu.appendChild(typedLine);
+    const tip = document.createElement("div");
+    tip.className = "menu-tip";
+    tip.textContent = "type / to turn into · enter adds below · backspace deletes";
+    menu.appendChild(tip);
+
     // Actions first: duplicate, copy, move and delete
     const span = () => selectedSpan()
       || [indexOf(id), subtreeEnd(indexOf(id))];
+    const removeBlocks = () => {
+      checkpoint();
+      const sp = span();
+      blocks().splice(sp[0], sp[1] - sp[0]);
+      if (!blocks().length) blocks().push(newBlock());
+      select([]);
+      commit();
+    };
+    const turnInto = type => {
+      checkpoint();
+      targets.forEach(t => {
+        const x = byId(t);
+        if (x) setType(x, type);
+      });
+      select([]);
+      const keep = type === "divider" ? undefined : id;
+      commit(keep, keep ? "end" : undefined);
+    };
+    const addBelow = () => {
+      checkpoint();
+      const sp = span();
+      const nb = newBlock("text", "", byId(id).indent);
+      blocks().splice(sp[1], 0, nb);
+      select([]);
+      commit(nb.id, 0);
+    };
     menu.appendChild(menuItem({ label: "duplicate", sym: "+", run: () => {
       checkpoint();
       const sp = span();
@@ -5476,29 +5527,14 @@
       } }));
     menu.appendChild(menuItem({ label: "move to another note", sym: "→",
       run: () => moveToNote(handle, span()) }));
-    menu.appendChild(menuItem({ label: "delete", sym: "−", run: () => {
-      checkpoint();
-      const sp = span();
-      blocks().splice(sp[0], sp[1] - sp[0]);
-      if (!blocks().length) blocks().push(newBlock());
-      select([]);
-      commit();
-    } }));
+    menu.appendChild(menuItem({ label: "delete", sym: "−",
+      run: removeBlocks }));
     rule();
 
     Object.entries(TYPES).forEach(([type, name]) => {
       menu.appendChild(menuItem({ active: b.type === type, label: name,
         hint: TYPE_HINTS[type], sym: TYPE_SYMS[type],
-        run: () => {
-          checkpoint();
-          targets.forEach(t => {
-            const x = byId(t);
-            if (x) setType(x, type);
-          });
-          select([]);
-          const keep = type === "divider" ? undefined : id;
-          commit(keep, keep ? "end" : undefined);
-        } }));
+        run: () => turnInto(type) }));
     });
 
     if (b.type === "table") {
@@ -5530,8 +5566,72 @@
       }));
     }
 
-    placeMenu(menu, handle);
+    placeMenuLeft(menu, handle);
     menuKeys(menu);
+
+    let typed = "";
+    const showTyped = () => {
+      const match = typed.length > 1 ? slashItems(typed.slice(1))[0] : null;
+      typedLine.hidden = !typed;
+      typedLine.textContent = typed
+        + (typed.length > 1 ? (match ? "  →  " + TYPES[match] : "  ·  no match")
+          : "");
+      tip.hidden = !!typed;
+    };
+    menu.addEventListener("keydown", e => {
+      // Arrow keys, Enter on a highlighted item and Esc are menuKeys' own
+      if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (typed) {
+        if (e.key === "Backspace") {
+          typed = typed.slice(0, -1);
+        } else if (e.key === " " || e.key === "Enter") {
+          const match = typed.length > 1 ? slashItems(typed.slice(1))[0] : null;
+          if (match) {
+            e.preventDefault();
+            hideMenus();
+            turnInto(match);
+            return;
+          }
+        } else if (e.key.length === 1) {
+          typed += e.key;
+        } else {
+          return;
+        }
+        e.preventDefault();
+        showTyped();
+        return;
+      }
+      if (e.key === "/") {
+        e.preventDefault();
+        typed = "/";
+        showTyped();
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        hideMenus();
+        addBelow();
+      } else if (e.key === "Backspace" || e.key === "Delete") {
+        e.preventDefault();
+        hideMenus();
+        removeBlocks();
+      }
+    });
+  }
+
+  // The block menu opens to the left of its block, beside the handle;
+  // where there isn't room it falls back to opening below the handle
+  function placeMenuLeft(menu, handle) {
+    app.appendChild(menu);
+    const a = handle.getBoundingClientRect();
+    const w = menu.offsetWidth, h = menu.offsetHeight;
+    const left = a.left - w - 6;
+    if (left < 8) {
+      placeMenu(menu, handle);
+      return;
+    }
+    let top = a.top - 4;
+    if (top + h > innerHeight - 8) top = Math.max(8, innerHeight - h - 8);
+    menu.style.left = left + "px";
+    menu.style.top = top + "px";
   }
 
   // Arrow keys move through a menu's items, Enter chooses one
