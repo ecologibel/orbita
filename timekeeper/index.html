@@ -53,6 +53,12 @@
   .selection-list.inactive { opacity:.48; }
   .list-heading { align-items:center;background:transparent;border:0;border-bottom:1px solid var(--border);border-radius:0;display:flex;font-weight:600;justify-content:space-between;margin:-2px 0 9px;padding:2px 0 9px;text-align:left;width:100%; }
   .list-heading[aria-pressed=true] { color:var(--accent); }
+  .list-head { align-items:center;border-bottom:1px solid var(--border);display:flex;gap:8px;margin:-2px 0 9px;padding:2px 0 9px; }
+  .list-head .list-heading { border-bottom:0;flex:1;margin:0;min-width:0;padding:0; }
+  .list-actions { display:flex;flex-shrink:0;gap:4px; }
+  .list-actions button { background:transparent;border:1px solid var(--border);border-radius:999px;color:var(--fg-muted);font-size:.78em;line-height:1.2;padding:3px 8px; }
+  .list-actions button:hover:not(:disabled),.list-actions button:focus-visible { border-color:var(--accent);color:var(--accent); }
+  .list-actions button:disabled { cursor:default;opacity:.4; }
   .choice-list { display:flex;flex-wrap:wrap;gap:6px; }
   .choice { background:transparent;border:1px solid var(--border);border-radius:999px;font-size:.88em;line-height:1.2;max-width:100%;overflow-wrap:anywhere;padding:6px 10px;text-align:left; }
   .choice:not(.tag-token)[aria-pressed=true] { background:color-mix(in srgb,var(--accent) 14%,transparent);border-color:var(--accent);color:var(--accent); }
@@ -199,10 +205,10 @@
         <h2 class="section-title" id="selection-heading">calendars or tags <span class="help-tip"><button type="button" aria-label="help with calendars or tags" aria-describedby="selection-help">?</button><span class="help-content" id="selection-help" role="tooltip">choose calendars directly, or select tags to include their assigned calendars</span></span></h2>
         <div class="selection-columns">
           <section class="selection-list active" id="calendar-selection" aria-label="calendars">
-            <button type="button" class="list-heading" id="calendar-mode" aria-pressed="true"><span>calendars</span><span class="muted" id="calendar-count"></span></button><div class="choice-list" id="calendar-choices"></div>
+            <div class="list-head"><button type="button" class="list-heading" id="calendar-mode" aria-pressed="true"><span>calendars</span><span class="muted" id="calendar-count"></span></button><span class="list-actions"><button type="button" id="calendar-all">select all</button><button type="button" id="calendar-none">deselect all</button></span></div><div class="choice-list" id="calendar-choices"></div>
           </section>
           <section class="selection-list inactive" id="tag-selection" aria-label="tags">
-            <button type="button" class="list-heading" id="tag-mode" aria-pressed="false"><span>tags</span><span class="muted" id="tag-count"></span></button><div class="choice-list" id="tag-choices"></div>
+            <div class="list-head"><button type="button" class="list-heading" id="tag-mode" aria-pressed="false"><span>tags</span><span class="muted" id="tag-count"></span></button><span class="list-actions"><button type="button" id="tag-all">select all</button><button type="button" id="tag-none">deselect all</button></span></div><div class="choice-list" id="tag-choices"></div>
           </section>
         </div>
       </section>
@@ -317,12 +323,19 @@
     $("#calendar-mode").setAttribute("aria-pressed",selectionMode==="calendars");$("#tag-mode").setAttribute("aria-pressed",selectionMode==="tags");
     $("#calendar-count").textContent=selectedCalendars.size?selectedCalendars.size+" selected":"";
     $("#tag-count").textContent=selectedTags.size?selectedTags.size+" selected":"";
+    const shownCalendars=includedCalendars();
+    $("#calendar-all").disabled=!shownCalendars.length||shownCalendars.every(c=>selectedCalendars.has(c.id));$("#calendar-none").disabled=!selectedCalendars.size;
+    $("#tag-all").disabled=!tags.length||tags.every(t=>selectedTags.has(t));$("#tag-none").disabled=!selectedTags.size;
     const cb=$("#calendar-choices");cb.replaceChildren();if(!calendars.length)cb.innerHTML='<span class="muted-list">connect Google Calendar to load calendars.</span>';else if(!includedCalendars().length)cb.innerHTML='<span class="muted-list">all calendars are excluded; re-enable calendars in the sidebar.</span>';
     includedCalendars().forEach(c=>{const b=document.createElement("button");b.type="button";b.className="choice";b.textContent=c.summary||"untitled calendar";b.setAttribute("aria-pressed",selectedCalendars.has(c.id));b.onclick=()=>{selectionMode="calendars";selectedCalendars.has(c.id)?selectedCalendars.delete(c.id):selectedCalendars.add(c.id);save();render();};cb.append(b);});
     const tb=$("#tag-choices");tb.replaceChildren();if(!tags.length)tb.innerHTML='<span class="muted-list">create tags in the sidebar.</span>';
     tagsSorted().forEach(t=>{const selected=selectedTags.has(t),b=document.createElement("button");b.type="button";b.className="choice tag-token tag-color-"+tagColor(t);paintTag(b,t);b.textContent=t;b.setAttribute("aria-pressed",selected);b.onclick=()=>{selectionMode="tags";selectedTags.has(t)?selectedTags.delete(t):selectedTags.add(t);save();render();};tb.append(b);});
   }
   $("#calendar-mode").onclick=()=>{selectionMode="calendars";save();render();};$("#tag-mode").onclick=()=>{selectionMode="tags";save();render();};
+  $("#calendar-all").onclick=()=>{selectionMode="calendars";includedCalendars().forEach(c=>selectedCalendars.add(c.id));save();render();};
+  $("#calendar-none").onclick=()=>{selectionMode="calendars";selectedCalendars.clear();save();render();};
+  $("#tag-all").onclick=()=>{selectionMode="tags";tags.forEach(t=>selectedTags.add(t));save();render();};
+  $("#tag-none").onclick=()=>{selectionMode="tags";selectedTags.clear();save();render();};
   document.querySelectorAll("#assign-tags .help-tip button,#exclude-calendars .help-tip button").forEach(b=>b.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();}));
   const sidebarToggleTimers=new WeakMap(),sidebarToggleDuration=matchMedia("(prefers-reduced-motion: reduce)").matches?0:240;
   document.querySelectorAll("#right-sidebar details.assign-box > summary").forEach(summary=>summary.addEventListener("click",e=>{
