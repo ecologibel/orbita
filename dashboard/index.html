@@ -203,7 +203,7 @@
   .recent {
     display: grid;
     gap: 12px;
-    grid-template-columns: repeat(6, 5.5em);
+    grid-template-columns: repeat(7, 5.5em);
   }
 
   /* A recent note: its title, then its date */
@@ -524,7 +524,6 @@
           aria-expanded="false"></button>
         <button class="tool" type="button" data-tool="todos"
           aria-expanded="false"></button>
-        <a class="tool" href="../codepad/index.html" data-tool="codepad"></a>
         <a class="tool" href="../focus/index.html" data-tool="focus"></a>
         <a class="tool" href="../timekeeper/index.html" data-tool="timekeeper"></a>
       </div>
@@ -662,7 +661,7 @@
 
   function renderTools() {
     const icon = id => ToolkitSidebar.icon(id);
-    const label = { codepad: "codepad", focus: "focus", timekeeper: "timekeeper", notes: "notes",
+    const label = { focus: "focus", timekeeper: "timekeeper", notes: "notes",
       todos: "to dos" };
     document.querySelectorAll(".tool").forEach(t => {
       const id = t.dataset.tool;
@@ -1149,12 +1148,18 @@
     const data = loadNotes();
     const list = (data ? data.notes : []).filter(n => !n.trashed)
       .sort((a, b) => (b.updated || 0) - (a.updated || 0)).slice(0, 4);
-    // + new note first, then recent notes (newest first), then all notes
+    // + new note and + new code first, then recent notes (newest first),
+    // then all notes
     const add = document.createElement("a");
     add.className = "note-card new";
     add.href = "../notes/index.html#new";
     add.innerHTML = '<span class="nc-plus">+</span><span>new note</span>';
     box.appendChild(add);
+    const addCode = document.createElement("a");
+    addCode.className = "note-card new";
+    addCode.href = "../notes/index.html#new-code";
+    addCode.innerHTML = '<span class="nc-plus">+</span><span>new code</span>';
+    box.appendChild(addCode);
     list.forEach(n => {
       const a = document.createElement("a");
       a.className = "note-card";

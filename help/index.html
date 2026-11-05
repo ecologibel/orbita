@@ -105,7 +105,7 @@
 <a class="skip-link" href="#main">skip to help content</a>
 <main id="main" class="help-shell">
   <h1>help</h1>
-  <p class="intro">A guide to using orbita's dashboard, notes, to dos, focus timer, and codepad.</p>
+  <p class="intro">A guide to using orbita's dashboard, notes, to dos, focus timer, and timekeeper.</p>
   <nav class="contents" aria-label="help topics">
     <ul>
       <li><a href="#getting-started"><span class="topic-icon" aria-hidden="true">✦</span>getting started</a></li>
@@ -113,7 +113,6 @@
       <li><a href="#notes"><span class="topic-icon" aria-hidden="true">▤</span>notes</a></li>
       <li><a href="#to-dos"><span class="topic-icon" aria-hidden="true">☑</span>to dos</a></li>
       <li><a href="#focus"><span class="topic-icon" aria-hidden="true">◉</span>focus</a></li>
-      <li><a href="#codepad"><span class="topic-icon" aria-hidden="true">&lt;/&gt;</span>codepad</a></li>
       <li><a href="#sync"><span class="topic-icon" aria-hidden="true">⇄</span>Google Drive sync</a></li>
       <li><a href="#backups"><span class="topic-icon" aria-hidden="true">⟲</span>backups</a></li>
       <li><a href="#shortcuts"><span class="topic-icon" aria-hidden="true">⌨</span>keyboard shortcuts</a></li>
@@ -136,8 +135,10 @@
   <section id="notes">
     <h2>notes</h2>
     <h3>organise notes</h3>
-    <p>Notes are listed as a tree: folders first, then notes, then <strong>+ new note</strong>. Click a folder to open it and see its subfolders and notes, indented beneath it; several folders can be open at once. Drag notes or folders to move them, and use a folder's &#8943; menu to rename it or add a subfolder.</p>
-    <p>The sidebar on the right holds <strong>search notes</strong>, with matches listed as you type, and below it sorting, tags, pinned notes, <strong>+ new folder</strong> and the bin. Drag a note onto pinned to pin it, or onto the bin to delete it. The bin keeps deleted notes for 30 days.</p>
+    <p>The notes page starts with <strong>new</strong> (<strong>+ new folder</strong>, <strong>+ new note</strong> and <strong>+ new code</strong>), then <strong>recent</strong>, the four notes edited last (pinned notes aside), then <strong>folders</strong>: a tree of folders, then notes, then <strong>+ new note</strong> and <strong>+ new code</strong>. Click a folder to open it and see its subfolders and notes, indented beneath it; several folders can be open at once. Drag notes or folders to move them, and use a folder's &#8943; menu to rename it, add a subfolder, or choose its icon and colour. A folder's colour shows on everything inside it, unless a note has its own. <kbd>Ctrl+Z</kbd> and <kbd>Ctrl+Y</kbd> undo and redo moves, renames and colours.</p>
+    <p>The sidebar on the right holds <strong>search notes</strong>, with matches listed as you type, and below it sorting, tags, pinned notes and the bin. Drag a note onto pinned to pin it, or onto the bin to delete it. Open the bin to see what's in it; it keeps deleted notes for 30 days.</p>
+    <h3>code</h3>
+    <p>Code items hold R, with syntax highlighting, matching and rainbow brackets, and line numbers. They sit in folders beside notes and sync with them. Use <strong>copy</strong> or <strong>download .R</strong> above the code, or the same options in the item's &#8943; menu. What was in the old codepad now lives in a code item called <em>codepad</em>.</p>
     <h3>write and format</h3>
     <p>Type <kbd>/</kbd> in a note to choose a block type. Common shortcuts include <kbd>[]</kbd> for a to do, <kbd>/tog</kbd> for a toggle, <kbd>/tab</kbd> for a table, and <kbd>```</kbd> for an R code block. Markdown shortcuts such as <kbd>#</kbd> for a heading and <kbd>-</kbd> for a bullet list are also available.</p>
     <p>Select text to use the floating format menu, or use <kbd>Ctrl+B</kbd> for bold, <kbd>Ctrl+I</kbd> for italics, <kbd>Ctrl+E</kbd> for inline code, and <kbd>Ctrl+K</kbd> for a link. Drag blocks by their handle; use <kbd>Tab</kbd> and <kbd>Shift+Tab</kbd> to change indentation. <kbd>Ctrl+Z</kbd> and <kbd>Ctrl+Y</kbd> undo and redo.</p>
@@ -167,15 +168,10 @@
     <p class="muted">Ambience recordings: rain is <a href="https://commons.wikimedia.org/wiki/File:Bourne_woods_rain_2020-05-10_0800.mp3">Bourne woods rain</a> by Robert EA Harvey (<a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>); nature is <a href="https://commons.wikimedia.org/wiki/File:2013-07-24_00-19-04hrs_Chiang_Mai_Chang_Khien_rain_animal_sounds_night_time.ogg">midnight frog songs, Chiang Mai</a> by Takeaway (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a>); café and fire are public-domain recordings from Wikimedia Commons.</p>
   </section>
 
-  <section id="codepad">
-    <h2>codepad</h2>
-    <p>Use codepad as a scratchpad for R. It highlights R syntax and matching brackets. Your code is saved in the browser and included in Google Drive sync when signed in.</p>
-  </section>
-
   <section id="sync">
     <h2>Google Drive sync</h2>
     <p>Choose the sync control at the bottom of the sidebar and select the Google account to use. Sync stores the app's files in a private app-data folder in Drive; orbita does not use this access to browse your other Drive files.</p>
-    <p>Notes, to dos, codepad, and timekeeper settings sync as separate files. Dashboard and focus can sync to dos and notes too. The focus timer itself stays on the device.</p>
+    <p>Notes (code items included), to dos, and timekeeper settings sync as separate files. Dashboard and focus can sync to dos and notes too. The focus timer itself stays on the device.</p>
     <p>Timekeeper's tags, colours, and calendar choices sync with this Drive account, not the Google account you connect for Calendar, so the two can be different. Its sidebar width and fold stay on each device.</p>
     <p>If local and Drive copies have conflicting changes, the sync icon turns yellow. Click it to choose <strong>local</strong> (this device's copy) or <strong>drive</strong> (Google Drive's copy), or close the window to decide later. A recovery copy is made before resolving it. If a sync replaces a newer copy, you can restore the earlier one from <a href="#backups">backups</a>.</p>
     <p>Sync requires the hosted site or a local web server; it does not work when you open an HTML file directly using <code>file://</code>. The sync icon is teal while sync is running and orange when it isn't (signed out, or the last sync failed); hover over it to see its status. Alt-click it to sign out.</p>

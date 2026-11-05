@@ -1032,6 +1032,139 @@
   #date.invalid { color: var(--c-red); }
   .note-body { flex: 1; padding: 20px 56px 120px 72px; }
 
+  /* ---- Code items: an R editor in place of blocks ---- */
+  #code-item { display: none; }
+  #note.is-code #code-item { display: block; }
+  #note.is-code #blocks, #note.is-code .word-count { display: none; }
+  #code-host {
+    --font-mono: 'Ubuntu Mono', 'Consolas', 'Menlo', 'Lucida Console', monospace;
+    --no-fg: #d6deeb; --no-codebg: #010e1a;
+    --no-selection: rgba(95, 126, 151, 0.47); --no-cursor: #80a4c2;
+    --no-keyword: #97b7ff; --no-operator: #7fdbca; --no-number: #9ea3ec;
+    --no-string: #9ccc8a; --no-comment: #5a9a8e; --no-function: #f4a46a;
+    --no-constant: #9ea3ec; --no-bracket: rgba(128, 128, 128, 0.5);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    min-height: 320px;
+    overflow: hidden;
+  }
+  .t-dark #code-host { box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45); }
+  .t-light #code-host { border-color: #c5e6e0; box-shadow: 0 2px 8px rgba(36, 70, 75, 0.14); }
+  #code-host .code-loading { color: var(--fg-muted); padding: 16px; }
+  .code-bar { display: flex; gap: 14px; justify-content: flex-end; margin-bottom: 8px; }
+  .code-bar button {
+    background: none;
+    border: none;
+    border-radius: 6px;
+    color: var(--accent);
+    cursor: pointer;
+    font: inherit;
+    font-size: 14px;
+    padding: 3px 6px;
+  }
+  .code-bar button:hover, .code-bar button:focus-visible { background: var(--hover); outline: none; }
+  .card-preview .code-preview {
+    font-family: 'Ubuntu Mono', 'Consolas', monospace;
+    margin: 0;
+    white-space: pre;
+  }
+  .new-pair { display: flex; gap: 0 18px; }
+  .new-pair .tree-row { width: auto; }
+  /* Rainbow brackets by nesting depth */
+  /* Same colours in both modes */
+  .cm-paren-0 { color: #ed909a !important; }
+  .cm-paren-1 { color: #d3a25e !important; }
+  .cm-paren-2 { color: #99b657 !important; }
+  .cm-paren-3 { color: #2dc192 !important; }
+  .cm-paren-4 { color: #04bdce !important; }
+  .cm-paren-5 { color: #8ea9ec !important; }
+  .cm-paren-6 { color: #d891db !important; }
+
+  #code-host .CodeMirror {
+    height: auto !important;
+    font-family: var(--font-mono) !important;
+    font-weight: 400 !important;
+    line-height: 1.6 !important;
+  }
+
+  #code-host .CodeMirror-scroll { min-height: 320px; }
+
+  /* Editor text size for each size option */
+  .size-s #code-host { --code-fs: 13px; }
+  .size-m #code-host { --code-fs: 16px; }
+  .size-l #code-host { --code-fs: 19px; }
+  #code-host .CodeMirror { font-size: var(--code-fs, 16px); }
+
+  /* ---- Night Owl (CCL), matching ccl-rstudio-theme-dark ---- */
+  .t-dark #code-host .CodeMirror { background: var(--no-codebg) !important; color: var(--no-fg) !important; }
+  .t-dark #code-host .CodeMirror-gutters { background: var(--no-codebg) !important; border-right: none !important; }
+  .t-dark #code-host .CodeMirror-activeline-gutter { background: var(--no-codebg) !important; }
+  .t-dark #code-host .CodeMirror-linenumber { color: #2a4d6b !important; }
+  .t-dark #code-host .CodeMirror-cursor { border-left: 2px solid var(--no-cursor) !important; }
+  .t-dark #code-host .CodeMirror-selected { background: var(--no-selection) !important; }
+  .t-dark #code-host .CodeMirror-activeline-background { background: var(--no-codebg) !important; }
+  .t-dark #code-host .cm-keyword    { color: var(--no-keyword)  !important; }
+  .t-dark #code-host .cm-operator   { color: var(--no-operator) !important; }
+  .t-dark #code-host .cm-number     { color: var(--no-number)   !important; }
+  .t-dark #code-host .cm-string     { color: var(--no-string)   !important; }
+  .t-dark #code-host .cm-comment    { color: var(--no-comment) !important;
+    font-style: italic; }
+  .t-dark #code-host .cm-def        { color: var(--no-function) !important; }
+  .t-dark #code-host .cm-variable   { color: var(--no-fg)       !important; }
+  .t-dark #code-host .cm-variable-2 { color: var(--no-operator) !important; }
+  .t-dark #code-host .cm-variable-3 { color: var(--no-fg)       !important; }
+  .t-dark #code-host .cm-arg-is     { color: var(--no-operator) !important; }
+  .t-dark #code-host .cm-fn-call:not(.cm-string):not(.cm-comment):not(.cm-keyword) {
+    color: var(--no-function) !important;
+  }
+  .t-dark #code-host .cm-atom       { color: var(--no-constant) !important; }
+  .t-dark #code-host .cm-builtin    { color: var(--no-function) !important; }
+  .t-dark #code-host .CodeMirror-matchingbracket {
+    background: var(--no-bracket); color: inherit !important;
+  }
+
+  /* ---- Light ---- */
+  .t-light #code-host .CodeMirror { background: #ebf5f3 !important; color: #1b4d42 !important; }
+  .t-light #code-host .CodeMirror-gutters { background: #ebf5f3 !important; border-right: none !important; }
+  .t-light #code-host .CodeMirror-linenumber { color: #8fbfb5 !important; }
+  .t-light #code-host .CodeMirror-cursor { border-left: 2px solid #1b4d42 !important; }
+  .t-light #code-host .CodeMirror-selected { background: #c5e6e0 !important; }
+  .t-light #code-host .CodeMirror-activeline-background { background: #ebf5f3 !important; }
+  /* Workshop styles: mint code, blue keywords, orange functions and
+     teal italic comments; strings and numbers get their own colours */
+  .t-light #code-host .cm-keyword    { color: #2d68e9 !important; }
+  .t-light #code-host .cm-operator   { color: #077a76 !important; }
+  .t-light #code-host .cm-number     { color: #5e65d9 !important; }
+  .t-light #code-host .cm-string     { color: #1f7a45 !important; }
+  .t-light #code-host .cm-comment    { color: #4f8f82 !important;
+    font-style: italic; }
+  .t-light #code-host .cm-def        { color: #c43d00 !important; }
+  .t-light #code-host .cm-variable   { color: #1b4d42 !important; }
+  .t-light #code-host .cm-variable-2 { color: #077a76 !important; }
+  .t-light #code-host .cm-variable-3 { color: #1b4d42 !important; }
+  .t-light #code-host .cm-arg-is     { color: #077a76 !important; }
+  .t-light #code-host .cm-atom       { color: #5e65d9 !important; }
+  .t-light #code-host .cm-builtin    { color: #c43d00 !important; }
+  .t-light #code-host .cm-fn-call:not(.cm-string):not(.cm-comment):not(.cm-keyword) {
+    color: #c43d00 !important;
+  }
+
+  /* ---- Spacing inside the coding area ---- */
+
+  /* Line numbers sit near the left edge; the code keeps its place */
+  .CodeMirror-linenumber {
+    padding: 0 9px 0 12px !important;
+    text-align: left !important;
+
+    /* 3px smaller than the code, centred on its line */
+    font-size: calc(var(--code-fs, 16px) - 3px);
+    line-height: calc(var(--code-fs, 16px) * 1.6);
+  }
+  .CodeMirror-lines { padding: 16px 0 !important; }
+  .CodeMirror pre.CodeMirror-line,
+  .CodeMirror pre.CodeMirror-line-like { padding: 0 16px 0 4px !important; }
+
+
   /* ---- Blocks: Notion-like spacing ---- */
   #blocks { --unit: 1.625em; line-height: 1.5; position: relative; }
   .block {
@@ -1651,6 +1784,13 @@
       </div>
       <div class="note-body">
         <div id="blocks"><div id="drop-line"></div></div>
+        <div id="code-item">
+          <div class="code-bar">
+            <button type="button" id="code-copy">copy</button>
+            <button type="button" id="code-download">download .R</button>
+          </div>
+          <div id="code-host"></div>
+        </div>
         <div class="edited"></div>
         <div class="word-count"></div>
       </div>
@@ -2117,6 +2257,8 @@
       n.tags = [...new Set((Array.isArray(n.tags) ? n.tags : [])
         .map(cleanTag).filter(Boolean))];
       n.trashed = n.trashed || null;
+      if (n.kind === "code") n.code = typeof n.code === "string" ? n.code : "";
+      else { delete n.kind; delete n.code; }
       n.blocks = (Array.isArray(n.blocks) ? n.blocks : []).map(normBlock);
       if (!n.blocks.length) n.blocks.push(newBlock());
       normalise(n.blocks);
@@ -2135,11 +2277,18 @@
         relativeChanged = true;
       });
     });
+    codepadMoved = data && Array.isArray(data.codepadMoved)
+      ? data.codepadMoved.filter(x => typeof x === "string") : [];
     if (notes.length !== before || relativeChanged) persist();
   }
 
+  // Codepad contents already moved into code items, so each moves once
+  let codepadMoved = [];
+
   function persist() {
-    localStorage.setItem(DATA_KEY, JSON.stringify({ folders, notes }));
+    const data = { folders, notes };
+    if (codepadMoved.length) data.codepadMoved = codepadMoved;
+    localStorage.setItem(DATA_KEY, JSON.stringify(data));
   }
 
   let detailTimer = 0;
@@ -2277,6 +2426,7 @@
     hideMenus();
     closeTrash();
     if (id === "new") return createNote(null);
+    if (id === "new-code") return createNote(null, "code");
     const note = notes.find(n => n.id === id);
     if (note) openNote(note);
     else if (id.startsWith("folder=")) showFolder(id.slice(7));
@@ -2326,6 +2476,7 @@
     gallery.classList.add("gone");
     app.classList.add("note-open");
     noteEl.classList.remove("gone");
+    noteEl.classList.toggle("is-code", isCode(note));
     renderNote();
     if (changed) {
       replay(noteEl);
@@ -2467,7 +2618,12 @@
     const pv = document.createElement("div");
     pv.className = "card-preview";
     let count = 0;
-    n.blocks.slice(0, 12).forEach(b => {
+    if (isCode(n)) {
+      const pre = document.createElement("pre");
+      pre.className = "code-preview";
+      pre.textContent = n.code.split("\n").slice(0, 8).join("\n");
+      pv.appendChild(pre);
+    } else n.blocks.slice(0, 12).forEach(b => {
       count = b.type === "number" ? count + 1 : 0;
       if (b.type !== "text" || b.html) pv.appendChild(previewLine(b, count));
     });
@@ -2706,7 +2862,8 @@
     row.draggable = !n.trashed;
     const icon = document.createElement("span");
     icon.className = "tree-icon";
-    icon.innerHTML = n.pinned ? PIN_ICON : ToolkitSidebar.icon("notes");
+    icon.innerHTML = n.pinned ? PIN_ICON
+      : ToolkitSidebar.icon(isCode(n) ? "code" : "notes");
     const name = document.createElement("span");
     name.className = "tree-name" + (n.title.trim() ? "" : " untitled");
     name.textContent = n.title.trim() || "untitled";
@@ -2737,13 +2894,19 @@
   }
 
   function newRow(parent, depth) {
-    const row = document.createElement("button");
-    row.type = "button";
-    row.className = "tree-row new-row";
-    row.style.setProperty("--depth", depth);
-    row.append(chevron(true), document.createTextNode("+ new note"));
-    row.addEventListener("click", () => createNote(parent));
-    return row;
+    const pair = document.createElement("div");
+    pair.className = "new-pair";
+    [["+ new note", undefined], ["+ new code", "code"]].forEach(([label, kind], i) => {
+      const row = document.createElement("button");
+      row.type = "button";
+      row.className = "tree-row new-row";
+      row.style.setProperty("--depth", i ? 0 : depth);
+      row.append(chevron(true), document.createTextNode(label));
+      if (i) row.firstChild.remove();
+      row.addEventListener("click", () => createNote(parent, kind));
+      pair.appendChild(row);
+    });
+    return pair;
   }
 
   function treeLevel(parent, depth) {
@@ -2814,7 +2977,8 @@
 
   function matches(n, q) {
     const text = (n.title + " " + n.tags.map(t => "#" + t).join(" ") + " "
-      + n.blocks.map(blockText).join(" ")).toLowerCase();
+      + (isCode(n) ? n.code : n.blocks.map(blockText).join(" ")))
+      .toLowerCase();
     return q.split(/\s+/).every(w => text.includes(w));
   }
 
@@ -2876,7 +3040,8 @@
     const row = document.createElement("div");
     row.className = "gal-new";
     row.append(galButton("+ new folder", () => addFolder(null)),
-      galButton("+ new note", () => createNote(null)));
+      galButton("+ new note", () => createNote(null)),
+      galButton("+ new code", () => createNote(null, "code")));
     fresh.appendChild(row);
 
     const recent = galSection("recent", "gal-recent");
@@ -3015,10 +3180,11 @@
     });
   }
 
-  function createNote(folder = null) {
+  function createNote(folder = null, kind) {
     const n = { blocks: [newBlock()], created: Date.now(),
       date: isoDay(new Date()), folder, id: uid(), pinned: false, tags: [],
       tint: null, title: "", trashed: null, updated: Date.now() };
+    if (kind === "code") Object.assign(n, { code: "", kind: "code" });
     notes.push(n);
     persist();
     location.hash = n.id;
@@ -3097,9 +3263,22 @@
 
   function noteToMd(n) {
     const tags = n.tags.length ? " " + n.tags.map(t => "#" + t).join(" ") : "";
+    const body = isCode(n) ? "```r\n" + n.code.replace(/\n$/, "") + "\n```"
+      : blocksToMd(n.blocks);
     return "# " + (n.title.trim() || "untitled") + "\n\n@"
-      + fmtLong(fromIso(n.date)) + tags + "\n\n" + blocksToMd(n.blocks)
-      + "\n";
+      + fmtLong(fromIso(n.date)) + tags + "\n\n" + body + "\n";
+  }
+
+  function downloadR(n) {
+    const blob = new Blob([n.code], { type: "text/plain" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = (n.title.trim() || "untitled").replace(/[\\/:*?"<>|]+/g, "-")
+      + ".R";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   }
 
   function copyText(text) {
@@ -3188,11 +3367,19 @@
         if (inNote) ToolkitSidebar.toast("duplicated");
         else renderGallery();
       } },
-      { label: "copy as md", sym: "⧉", run: () => {
-        copyText(noteToMd(n));
-        ToolkitSidebar.toast("copied as markdown");
-      } },
-      { label: "download as md", sym: "↓", run: () => downloadMd(n) },
+      ...(isCode(n) ? [
+        { label: "copy code", sym: "⧉", run: () => {
+          copyText(n.code);
+          ToolkitSidebar.toast("code copied");
+        } },
+        { label: "download .R", sym: "↓", run: () => downloadR(n) }
+      ] : [
+        { label: "copy as md", sym: "⧉", run: () => {
+          copyText(noteToMd(n));
+          ToolkitSidebar.toast("copied as markdown");
+        } },
+        { label: "download as md", sym: "↓", run: () => downloadMd(n) }
+      ]),
       { label: "move to bin", sym: BIN_SYM, run: () => {
         if (inNote) location.hash = "";
         withUndo("moved to bin", () => { n.trashed = Date.now(); });
@@ -3417,7 +3604,8 @@
     renderTags();
     renderPin();
     renderEdited();
-    renderBlocks();
+    if (isCode(current)) renderCode();
+    else renderBlocks();
     renderWords();
     renderCrumbs();
     noteTitle();
@@ -5132,6 +5320,11 @@
     document.execCommand("insertText", false, text);
   });
   titleEl.addEventListener("keydown", e => {
+    if (isCode(current) && (e.key === "Enter" || e.key === "ArrowDown")) {
+      e.preventDefault();
+      if (codeEditor) codeEditor.focus();
+      return;
+    }
     const first = () => {
       const k = editableIndex(-1, 1);
       if (k !== -1) return contentOf(blocks()[k].id);
@@ -5559,7 +5752,7 @@
   document.addEventListener("keydown", e => {
     if (!current || !(e.ctrlKey || e.metaKey)) return;
     const a = document.activeElement;
-    if (a && a.closest && a.closest(".linkbox, #search")) return;
+    if (a && a.closest && a.closest(".linkbox, #search, #code-host")) return;
     if (a === dateEl && dateEl.isContentEditable) return;
     const key = e.key.toLowerCase();
     if (key === "z" && !e.shiftKey) {
@@ -6396,6 +6589,160 @@
     });
   });
 
+  // ---- Code items ----
+  //
+  // An R editor (CodeMirror, as the codepad had) in place of blocks,
+  // loaded the first time a code item opens
+  const isCode = n => !!n && n.kind === "code";
+  const CM = "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/";
+  const CM_FILES = [
+    ["codemirror.min.css", "sha512-uf06llspW44/LZpHzHT6qBOIVODjWtv4MxCricRxkzvopAlSWnTf6hpZTFxuuZcuNE9CBQhqE0Seu1CoRk84nQ=="],
+    ["codemirror.min.js", "sha512-OeZ4Yrb/W7d2W4rAMOO0HQ9Ro/aWLtpW9BUSR2UOWnSV2hprXLkkYnnCGc9NeLUxxE4ZG7zN16UuT1Elqq8Opg=="],
+    ["mode/r/r.min.js", "sha512-Ag6wqGwcIwkgp0g8jSpAFLMHwtbGBqhfJh71N00FXDmSIFJix8e9CEt1kCVatfSwIwHCqg08mYVIcREiPIjxFg=="],
+    ["addon/edit/matchbrackets.min.js", "sha512-GSYCbN/le5gNmfAWVEjg1tKnOH7ilK6xCLgA7c48IReoIR2g2vldxTM6kZlN6o3VtWIe6fHu/qhwxIt11J8EBA=="],
+    ["addon/selection/active-line.min.js", "sha512-0sDhEPgX5DsfNcL5ty4kP6tR8H2vPkn40GwA0RYTshkbksURAlsRVnG4ECPPBQh7ZYU6S3rGvp5uhlGQUNrcmA=="]
+  ];
+  let cmLoading = null, codeEditor = null, codeFor = null, codeSetting = false;
+
+  function loadCodeMirror() {
+    if (cmLoading) return cmLoading;
+    const one = ([file, hash]) => new Promise((done, fail) => {
+      const css = file.endsWith(".css");
+      const el = document.createElement(css ? "link" : "script");
+      if (css) { el.rel = "stylesheet"; el.href = CM + file; }
+      else { el.src = CM + file; el.async = false; }
+      el.integrity = hash;
+      el.crossOrigin = "anonymous";
+      el.referrerPolicy = "no-referrer";
+      el.onload = done;
+      el.onerror = fail;
+      document.head.appendChild(el);
+    });
+    cmLoading = one(CM_FILES[0]).catch(() => {})
+      .then(() => one(CM_FILES[1]))
+      .then(() => Promise.all(CM_FILES.slice(2).map(one)));
+    cmLoading.catch(() => { cmLoading = null; });
+    return cmLoading;
+  }
+
+  function makeEditor(host) {
+    // R highlighting plus rainbow brackets by nesting depth
+    CodeMirror.defineMode("r-rainbow", config => {
+      const base = CodeMirror.getMode(config, "r");
+      return {
+        copyState: st => ({
+          base: CodeMirror.copyState(base, st.base), depth: st.depth
+        }),
+        electricInput: base.electricInput,
+        indent: (st, after, line) => base.indent(st.base, after, line),
+        lineComment: base.lineComment,
+        startState: () => ({ base: CodeMirror.startState(base), depth: 0 }),
+        token(stream, st) {
+          const style = base.token(stream, st.base);
+          const ch = stream.current();
+          if (!style && ch.length === 1 && "([{".includes(ch)) {
+            return "paren-" + (st.depth++ % 7);
+          }
+          if (!style && ch.length === 1 && ")]}".includes(ch)) {
+            st.depth = Math.max(0, st.depth - 1);
+            return "paren-" + (st.depth % 7);
+          }
+          return style;
+        }
+      };
+    });
+    const ed = CodeMirror(host, {
+      indentUnit: 2, indentWithTabs: false, lineNumbers: true,
+      lineWrapping: false, matchBrackets: true, mode: "r-rainbow",
+      styleActiveLine: true, tabSize: 2, viewportMargin: Infinity,
+      extraKeys: {
+        "Tab": cm => cm.execCommand("indentMore"),
+        "Shift-Tab": cm => cm.execCommand("indentLess")
+      }
+    });
+    // Function calls coloured, as RStudio does: a name followed by "("
+    ed.addOverlay({
+      token(stream) {
+        if (stream.match(/^[A-Za-z.][\w.]*(?=\s*\()/)) return "fn-call";
+        if (!stream.match(/^[\w.]+/)) stream.next();
+        return null;
+      }
+    });
+    ed.on("change", () => {
+      if (codeSetting || !isCode(current) || codeFor !== current.id) return;
+      current.code = ed.getValue();
+      save();
+    });
+    return ed;
+  }
+
+  function renderCode() {
+    const host = document.getElementById("code-host");
+    const n = current;
+    if (!codeEditor) {
+      if (!host.firstChild) {
+        host.innerHTML = '<div class="code-loading">loading the editor…</div>';
+      }
+      loadCodeMirror().then(() => {
+        if (!codeEditor) {
+          host.innerHTML = "";
+          codeEditor = makeEditor(host);
+        }
+        if (current === n) renderCode();
+      }, () => {
+        host.innerHTML = '<div class="code-loading">the editor couldn\'t load; '
+          + "check your connection and reopen this item</div>";
+      });
+      return;
+    }
+    const fresh = codeFor !== n.id;
+    if (fresh || (!codeEditor.hasFocus() && codeEditor.getValue() !== n.code)) {
+      codeSetting = true;
+      const cursor = codeEditor.getCursor();
+      codeEditor.setValue(n.code);
+      if (fresh) codeEditor.clearHistory();
+      else codeEditor.setCursor(cursor);
+      codeSetting = false;
+      codeFor = n.id;
+    }
+    setTimeout(() => codeEditor.refresh(), 0);
+  }
+
+  document.getElementById("code-copy").addEventListener("click", () => {
+    if (!isCode(current)) return;
+    copyText(current.code);
+    ToolkitSidebar.toast("code copied");
+  });
+  document.getElementById("code-download").addEventListener("click", () => {
+    if (isCode(current)) downloadR(current);
+  });
+
+  // The codepad's contents move into a code item named "codepad", once;
+  // a short fingerprint in the notes data stops a second copy, even from
+  // another device
+  const CODEPAD_KEY = "r-editor-content";
+  function fingerprint(text) {
+    let h = 5381;
+    for (let i = 0; i < text.length; i++) h = (h * 33 + text.charCodeAt(i)) | 0;
+    return (h >>> 0).toString(36) + "-" + text.length;
+  }
+  function moveCodepad() {
+    let text = null;
+    try { text = localStorage.getItem(CODEPAD_KEY); } catch {}
+    if (!text || !text.trim()) return;
+    const mark = fingerprint(text);
+    if (codepadMoved.includes(mark)) return;
+    codepadMoved.push(mark);
+    if (!notes.some(n => isCode(n) && n.code === text)) {
+      notes.push({ blocks: [newBlock()], code: text, created: Date.now(),
+        date: isoDay(new Date()), folder: null, id: uid(), kind: "code",
+        pinned: false, tags: [], tint: null, title: "codepad", trashed: null,
+        updated: Date.now() });
+    }
+    persist();
+    if (!current) renderGallery();
+  }
+
   // Follow changes made in another tab, such as ticks in the to-dos
   window.addEventListener("storage", e => {
     if (e.key !== DATA_KEY) return;
@@ -6455,6 +6802,12 @@
   route();
 
   // Sync notes via Google Drive
+  moveCodepad();
+  ToolSync.init({
+    file:     "r-codepad.json",
+    keys:     [CODEPAD_KEY],
+    onRemote: () => moveCodepad()
+  });
   ToolSync.init({
     file:     "notes.json",
     keys:     [DATA_KEY],

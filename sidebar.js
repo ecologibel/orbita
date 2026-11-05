@@ -90,11 +90,6 @@
         + '<path d="M8 12.5l2.7 2.7L16 9.5"/>')
     },
     {
-      id: "codepad", label: "codepad", page: "codepad/index.html",
-      icon: svg('<path d="M8.5 7l-5 5 5 5M15.5 7l5 5-5 5"/>'
-        + dim('<path d="M13.5 4.5l-3 15"/>'))
-    },
-    {
       // A timer ring, partly run down
       id: "focus", label: "focus", page: "focus/index.html",
       icon: svg(dim('<circle cx="12" cy="12" r="8.5"/>')
@@ -1271,8 +1266,6 @@
       href: root + "to-dos/index.html#" + v, icon: icon(v),
       kind: "to dos", name: VIEW_NAMES[v]
     }));
-    out.push({ href: root + "codepad/index.html", icon: icon("codepad"),
-      kind: "page", name: "codepad" });
     out.push({ href: root + "focus/index.html", icon: icon("focus"),
       kind: "page", name: "focus" });
 
@@ -1965,7 +1958,12 @@
   }
 
   // A view's icon, for pages that link to the tools
+  // Code items in notes wear the old codepad's icon
+  const CODE_ICON = svg('<path d="M8.5 7l-5 5 5 5M15.5 7l5 5-5 5"/>'
+    + dim('<path d="M13.5 4.5l-3 15"/>'));
+
   function icon(id) {
+    if (id === "code") return CODE_ICON;
     const item = ITEMS.find(x => x.id === id);
     return item ? item.icon : "";
   }

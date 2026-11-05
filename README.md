@@ -1,6 +1,6 @@
 # orbita
 
-A personal productivity space with a dashboard, notes, to dos, focus timer, timekeeper and R codepad.
+A personal productivity space with a dashboard, notes (with R code items), to dos, focus timer and timekeeper.
 
 Open the app at [ecologibel.github.io/orbita](https://ecologibel.github.io/orbita/). For instructions on using its tools and syncing with Google Drive, open **help** from the sidebar.
 
