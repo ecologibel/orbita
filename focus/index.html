@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy"
   content="default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/ https://cdnjs.cloudflare.com/ajax/libs/codemirror/; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com/ajax/libs/codemirror/ https://accounts.google.com/gsi/style; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' https://www.googleapis.com https://oauth2.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; object-src 'none'; base-uri 'self'; form-action 'self'">
+<script src="../in-shell.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>focus · orbita</title>
 <style>
@@ -72,8 +73,161 @@
   #app {
     background: var(--bg);
     color: var(--fg);
+    display: flex;
     min-height: 100vh;
-    padding: 0 20px 140px;
+  }
+  .main-col { flex: 1 1 auto; min-width: 0; padding: 0 20px 140px; }
+
+  /* ---- Settings sidebar: as the dashboard's, resizable and folding to
+     a slim strip. Shown only while picking a task ---- */
+  body.focus-bare .aside-wrap { display: none; }
+  aside {
+    display: flex;
+    flex: 0 0 320px;
+    flex-direction: column;
+    gap: 32px;
+    max-height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 48px 28px 36px;
+    position: sticky;
+    top: 0;
+    transition: flex-basis 0.25s ease, padding 0.25s ease;
+  }
+  aside.dragging { transition: none; }
+  .aside-wrap { display: flex; flex: none; position: relative; }
+  .aside-wrap::before {
+    background: var(--border);
+    bottom: 38px;
+    content: '';
+    left: 0;
+    position: absolute;
+    top: 38px;
+    width: 1px;
+    z-index: 1;
+  }
+  .aside-handle {
+    bottom: 0;
+    cursor: col-resize;
+    left: -4px;
+    position: absolute;
+    top: 0;
+    width: 9px;
+    z-index: 2;
+  }
+  .aside-wrap:has(.aside-handle:hover)::before,
+  .aside-wrap.resizing::before { background: var(--accent); }
+  .fold-btn {
+    background: none;
+    border: none;
+    border-radius: 4px;
+    color: var(--fg-muted);
+    cursor: pointer;
+    font-size: 15px;
+    height: 24px;
+    line-height: 1;
+    width: 24px;
+  }
+  .fold-btn:hover { background: var(--hover); color: var(--accent); }
+  .unfold { display: none; left: 6px; position: absolute; top: 44px; }
+  aside.folded { flex-basis: 36px !important; padding: 48px 0; }
+  aside.folded > * { display: none; }
+  aside.folded > .unfold { display: block; }
+  @keyframes side-in {
+    from { opacity: 0; transform: translateX(12px); }
+    to   { opacity: 1; transform: none; }
+  }
+  aside > div { animation: side-in 0.35s ease 0.08s both; }
+  .side-head {
+    align-items: last baseline;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 18px;
+    padding-bottom: 8px;
+  }
+  .side-title { font-size: 1.25em; font-weight: 600; }
+
+  /* Each group opens and closes with its +/− */
+  .set-group { border-bottom: 1px solid var(--border); padding: 4px 0 10px; }
+  .set-head {
+    align-items: center;
+    background: none;
+    border: none;
+    color: var(--accent);
+    cursor: pointer;
+    display: flex;
+    font: inherit;
+    font-weight: 600;
+    justify-content: space-between;
+    padding: 8px 0;
+    text-transform: lowercase;
+    width: 100%;
+  }
+  .set-sign { font-weight: 400; }
+  .set-body {
+    display: grid;
+    grid-template-rows: 1fr;
+    transition: grid-template-rows 0.24s ease;
+  }
+  .set-group.closed .set-body { grid-template-rows: 0fr; }
+  .set-inner { min-height: 0; overflow: hidden; }
+  .set-row { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 0 10px; }
+  .set-opt {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--fg);
+    cursor: pointer;
+    font: inherit;
+    font-size: 13.5px;
+    padding: 4px 12px;
+    text-transform: lowercase;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .set-opt:hover, .set-opt:focus-visible { border-color: var(--accent); outline: none; }
+  .set-opt[aria-pressed="true"] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--bg);
+  }
+  .set-field {
+    color: var(--fg-muted);
+    display: flex;
+    flex-direction: column;
+    font-size: 13px;
+    gap: 6px;
+    padding-bottom: 6px;
+  }
+  .set-field input:not([type="range"]) {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--fg);
+    font: inherit;
+    font-size: 15px;
+    font-variant-numeric: tabular-nums;
+    outline: none;
+    padding: 6px 10px;
+    width: 8em;
+  }
+  .set-field input:focus { border-color: var(--accent); }
+  .set-field input[type="range"] { accent-color: var(--accent); width: 100%; }
+  .set-note { color: var(--fg-muted); font-size: 12.5px; min-height: 1em; }
+  .set-note.error { color: #e06c75; }
+
+  /* Narrow windows: the settings sit below */
+  @media (max-width: 900px) {
+    #app { flex-direction: column; }
+    aside, aside.folded {
+      flex-basis: auto !important;
+      max-height: none;
+      padding: 36px 28px;
+      position: static;
+    }
+    aside.folded > * { display: revert; }
+    .aside-wrap { border-top: 1px solid var(--border); }
+    .aside-wrap::before, .aside-handle, .fold-btn { display: none; }
   }
 
   /* Brief colour fade while the mode changes */
@@ -108,6 +262,11 @@
   #switch { left: auto; right: 16px; }
   #switch[hidden] { display: none; }
 
+  /* The left sidebar shows only while picking a task */
+  body.focus-bare #tk-sidebar { display: none; }
+  body.has-sidebar.focus-bare { padding-left: 0; }
+  body.has-sidebar:not(.focus-bare) #leave { left: 76px; }
+
   /* Widths match every page: 672px, wide halfway to full */
   main {
     margin: 0 auto;
@@ -126,6 +285,40 @@
   section[hidden] { display: none; }
   #focus.picking #panel,
   #focus.picking #c-btns { display: none; }
+
+  /* Pick a task: a rounded button under the timer while picking */
+  #c-pick { display: none; }
+  #focus.picking #c-pick {
+    background: transparent;
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    color: var(--accent);
+    cursor: pointer;
+    display: inline-block;
+    font: inherit;
+    font-size: 14px;
+    margin-top: 6px;
+    padding: 5px 16px;
+    text-transform: lowercase;
+    transition: background 0.15s, color 0.15s;
+  }
+  #focus.picking #c-pick:hover,
+  #focus.picking #c-pick:focus-visible {
+    background: var(--accent);
+    color: var(--bg);
+    outline: none;
+  }
+  /* The search bar glows when pick a task sends the cursor there */
+  #pick-input.glow { animation: pick-glow 1.6s ease-out; }
+  @keyframes pick-glow {
+    0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); }
+    35% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 30%, transparent),
+      0 0 22px color-mix(in srgb, var(--accent) 45%, transparent); }
+    100% { box-shadow: 0 0 0 0 transparent, var(--shadow); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #pick-input.glow { animation: none; }
+  }
   #picker { margin-top: 0; }
 
   /* Entrance */
@@ -175,10 +368,10 @@
     color: var(--fg);
     cursor: pointer;
     display: flex;
-    font-size: 17px;
+    font-size: 15px;
     gap: 10px;
     line-height: 1.4;
-    padding: 7px 12px;
+    padding: 5px 12px;
     text-align: left;
     width: 100%;
   }
@@ -197,7 +390,7 @@
     opacity: 0.6;
     transition: opacity 0.15s;
   }
-  .pick-row .pr-focus svg { height: 17px; width: 17px; }
+  .pick-row .pr-focus svg { height: 15px; width: 15px; }
   .pick-row:hover .pr-focus, .pick-row.active .pr-focus { opacity: 1; }
   .pick-row .pr-src {
     color: var(--fg-muted);
@@ -232,11 +425,6 @@
     justify-content: center;
     margin-bottom: 32px;
     min-height: 38px;
-  }
-  .min-label {
-    color: var(--fg-muted);
-    font-size: 13px;
-    margin-right: 4px;
   }
   /* Minute buttons: the notes folder cards' colour, with teal text */
   .min-btn {
@@ -334,6 +522,20 @@
     white-space: pre-wrap;
   }
   #focal-text:hover { background: var(--tint); }
+  /* Brings the step field back once its + line has been deleted */
+  #focal-add {
+    background: none;
+    border: none;
+    color: var(--accent);
+    cursor: pointer;
+    flex-shrink: 0;
+    font: inherit;
+    font-size: 22px;
+    line-height: 1.4;
+    margin-left: auto;
+    padding: 0 4px;
+  }
+  #focal-add[hidden] { display: none; }
   #focal-text:focus { background: var(--tint); box-shadow: 0 0 0 1px var(--border); }
   #focal-text code {
     background: var(--code-bg);
@@ -364,6 +566,24 @@
     text-decoration: line-through;
   }
   .focal.done #focal-text .date-token { color: var(--accent); }
+
+  /* Ticking the task: a line sweeps across each line of text in turn,
+     then the usual strike-through takes over */
+  .focal { position: relative; }
+  .focal.striking #focal-text,
+  .focal.striking #focal-text span { text-decoration: none; }
+  .strike-line {
+    animation: strike-across 0.35s ease-out both;
+    background: var(--done);
+    height: 2px;
+    pointer-events: none;
+    position: absolute;
+    transform-origin: left center;
+  }
+  @keyframes strike-across {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+  }
 
   /* Timer: a ring that drains as time passes, centred, with its
      controls inside, beneath the time */
@@ -524,32 +744,45 @@
   .add-sub[hidden] { display: none; }
 
   /* ---- Finished: the ring fills and the cheer sits inside ---- */
-  /* A wide stroke on a half-radius circle draws a disc that sweeps in
-     from 12 o'clock towards 9, following the timer's moving edge, then
-     breathes. The mirror reverses the stroke's direction; the long gap
-     keeps it hidden until it starts, and the dash runs a little past
-     the start so no seam shows once it's full */
-  #ring-fill {
-    stroke: var(--accent);
-    stroke-dasharray: 101 200;
-    stroke-dashoffset: 101;
-    stroke-width: 95 !important;
-    transform: scaleY(-1);
-    transform-origin: 100px 100px;
+  /* A glow starts just inside the ring's edge, then grows inwards and
+     loses its transparency until it fills the circle (about 2s), then
+     breathes */
+  @property --glow-in {
+    syntax: '<percentage>';
+    inherits: false;
+    initial-value: 100%;
   }
-  #ring.finished #ring-fill {
-    stroke-dashoffset: 0;
-    transition: stroke-dashoffset 2.5s ease-in-out;
+  #ring-fill { display: none; }
+  .ring-body { position: relative; }
+  .ring-glow {
+    --glow-in: 100%;
+    background: radial-gradient(circle closest-side,
+      transparent calc(var(--glow-in) - 28%), var(--accent) var(--glow-in));
+    border-radius: 50%;
+    inset: 4%;
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+  }
+  #ring.finished .ring-glow {
+    animation: ring-glow 2s ease-in-out forwards;
+  }
+  @keyframes ring-glow {
+    0% { --glow-in: 100%; opacity: 0.2; }
+    100% { --glow-in: 0%; opacity: 1; }
   }
   #ring.finished .ring-body {
-    animation: breathe 3.2s ease-in-out 2.5s infinite;
+    animation: breathe 3.2s ease-in-out 2s infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #ring.finished .ring-glow { animation: none; --glow-in: 0%; opacity: 1; }
   }
   #c-cheer, #c-back { display: none; }
   #ring.finished #c-time, #ring.finished #c-state,
   #ring.finished #c-btns { display: none; }
   #ring.finished #c-cheer { display: block; }
   #ring.finished .face-main, #ring.finished .face-below {
-    animation: rise 0.5s ease 2.1s both;
+    animation: rise 0.5s ease 1.7s both;
   }
   #c-cheer {
     color: var(--bg);
@@ -590,6 +823,7 @@
 </head>
 <body>
 <div id="app" class="t-dark">
+  <div class="main-col">
   <button id="leave" type="button" title="leave focus mode (esc)">
     <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
       stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -608,6 +842,7 @@
       <div class="timer">
         <div id="ring">
           <div class="ring-body">
+            <div class="ring-glow"></div>
             <svg viewBox="0 0 200 200" aria-hidden="true">
               <circle id="ring-fill" cx="100" cy="100" r="47.5" pathLength="100"/>
               <circle class="ring-track" cx="100" cy="100" r="92"/>
@@ -623,6 +858,7 @@
             <div class="face-below">
               <div id="c-state"></div>
               <div id="c-btns"></div>
+              <button id="c-pick" type="button">pick a task</button>
               <button id="c-back" type="button">
                 <svg viewBox="0 0 24 24" width="15" height="15" fill="none"
                   stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -639,11 +875,13 @@
         <div class="focal">
           <input type="checkbox" id="focal-done" aria-label="done">
           <div id="focal-text" spellcheck="true" title="click to edit"></div>
+          <button id="focal-add" class="plus" type="button" hidden
+            title="break it down" aria-label="add a step">+</button>
         </div>
         <div id="subs"></div>
         <div class="add-sub" id="add-sub-row" style="margin-left: 32px">
           <span class="plus">+</span>
-          <input id="add-sub" autocomplete="off" placeholder="break it down?">
+          <input id="add-sub" autocomplete="off" placeholder="break it down">
         </div>
       </div>
     </section>
@@ -661,11 +899,73 @@
       <div id="pick-list"></div>
     </section>
   </main>
+  </div>
 
+  <!-- Settings: shown beside the picker, like the dashboard's sidebar -->
+  <div class="aside-wrap" id="settings-wrap">
+  <div class="aside-handle" title="drag to resize"></div>
+  <aside id="settings">
+    <button class="fold-btn unfold" type="button" title="show settings"
+      aria-label="show settings">&lt;</button>
+    <div>
+      <div class="side-head">
+        <span class="side-title">settings</span>
+        <button class="fold-btn" id="fold" type="button"
+          title="fold away" aria-label="fold away">&gt;</button>
+      </div>
+
+      <section class="set-group" data-group="timer">
+        <button class="set-head" type="button" aria-expanded="true">
+          <span>timer</span><span class="set-sign" aria-hidden="true">−</span>
+        </button>
+        <div class="set-body"><div class="set-inner">
+          <div class="set-row" role="group" aria-label="set the timer by">
+            <button type="button" class="set-opt" data-mode="duration">duration</button>
+            <button type="button" class="set-opt" data-mode="time">time</button>
+          </div>
+          <label class="set-field">
+            <span id="timer-label">duration (hh:mm)</span>
+            <input id="timer-input" inputmode="numeric" autocomplete="off">
+          </label>
+          <div class="set-note" id="timer-note" role="status"></div>
+        </div></div>
+      </section>
+
+      <section class="set-group" data-group="chime">
+        <button class="set-head" type="button" aria-expanded="true">
+          <span>chime</span><span class="set-sign" aria-hidden="true">−</span>
+        </button>
+        <div class="set-body"><div class="set-inner">
+          <div class="set-row" id="chime-options" role="group"
+            aria-label="chime sound"></div>
+          <label class="set-field">
+            <span>volume</span>
+            <input id="chime-volume" type="range" min="0" max="100" step="1">
+          </label>
+        </div></div>
+      </section>
+
+      <section class="set-group" data-group="ambience">
+        <button class="set-head" type="button" aria-expanded="true">
+          <span>ambience</span><span class="set-sign" aria-hidden="true">−</span>
+        </button>
+        <div class="set-body"><div class="set-inner">
+          <div class="set-row" id="ambience-options" role="group"
+            aria-label="ambience sound"></div>
+          <label class="set-field">
+            <span>volume</span>
+            <input id="ambience-volume" type="range" min="0" max="100" step="1">
+          </label>
+        </div></div>
+      </section>
+    </div>
+  </aside>
+  </div>
 </div>
 
 <script src="../sync.js"></script>
 <script src="../sidebar.js"></script>
+<script src="../sounds.js"></script>
 <script src="../dates.js"></script>
 <script src="../recovery.js"></script>
 <script>
@@ -892,7 +1192,7 @@
     }
     rows.sort((a, b) => (a.r ? +a.r.start : 9e15) - (b.r ? +b.r.start : 9e15));
     rows = rows.slice(0, 40);
-    $("pick-label").textContent = q ? "matching to dos" : "today and overdue";
+    $("pick-label").textContent = q ? "matching to dos" : "maybe one of these?";
 
     const box = $("pick-list");
     box.innerHTML = "";
@@ -1046,10 +1346,26 @@
   }
 
   function begin(ref, text) {
-    F.set({ minutes: 10, state: "idle", task: ref, text });
+    // Keep the duration or finish time chosen in the settings
+    const prev = F.get();
+    const next = { minutes: prev.minutes || 10, state: "idle", task: ref, text };
+    if (prev.finishAt && prev.finishAt > Date.now()) next.finishAt = prev.finishAt;
+    F.set(next);
     $("pick-input").value = "";
     render();
   }
+
+  // Pick a task: put the cursor in the search bar and make it glow
+  $("c-pick").addEventListener("click", () => {
+    const input = $("pick-input");
+    input.focus();
+    input.classList.remove("glow");
+    void input.offsetWidth;
+    input.classList.add("glow");
+  });
+  $("pick-input").addEventListener("animationend", e => {
+    if (e.animationName === "pick-glow") e.target.classList.remove("glow");
+  });
 
   $("pick-input").addEventListener("input", renderPicker);
   $("pick-input").addEventListener("keydown", e => {
@@ -1078,6 +1394,7 @@
     if (firstRender && loc && loc.done && s.state === "idle") loc = null;
     firstRender = false;
     const picking = !loc;
+    document.body.classList.toggle("focus-bare", !picking);
     $("picker").hidden = !picking;
     $("focus").hidden = false;
     $("focus").classList.toggle("picking", picking);
@@ -1196,7 +1513,7 @@
       input.addEventListener("keydown", e => {
         if (e.key === "Enter") {
           e.preventDefault();
-          $("add-sub").focus();
+          openAddRow();
         } else if (e.key === "Backspace" && input.value === "") {
           e.preventDefault();
           removeStep(k);
@@ -1211,7 +1528,52 @@
       row.append(mark, input, del);
       box.appendChild(row);
     });
-    $("add-sub").placeholder = box.children.length ? "" : "break it down?";
+    $("add-sub").placeholder = box.children.length ? "" : "break it down";
+    const closed = addRowClosed();
+    $("add-sub-row").hidden = closed;
+    $("focal-add").hidden = !closed;
+  }
+
+  // Whether this task's + line has been deleted with Backspace
+  const CLOSED_KEY = "focus-steps-closed";
+  function addRowClosed() {
+    const ref = F.get().task;
+    try {
+      return !!(ref && (JSON.parse(read(CLOSED_KEY)) || {})[stepKey(ref)]);
+    } catch { return false; }
+  }
+  function setAddRowClosed(closed) {
+    const ref = F.get().task;
+    if (!ref) return;
+    let all = {};
+    try { all = JSON.parse(read(CLOSED_KEY)) || {}; } catch {}
+    if (closed) all[stepKey(ref)] = true;
+    else delete all[stepKey(ref)];
+    store(CLOSED_KEY, JSON.stringify(all));
+  }
+
+  // The cursor goes to the end of the line above: a step, or the task
+  function focusLineAbove(k) {
+    const rows = $("subs").querySelectorAll(".sub-text");
+    const target = k > 0 ? rows[k - 1] : null;
+    if (target) {
+      target.focus();
+      target.setSelectionRange(target.value.length, target.value.length);
+      return;
+    }
+    focalEl.focus();
+    const range = document.createRange();
+    range.selectNodeContents(focalEl);
+    range.collapse(false);
+    const sel = getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+
+  function openAddRow() {
+    setAddRowClosed(false);
+    renderSubs();
+    $("add-sub").focus();
   }
 
   function removeStep(k) {
@@ -1219,11 +1581,21 @@
     list.splice(k, 1);
     setSteps(list);
     renderSubs();
-    $("add-sub").focus();
+    focusLineAbove(k);
   }
 
-  // A new step takes the field's place; a fresh + opens beneath
+  $("focal-add").addEventListener("click", openAddRow);
+
+  // A new step takes the field's place; a fresh + opens beneath.
+  // Backspace on the empty field deletes the + line itself.
   $("add-sub").addEventListener("keydown", e => {
+    if (e.key === "Backspace" && $("add-sub").value === "") {
+      e.preventDefault();
+      setAddRowClosed(true);
+      renderSubs();
+      focusLineAbove(getSteps().length);
+      return;
+    }
     if (e.key !== "Enter") return;
     e.preventDefault();
     const text = $("add-sub").value.trim();
@@ -1237,10 +1609,51 @@
   });
 
   // Tick the focal task: the timer stops and a cheer comes up
+  // Draw a line across each line of the task's text, one after another
+  function strikeAcross() {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const focal = document.querySelector(".focal");
+    const box = focal.getBoundingClientRect();
+    const range = document.createRange();
+    range.selectNodeContents(focalEl);
+    // One rectangle per text line, merging fragments on the same line
+    const lines = [];
+    Array.from(range.getClientRects()).forEach(r => {
+      if (!r.width) return;
+      const line = lines.find(l => Math.abs(l.top - r.top) < r.height / 2);
+      if (line) {
+        line.left = Math.min(line.left, r.left);
+        line.right = Math.max(line.right, r.right);
+      } else {
+        lines.push({ top: r.top, height: r.height, left: r.left, right: r.right });
+      }
+    });
+    if (!lines.length) return;
+    focal.classList.add("striking");
+    // Each line takes 0.35s, but a long task sweeps faster to finish
+    // within about 1.2s
+    const step = Math.min(0.35, 1.2 / lines.length);
+    lines.forEach((l, i) => {
+      const bar = document.createElement("div");
+      bar.className = "strike-line";
+      bar.style.left = (l.left - box.left) + "px";
+      bar.style.top = (l.top - box.top + l.height * 0.55) + "px";
+      bar.style.width = (l.right - l.left) + "px";
+      bar.style.animationDelay = (i * step) + "s";
+      bar.style.animationDuration = step + "s";
+      focal.appendChild(bar);
+    });
+    setTimeout(() => {
+      focal.classList.remove("striking");
+      focal.querySelectorAll(".strike-line").forEach(b => b.remove());
+    }, (lines.length * step) * 1000 + 50);
+  }
+
   $("focal-done").addEventListener("change", () => {
     const loc = locate(F.get().task);
     if (!loc) return;
     const done = $("focal-done").checked;
+    if (done) strikeAcross();
     setDone(loc, loc.item, done);
     save(loc);
     const s = F.get();
@@ -1500,15 +1913,12 @@
       mins.dataset.kind = kind;
       mins.innerHTML = "";
       if (kind === "more") {
-        const lab = document.createElement("span");
-        lab.className = "min-label";
-        lab.textContent = "add time";
-        mins.appendChild(lab);
         MORE.forEach(m => {
           const b = document.createElement("button");
           b.type = "button";
           b.className = "min-btn more";
           b.textContent = "+" + m;
+          b.title = "add " + m + " minutes";
           b.addEventListener("click", () => addTime(m));
           mins.appendChild(b);
         });
@@ -1553,7 +1963,9 @@
     $("ring-arc").style.strokeDasharray = RING;
     $("ring-arc").style.strokeDashoffset = RING * (1 - frac);
     $("ring").className = s.state + (ringFinished ? " finished" : "");
-    $("switch").hidden = s.state === "running" || s.state === "paused";
+    // No other task to switch to while still picking one
+    $("switch").hidden = s.state === "running" || s.state === "paused"
+      || $("focus").classList.contains("picking");
   }
 
   function update(fn) {
@@ -1568,12 +1980,20 @@
       s.state = "idle";
       delete s.endAt;
       delete s.remaining;
+      delete s.finishAt;
     });
+    settingsSet({ timerMode: "duration" });
+    renderSettings();
   }
 
   function start() {
     update(s => {
-      const left = s.state === "paused" ? s.remaining : s.minutes * 60000;
+      // A finish time (from the settings) ends the countdown at that time
+      const until = s.finishAt && s.finishAt > Date.now()
+        ? s.finishAt - Date.now() : null;
+      const left = s.state === "paused" ? s.remaining
+        : until !== null ? until : s.minutes * 60000;
+      delete s.finishAt;
       if (s.state !== "paused") s.total = left;
       s.state = "running";
       s.endAt = Date.now() + left;
@@ -1686,8 +2106,223 @@
     if (e.key === "toolkit-width" || e.key === "toolkit-size") applyShared();
   });
 
+  // ---- Settings sidebar ----
+  //
+  // Timer (a duration, or a time to finish at), chime and ambience.
+  // Kept on this device in "focus-settings"; the chime is played by the
+  // sidebar wherever the timer runs out, and ambience by sounds.js.
+
+  const SET_KEY = "focus-settings";
+  const CHIME_NAMES = ["chime", "ding", "sparkle", "soft"];
+  const S = window.ToolkitSounds;
+
+  function settingsGet() {
+    try { return JSON.parse(read(SET_KEY)) || {}; } catch { return {}; }
+  }
+  function settingsSet(patch) {
+    store(SET_KEY, JSON.stringify(Object.assign(settingsGet(), patch)));
+  }
+
+  // "1:30" → 90; "45" → 45 minutes; null if it isn't a time
+  function parseHM(text) {
+    const m = String(text).trim().match(/^(\d{1,2}):(\d{2})$|^(\d{1,3})$/);
+    if (!m) return null;
+    if (m[3] !== undefined) return +m[3];
+    if (+m[2] > 59) return null;
+    return +m[1] * 60 + +m[2];
+  }
+  const hm = mins => Math.floor(mins / 60) + ":" + String(mins % 60).padStart(2, "0");
+
+  function timerMode() {
+    return settingsGet().timerMode === "time" ? "time" : "duration";
+  }
+
+  function renderTimerInput() {
+    const s = F.get(), input = $("timer-input");
+    if (timerMode() === "time") {
+      input.value = s.finishAt && s.finishAt > Date.now()
+        ? new Date(s.finishAt).toTimeString().slice(0, 5)
+        : settingsGet().finishAt || "";
+    } else {
+      input.value = hm(s.state === "idle" ? s.minutes || 10
+        : Math.ceil(F.left(s) / 60000));
+    }
+  }
+
+  function note(text, error) {
+    $("timer-note").textContent = text || "";
+    $("timer-note").classList.toggle("error", !!error);
+  }
+
+  // Apply the typed timer: to a running timer straight away, or to the
+  // next countdown when idle
+  function applyTimer() {
+    const mode = timerMode(), mins = parseHM($("timer-input").value);
+    if (mins === null) {
+      note(mode === "time" ? "type a time as hh:mm, e.g. 15:30"
+        : "type a duration as hh:mm, e.g. 0:25", true);
+      return;
+    }
+    let ms;
+    if (mode === "time") {
+      if (mins >= 24 * 60) return note("type a time between 0:00 and 23:59", true);
+      const at = new Date();
+      at.setHours(Math.floor(mins / 60), mins % 60, 0, 0);
+      if (+at <= Date.now()) return note("that time has already passed", true);
+      ms = +at - Date.now();
+      settingsSet({ finishAt: hm(mins).padStart(5, "0") });
+      update(s => {
+        if (s.state === "running") { s.endAt = +at; s.total = ms; }
+        else if (s.state === "paused") { s.remaining = ms; s.total = ms; }
+        else { s.minutes = Math.ceil(ms / 60000); s.finishAt = +at; }
+      });
+      note("finishes at " + at.toTimeString().slice(0, 5));
+    } else {
+      if (mins < 1) return note("a duration needs at least 1 minute", true);
+      ms = mins * 60000;
+      update(s => {
+        delete s.finishAt;
+        if (s.state === "running") { s.endAt = Date.now() + ms; s.total = ms; }
+        else if (s.state === "paused") { s.remaining = ms; s.total = ms; }
+        else s.minutes = mins;
+      });
+      note("");
+    }
+    renderClock(F.get(), true);
+  }
+
+  $("timer-input").addEventListener("keydown", e => {
+    if (e.key === "Enter") { e.preventDefault(); applyTimer(); }
+  });
+  $("timer-input").addEventListener("change", applyTimer);
+  document.querySelectorAll(".set-opt[data-mode]").forEach(b => {
+    b.addEventListener("click", () => {
+      settingsSet({ timerMode: b.dataset.mode });
+      if (b.dataset.mode === "duration") update(s => { delete s.finishAt; });
+      note("");
+      renderSettings();
+      $("timer-input").focus();
+    });
+  });
+
+  function optionButton(box, name, pressed, onClick) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "set-opt";
+    b.textContent = name;
+    b.setAttribute("aria-pressed", String(pressed));
+    b.addEventListener("click", onClick);
+    box.appendChild(b);
+  }
+
+  function renderSettings() {
+    const set = settingsGet(), mode = timerMode();
+    document.querySelectorAll(".set-opt[data-mode]").forEach(b =>
+      b.setAttribute("aria-pressed", String(b.dataset.mode === mode)));
+    $("timer-label").textContent = mode === "time"
+      ? "finish at (hh:mm)" : "duration (hh:mm)";
+    $("timer-input").placeholder = mode === "time" ? "15:30" : "0:25";
+    if (document.activeElement !== $("timer-input")) renderTimerInput();
+
+    // Chime: clicking one chooses and plays it
+    const chimeBox = $("chime-options"), chosen = CHIME_NAMES.includes(set.chime)
+      ? set.chime : "chime";
+    chimeBox.innerHTML = "";
+    CHIME_NAMES.forEach(name => optionButton(chimeBox, name, name === chosen, () => {
+      settingsSet({ chime: name });
+      F.chime(name);
+      renderSettings();
+    }));
+    $("chime-volume").value = Math.round((Number.isFinite(set.chimeVolume)
+      ? set.chimeVolume : 0.7) * 100);
+
+    // Ambience: one at a time; clicking the playing one stops it
+    const ambBox = $("ambience-options"), playing = S.current();
+    ambBox.innerHTML = "";
+    S.names.forEach(name => optionButton(ambBox, name, name === playing, () => {
+      if (S.current() === name) S.stopAmbience();
+      else S.play(name);
+    }));
+    $("ambience-volume").value = Math.round((Number.isFinite(set.ambienceVolume)
+      ? set.ambienceVolume : 0.5) * 100);
+  }
+
+  // Chime volume: the chime plays again once the slider is let go
+  $("chime-volume").addEventListener("change", e => {
+    const v = e.target.value / 100;
+    settingsSet({ chimeVolume: v });
+    F.chime(undefined, v);
+  });
+  // Ambience volume changes as the slider moves
+  $("ambience-volume").addEventListener("input", e => {
+    const v = e.target.value / 100;
+    settingsSet({ ambienceVolume: v });
+    S.setVolume(v);
+  });
+  S.onChange(renderSettings);
+  // Stop listening once this page leaves the shell's frame
+  window.addEventListener("pagehide", () => {
+    if (S.offChange) S.offChange(renderSettings);
+  });
+
+  // Groups open and close with their +/−; remembered on this device
+  const GROUPS_KEY = "focus-settings-groups";
+  let closedGroups = {};
+  try { closedGroups = JSON.parse(read(GROUPS_KEY)) || {}; } catch {}
+  document.querySelectorAll(".set-group").forEach(g => {
+    const head = g.querySelector(".set-head");
+    const show = open => {
+      g.classList.toggle("closed", !open);
+      head.setAttribute("aria-expanded", String(open));
+      head.querySelector(".set-sign").textContent = open ? "−" : "+";
+    };
+    show(!closedGroups[g.dataset.group]);
+    head.addEventListener("click", () => {
+      const open = g.classList.contains("closed");
+      show(open);
+      closedGroups[g.dataset.group] = !open;
+      store(GROUPS_KEY, JSON.stringify(closedGroups));
+    });
+  });
+
+  // Resize and fold, as on the dashboard
+  const aside = $("settings"), sideWrap = $("settings-wrap");
+  const SIDE_KEY = "focus-settings-width", FOLD_KEY = "focus-settings-folded";
+  const sideWidth = w => Math.max(240, Math.min(520, Math.round(w)));
+  const savedWidth = parseInt(read(SIDE_KEY));
+  if (savedWidth) aside.style.flexBasis = sideWidth(savedWidth) + "px";
+  aside.classList.toggle("folded", read(FOLD_KEY) === "1");
+  const setFolded = folded => {
+    aside.classList.toggle("folded", folded);
+    store(FOLD_KEY, folded ? "1" : "0");
+  };
+  $("fold").addEventListener("click", () => setFolded(true));
+  aside.querySelector(".unfold").addEventListener("click", () => setFolded(false));
+  sideWrap.querySelector(".aside-handle").addEventListener("pointerdown", e => {
+    if (e.button !== 0 || aside.classList.contains("folded")) return;
+    e.preventDefault();
+    const right = sideWrap.getBoundingClientRect().right;
+    aside.classList.add("dragging");
+    sideWrap.classList.add("resizing");
+    document.body.style.cursor = "col-resize";
+    const move = ev => {
+      aside.style.flexBasis = sideWidth(right - ev.clientX) + "px";
+    };
+    const up = () => {
+      document.removeEventListener("pointermove", move);
+      document.removeEventListener("pointerup", up);
+      aside.classList.remove("dragging");
+      sideWrap.classList.remove("resizing");
+      document.body.style.cursor = "";
+      store(SIDE_KEY, parseInt(aside.style.flexBasis));
+    };
+    document.addEventListener("pointermove", move);
+    document.addEventListener("pointerup", up);
+  });
+
   ToolkitSidebar.init({
-    bare: true,
+    active: "focus",
+    focusPage: true,
     mode: {
       apply: (m, anim) => {
         if (anim) {
@@ -1699,11 +2334,25 @@
       },
       initial: "dark"
     },
-    page: "focus/index.html"
+    page: "focus/index.html",
+    size: {
+      get: () => ["s", "m", "l"].includes(read("toolkit-size"))
+        ? read("toolkit-size") : "m",
+      set: v => { store("toolkit-size", v); applyShared(); }
+    },
+    width: {
+      get: () => ["normal", "wide", "full"].includes(read("toolkit-width"))
+        ? read("toolkit-width") : "normal",
+      set: v => { store("toolkit-width", v); applyShared(); }
+    }
   });
 
   render();
   F.onTick(s => renderClock(s));
+  renderSettings();
+  F.onTick(() => {
+    if (document.activeElement !== $("timer-input")) renderTimerInput();
+  });
 
   // Refresh relative task tokens after local midnight.
   let relativeDate = new Date().toDateString();

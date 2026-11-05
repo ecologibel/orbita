@@ -22,7 +22,9 @@
 // Focus mode's timer runs here too (window.ToolkitFocus), so it keeps
 // counting on every page: a chip shows the time left, and at 0 a banner
 // slides down and a chime plays. The focus page itself calls init with
-// bare: true, which skips the bar.
+// bare: true, which skips the bar. The focus page passes focusPage: true
+// instead: it gets the bar (shown only while picking a task) but no focus
+// chip, and isn't remembered as the last page.
 
 (function () {
 
@@ -329,19 +331,25 @@
       }
       #tk-sidebar .tk-btn.has-active { color: #7fdbca; }
 
-      /* Sync icon: dim when signed out, teal when signed in, red on error */
+      /* Sync icon: teal while sync runs, orange when it isn't running
+         (signed out or failed), yellow for a conflict */
       /* The sidebar icon is the only sync control */
       #tool-sync { display: none !important; }
-      #tk-sidebar #tk-sync { opacity: 0.55; }
-      #tk-sidebar #tk-sync:hover { opacity: 1; }
       #tk-sidebar #tk-sync[hidden] { display: none; }
+      #tk-sidebar #tk-ambience[hidden] { display: none; }
+      #tk-sidebar #tk-ambience { color: #7fdbca; }
       #tk-sidebar #tk-sync[data-state="pending"],
       #tk-sidebar #tk-sync[data-state="synced"],
       #tk-sidebar #tk-sync[data-state="syncing"] { color: #7fdbca; }
-      #tk-sidebar #tk-sync[data-state="error"] { color: #e06c75; }
-       #tk-sidebar #tk-sync[data-state="conflict"] { color: #e5c07b; }
+      #tk-sidebar #tk-sync[data-state="signedOut"],
+      #tk-sidebar #tk-sync[data-state="reconnect"],
+      #tk-sidebar #tk-sync[data-state="error"] { color: #ff9a3c; }
+      #tk-sidebar #tk-sync[data-state="conflict"] { color: #f5d547; }
       #tk-sidebar #tk-sync[data-state="noClient"],
-      #tk-sidebar #tk-sync[data-state="unavailable"] { cursor: default; }
+      #tk-sidebar #tk-sync[data-state="unavailable"] {
+        cursor: default;
+        opacity: 0.55;
+      }
 
       /* Name of each icon, shown to the right on hover. It sits outside
          the bar, so the bar can scroll in a short window */
@@ -600,6 +608,8 @@
     const items = nav.querySelector(".tk-items");
     let sub = null;
     ITEMS.forEach(item => {
+      // Help sits with the controls at the bottom of the bar
+      if (item.id === "help") return;
       if (item.id === "todos") {
         items.appendChild(todosButton(item));
         sub = document.createElement("div");
@@ -652,6 +662,32 @@
       b.addEventListener("click", () => cycle(kind));
       controls.appendChild(b);
     });
+
+    // Help, between the width control and sync
+    const helpItem = ITEMS.find(x => x.id === "help");
+    const help = document.createElement("a");
+    help.className = "tk-btn";
+    help.dataset.id = helpItem.id;
+    help.dataset.label = helpItem.label;
+    help.setAttribute("aria-label", helpItem.label);
+    help.href = root + helpItem.page;
+    help.innerHTML = helpItem.icon;
+    controls.appendChild(help);
+
+    // Shown while ambience plays; clicking it stops the ambience
+    const amb = document.createElement("button");
+    amb.className = "tk-btn";
+    amb.hidden = true;
+    amb.id = "tk-ambience";
+    amb.type = "button";
+    amb.innerHTML = AMBIENCE_ICON;
+    amb.addEventListener("click", () => {
+      const S = sounds();
+      if (S) S.stopAmbience();
+    });
+    controls.appendChild(amb);
+    const playingNow = sounds() && sounds().current();
+    if (playingNow || ambienceName) setAmbience(playingNow || ambienceName);
 
     // Hidden until sync.js reports a state
     const s = document.createElement("button");
@@ -811,6 +847,23 @@
   }
 
   // Show sync.js's state on the sync icon
+  // A speaker with sound waves, for ambience that is playing
+  const AMBIENCE_ICON = svg('<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/>'
+    + '<path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/>');
+  let ambienceName = null;
+
+  function setAmbience(name) {
+    ambienceName = name || null;
+    if (!nav) return;
+    const b = nav.querySelector("#tk-ambience");
+    if (!b) return;
+    b.hidden = !ambienceName;
+    const label = ambienceName ? "ambience: " + ambienceName + ", click to stop" : "";
+    b.dataset.label = label;
+    b.setAttribute("aria-label", label);
+    updateTip();
+  }
+
   function setSync(state, label) {
     syncState = { label, state };
     if (!nav) return;
@@ -843,6 +896,22 @@
   // "week · to dos · orbita"
   function title(...parts) {
     document.title = parts.filter(Boolean).concat("orbita").join(" · ");
+    // Inside the app shell, the shell's tab shows this title too
+    try {
+      if (window.parent !== window && window.parent.ToolkitShell) {
+        window.parent.ToolkitShell.mirror();
+      }
+    } catch {}
+  }
+
+  // The ambience player: this page's, or the app shell's around it
+  function sounds() {
+    if (window.ToolkitSounds) return window.ToolkitSounds;
+    try {
+      return window.parent !== window ? window.parent.ToolkitSounds || null : null;
+    } catch {
+      return null;
+    }
   }
 
   // ---- Undo toast ----
@@ -1103,7 +1172,7 @@
 
   function setActive(id) {
     if (!nav) return;
-    nav.querySelectorAll(".tk-items .tk-btn").forEach(a => {
+    nav.querySelectorAll(".tk-items .tk-btn, .tk-controls a.tk-btn").forEach(a => {
       if (a.dataset.id === "todos") return;
       a.classList.toggle("active", a.dataset.id === id);
     });
@@ -1125,14 +1194,17 @@
     addStyles();
     addTabIcon();
     if (!cfg.bare) {
-      // Remember the page so the toolkit's address reopens it
-      store(LAST_KEY, cfg.page || "to-dos/index.html");
+      // Remember the page so the toolkit's address reopens it. The focus
+      // page shows the bar while picking a task, but isn't remembered.
+      if (!cfg.focusPage) store(LAST_KEY, cfg.page || "to-dos/index.html");
       build();
       setActive(cfg.active);
       applyShared();
 
       // Focus mode returns to the last page left
-      window.addEventListener("pagehide", () => store(FROM_KEY, location.href));
+      if (!cfg.focusPage) {
+        window.addEventListener("pagehide", () => store(FROM_KEY, location.href));
+      }
     }
     startFocus();
 
@@ -1215,27 +1287,69 @@
     location.href = (cfg && cfg.root || "../") + "focus/index.html";
   }
 
-  // A soft rising chime, made in the browser
-  function chime() {
+  // ---- Chimes ----
+  //
+  // Sounds made in the browser for when the timer runs out. The focus
+  // settings choose one and its volume ("focus-settings" in storage);
+  // chime(name, volume) plays a given one, for previews.
+
+  const SETTINGS_KEY = "focus-settings";
+  // Each chime: notes as [frequency, start (s), length (s), wave, peak]
+  const CHIMES = {
+    // A soft rising triad
+    chime: [[784, 0, 1.8, "sine", 0.16], [1046.5, 0.32, 1.8, "sine", 0.16],
+      [1318.5, 0.64, 1.8, "sine", 0.16]],
+    // One bell strike with a bright overtone
+    ding: [[1318.5, 0, 2.6, "sine", 0.2], [2637, 0, 1.2, "sine", 0.05],
+      [3951, 0, 0.5, "sine", 0.02]],
+    // Quick high notes tumbling upwards
+    sparkle: [[1568, 0, 0.6, "triangle", 0.09], [2093, 0.08, 0.6, "triangle", 0.09],
+      [2637, 0.16, 0.7, "triangle", 0.09], [3136, 0.24, 0.8, "triangle", 0.08],
+      [4186, 0.32, 1.1, "sine", 0.06]],
+    // Two low, slow notes
+    soft: [[523.25, 0, 2.4, "sine", 0.14], [659.25, 0.45, 2.6, "sine", 0.12]]
+  };
+
+  function chimeSettings() {
+    try {
+      const s = JSON.parse(read(SETTINGS_KEY)) || {};
+      return {
+        name: CHIMES[s.chime] ? s.chime : "chime",
+        volume: Number.isFinite(s.chimeVolume)
+          ? Math.min(1, Math.max(0, s.chimeVolume)) : 0.7
+      };
+    } catch {
+      return { name: "chime", volume: 0.7 };
+    }
+  }
+
+  function chime(name, volume) {
+    const saved = chimeSettings();
+    const notes = CHIMES[name] || CHIMES[saved.name];
+    const level = Number.isFinite(volume) ? volume : saved.volume;
+    if (!level) return;
     try {
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return;
       const ctx = new AC();
       if (ctx.state === "suspended") ctx.resume();
-      [[784, 0], [1046.5, 0.32], [1318.5, 0.64]].forEach(([f, t]) => {
+      let end = 0;
+      notes.forEach(([f, t, len, wave, peak]) => {
         const o = ctx.createOscillator(), g = ctx.createGain();
         const at = ctx.currentTime + t;
-        o.type = "sine";
+        o.type = wave;
         o.frequency.value = f;
         g.gain.setValueAtTime(0.0001, at);
-        g.gain.exponentialRampToValueAtTime(0.16, at + 0.03);
-        g.gain.exponentialRampToValueAtTime(0.0001, at + 1.8);
+        g.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak * level * 1.4),
+          at + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, at + len);
         o.connect(g);
         g.connect(ctx.destination);
         o.start(at);
-        o.stop(at + 1.9);
+        o.stop(at + len + 0.1);
+        end = Math.max(end, t + len);
       });
-      setTimeout(() => ctx.close(), 3200);
+      setTimeout(() => ctx.close(), (end + 1) * 1000);
     } catch {}
   }
 
@@ -1246,7 +1360,7 @@
     + '<rect x="14" y="4.5" width="4" height="15" rx="1"/></svg>';
 
   function renderChip(s) {
-    const show = cfg && !cfg.bare
+    const show = cfg && !cfg.bare && !cfg.focusPage
       && ["running", "paused", "expired"].includes(s.state);
     if (!show) {
       if (focusChip) focusChip.hidden = true;
@@ -1290,7 +1404,7 @@
       };
       focusBanner.querySelector(".tk-fb-main").addEventListener("click", () => {
         off();
-        if (!cfg.bare) focusGo();
+        if (!cfg.bare && !cfg.focusPage) focusGo();
       });
       focusBanner.querySelector(".tk-fb-close").addEventListener("click", off);
       document.body.appendChild(focusBanner);
@@ -1323,6 +1437,278 @@
     checkFocus();
   }
 
+  // ---- Modal window ----
+  //
+  // A window in the middle of the screen over a dimmed page, in the current
+  // light or dark mode. Resolves with the chosen button's value, or null when
+  // closed with Esc, the close button or a click on the dimmed page.
+  //   ToolkitSidebar.modal({
+  //     title: "sync conflict",
+  //     body: "Text or a DOM node",
+  //     buttons: [{ label: "local", detail: "keep this device's copy",
+  //                 value: "LOCAL" }, ...]
+  //   }).then(value => ...)
+  // With input: { placeholder } instead of buttons, Enter resolves with
+  // the typed text.
+
+  const MODAL_THEMES = {
+    dark: { bg: "#01111f", line: "#1e3a52", fg: "#d6deeb", muted: "#8291a5",
+      accent: "#7fdbca", hover: "#012a3f", dim: "rgba(1, 10, 18, 0.6)" },
+    light: { bg: "#ffffff", line: "#d7e0e8", fg: "#233044", muted: "#607086",
+      accent: "#147d70", hover: "#eef3f6", dim: "rgba(35, 48, 68, 0.35)" }
+  };
+  let modalClose = null;
+
+  function addModalStyles() {
+    if (document.getElementById("tk-modal-style")) return;
+    const style = document.createElement("style");
+    style.id = "tk-modal-style";
+    style.textContent = `
+      .tk-modal {
+        align-items: center;
+        background: var(--tkm-dim);
+        display: flex;
+        font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+        inset: 0;
+        justify-content: center;
+        opacity: 0;
+        padding: 16px;
+        position: fixed;
+        transition: opacity 0.2s ease;
+        z-index: 2100;
+      }
+      .tk-modal.show { opacity: 1; }
+      .tk-modal .tkm-box {
+        background: var(--tkm-bg);
+        border: 1px solid var(--tkm-line);
+        border-radius: 10px;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+        color: var(--tkm-fg);
+        max-width: 100%;
+        padding: 20px 22px 18px;
+        position: relative;
+        transform: translateY(10px) scale(0.97);
+        transition: transform 0.22s ease;
+        width: 440px;
+      }
+      .tk-modal.show .tkm-box { transform: none; }
+      .tk-modal h2 {
+        font-size: 17px;
+        font-weight: 600;
+        margin: 0 28px 10px 0;
+        text-transform: lowercase;
+      }
+      .tk-modal .tkm-body { font-size: 14px; line-height: 1.55; }
+      .tk-modal .tkm-body p { margin: 0 0 8px; }
+      .tk-modal .tkm-muted { color: var(--tkm-muted); font-size: 13px; }
+      .tk-modal .tkm-input {
+        background: transparent;
+        border: 1px solid var(--tkm-line);
+        border-radius: 8px;
+        color: var(--tkm-fg);
+        font: inherit;
+        font-size: 16px;
+        margin-top: 4px;
+        outline: none;
+        padding: 10px 12px;
+        transition: border-color 0.15s;
+        width: 100%;
+      }
+      .tk-modal .tkm-input:focus { border-color: var(--tkm-accent); }
+      .tk-modal .tkm-input::placeholder { color: var(--tkm-muted); }
+      .tk-modal .tkm-buttons:empty { display: none; }
+      .tk-modal .tkm-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 16px;
+      }
+      .tk-modal .tkm-choice {
+        background: transparent;
+        border: 1px solid var(--tkm-line);
+        border-radius: 8px;
+        color: var(--tkm-fg);
+        cursor: pointer;
+        flex: 1 1 160px;
+        font: inherit;
+        padding: 10px 12px;
+        text-align: left;
+        transition: border-color 0.15s, background 0.15s;
+      }
+      .tk-modal .tkm-choice:hover,
+      .tk-modal .tkm-choice:focus-visible {
+        background: var(--tkm-hover);
+        border-color: var(--tkm-accent);
+        outline: none;
+      }
+      .tk-modal .tkm-label {
+        color: var(--tkm-accent);
+        display: block;
+        font-size: 15px;
+        font-weight: 600;
+      }
+      .tk-modal .tkm-detail {
+        color: var(--tkm-muted);
+        display: block;
+        font-size: 12.5px;
+        margin-top: 2px;
+      }
+      .tk-modal .tkm-close {
+        background: none;
+        border: none;
+        border-radius: 6px;
+        color: var(--tkm-muted);
+        cursor: pointer;
+        font-size: 20px;
+        height: 30px;
+        line-height: 1;
+        position: absolute;
+        right: 10px;
+        top: 10px;
+        width: 30px;
+      }
+      .tk-modal .tkm-close:hover,
+      .tk-modal .tkm-close:focus-visible {
+        background: var(--tkm-hover);
+        color: var(--tkm-fg);
+        outline: none;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .tk-modal, .tk-modal .tkm-box { transition: none; }
+        .tk-modal .tkm-box { transform: none; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function modal(opts) {
+    if (modalClose) modalClose(null);
+    addModalStyles();
+    const theme = MODAL_THEMES[read(MODE_KEY) || mode] || MODAL_THEMES.dark;
+    const before = document.activeElement;
+
+    const wrap = document.createElement("div");
+    wrap.id = "tk-modal";
+    wrap.className = "tk-modal";
+    Object.entries(theme).forEach(([k, v]) =>
+      wrap.style.setProperty("--tkm-" + k, v));
+    const box = document.createElement("div");
+    box.className = "tkm-box";
+    box.setAttribute("role", "dialog");
+    box.setAttribute("aria-modal", "true");
+    box.setAttribute("aria-labelledby", "tkm-title");
+
+    const title = document.createElement("h2");
+    title.id = "tkm-title";
+    title.textContent = opts.title || "";
+    const body = document.createElement("div");
+    body.className = "tkm-body";
+    if (typeof opts.body === "string") {
+      const p = document.createElement("p");
+      p.textContent = opts.body;
+      body.appendChild(p);
+    } else if (opts.body) {
+      body.appendChild(opts.body);
+    }
+
+    // An optional text field: Enter resolves with its trimmed text
+    let input = null;
+    if (opts.input) {
+      input = document.createElement("input");
+      input.className = "tkm-input";
+      input.autocomplete = "off";
+      input.placeholder = opts.input.placeholder || "";
+      input.setAttribute("aria-label", opts.input.label || opts.title || "");
+      input.addEventListener("keydown", e => {
+        if (e.key !== "Enter" || e.isComposing) return;
+        e.preventDefault();
+        const text = input.value.trim();
+        if (text) done(text);
+      });
+      body.appendChild(input);
+    }
+
+    const close = document.createElement("button");
+    close.type = "button";
+    close.className = "tkm-close";
+    close.setAttribute("aria-label", "close");
+    close.textContent = "×";
+
+    const row = document.createElement("div");
+    row.className = "tkm-buttons";
+    (opts.buttons || []).forEach(btn => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "tkm-choice";
+      b.dataset.value = btn.value;
+      const label = document.createElement("span");
+      label.className = "tkm-label";
+      label.textContent = btn.label;
+      b.appendChild(label);
+      if (btn.detail) {
+        const detail = document.createElement("span");
+        detail.className = "tkm-detail";
+        detail.textContent = btn.detail;
+        b.appendChild(detail);
+      }
+      b.addEventListener("click", () => done(btn.value));
+      row.appendChild(b);
+    });
+
+    box.append(close, title, body, row);
+    wrap.appendChild(box);
+    document.body.appendChild(wrap);
+    // Fade in only if it wasn't closed before the next frame
+    requestAnimationFrame(() => {
+      if (modalClose === done) wrap.classList.add("show");
+    });
+
+    let resolve;
+    const result = new Promise(r => { resolve = r; });
+    function done(value) {
+      if (modalClose !== done) return;
+      modalClose = null;
+      document.removeEventListener("keydown", onKey, true);
+      // A closing window fades out without blocking a new one
+      wrap.removeAttribute("id");
+      title.removeAttribute("id");
+      box.removeAttribute("aria-labelledby");
+      wrap.classList.remove("show");
+      wrap.style.pointerEvents = "none";
+      const remove = () => wrap.remove();
+      if (matchMedia("(prefers-reduced-motion: reduce)").matches) remove();
+      else setTimeout(remove, 220);
+      if (before && before.focus) before.focus();
+      resolve(value);
+    }
+    function onKey(e) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        done(null);
+      } else if (e.key === "Tab") {
+        // Keep keyboard focus inside the window
+        const items = Array.from(box.querySelectorAll("button, input, "
+          + "textarea, select, [tabindex]:not([tabindex='-1'])"));
+        const first = items[0], last = items[items.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    }
+    modalClose = done;
+    close.addEventListener("click", () => done(null));
+    wrap.addEventListener("pointerdown", e => {
+      if (e.target === wrap) done(null);
+    });
+    document.addEventListener("keydown", onKey, true);
+    (input || row.querySelector("button") || close).focus();
+    return result;
+  }
+
   // A view's icon, for pages that link to the tools
   function icon(id) {
     const item = ITEMS.find(x => x.id === id);
@@ -1330,7 +1716,8 @@
   }
 
   window.ToolkitSidebar = {
-    folderIcon, folderIcons: Object.keys(FOLDER_ICONS), icon, init,
+    folderIcon, folderIcons: Object.keys(FOLDER_ICONS), icon, init, modal,
+    setAmbience,
     openSwitcher, preserveRecovery, refresh, setActive, setSync, title, toast
   };
 

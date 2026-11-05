@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy"
   content="default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/ https://cdnjs.cloudflare.com/ajax/libs/codemirror/; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com/ajax/libs/codemirror/ https://accounts.google.com/gsi/style; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' https://www.googleapis.com https://oauth2.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; object-src 'none'; base-uri 'self'; form-action 'self'">
+<script src="../in-shell.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>to dos · orbita</title>
 <style>
@@ -308,6 +309,22 @@
     gap: 6px;
     padding: 6px 0;
     transition: opacity 0.15s;
+  }
+  /* A task just added from the dashboard rises into place after the page
+     cross-fade, with a brief accent glow behind it */
+  .task.just-added {
+    animation: task-arrive 0.9s ease 0.3s both;
+    border-radius: 6px;
+  }
+  @keyframes task-arrive {
+    0% { opacity: 0; transform: translateY(14px);
+      background: color-mix(in srgb, var(--accent) 22%, transparent); }
+    40% { opacity: 1; transform: none;
+      background: color-mix(in srgb, var(--accent) 22%, transparent); }
+    100% { background: transparent; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .task.just-added { animation: none; }
   }
   .task.indent-1 { padding-left: 24px; --indent: 24px; }
   .task.indent-2 { padding-left: 48px; --indent: 48px; }
@@ -3820,6 +3837,24 @@
   });
 
   renderCurrentView();
+
+  // A task just added from the dashboard slides into the simple list
+  (() => {
+    let text = null;
+    try {
+      text = sessionStorage.getItem("todo-just-added");
+      sessionStorage.removeItem("todo-just-added");
+    } catch {}
+    if (!text || currentView !== "simple") return;
+    const rows = Array.from(document.querySelectorAll("#simple-tasks .task"));
+    const row = rows.reverse().find(r => r._task && r._task.text === text);
+    if (!row) return;
+    row.classList.add("just-added");
+    row.addEventListener("animationend", () =>
+      row.classList.remove("just-added"), { once: true });
+    row.scrollIntoView({ block: "nearest" });
+  })();
+
   let relativeDate = new Date().toDateString();
   setInterval(() => {
     const today = new Date().toDateString();

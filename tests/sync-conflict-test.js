@@ -100,8 +100,23 @@
         "Conflict detection does not overwrite Drive.", passed);
 
       if (choice !== "detect") {
-        window.prompt = () => choice;
+        // Closing the window without choosing leaves the conflict in place
         ToolSync.click({});
+        await waitFor(() => !!document.querySelector("#tk-modal .tkm-choice"));
+        const labels = Array.from(document.querySelectorAll(
+          "#tk-modal .tkm-label")).map(el => el.textContent);
+        assert(labels.join(",") === "local,drive",
+          "The conflict window offers local and drive buttons.", passed);
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+        await waitFor(() => !document.querySelector("#tk-modal.show"));
+        assert(ToolSync.status() === "conflict"
+          && !!localStorage.getItem(conflictKey),
+          "Closing the window keeps the conflict for later.", passed);
+
+        ToolSync.click({});
+        await waitFor(() => !!document.querySelector("#tk-modal.show .tkm-choice"));
+        document.querySelector('#tk-modal.show .tkm-choice[data-value="'
+          + choice + '"]').click();
         await waitFor(() => ToolSync.status() === "synced"
           && localStorage.getItem(conflictKey) === null);
 

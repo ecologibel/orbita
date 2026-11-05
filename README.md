@@ -14,6 +14,11 @@ python -m http.server 8000
 
 Then open [http://localhost:8000](http://localhost:8000).
 
+The site's `index.html` is an app shell: it stays open and shows each tool in a
+frame, so focus ambience keeps playing as you move between tools. The address
+follows the tool, e.g. `#notes` or `#to-dos/simple`. A tool page opened on its
+own reopens inside the shell; add `?standalone` to its address to open it alone.
+
 The timekeeper connects to Google Calendar with read-only access. It stores its
 own OAuth token separately from Google Drive sync, so it can use a different
 Google account. The Google Calendar API is enabled and the OAuth client already

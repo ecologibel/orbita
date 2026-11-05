@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy"
   content="default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/ https://cdnjs.cloudflare.com/ajax/libs/codemirror/; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com/ajax/libs/codemirror/ https://accounts.google.com/gsi/style; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' https://www.googleapis.com https://oauth2.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; object-src 'none'; base-uri 'self'; form-action 'self'">
+<script src="../in-shell.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>timekeeper &middot; orbita</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -47,12 +48,28 @@
   button:disabled { cursor:not-allowed;opacity:.4; }
   button.primary { background:var(--accent);border-color:var(--accent);color:var(--bg);font-weight:650; }
   .muted { color:var(--fg-muted); }
-  .selection-columns { display:grid;gap:18px;grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .selection-columns { display:grid;gap:18px;grid-template-columns:minmax(0,1fr); }
+  .mode-tabs { align-items:center;display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px; }
+  .visually-hidden { clip:rect(0 0 0 0);height:1px;overflow:hidden;position:absolute;white-space:nowrap;width:1px; }
+  @keyframes list-in { from { opacity:0;transform:translateY(6px); } to { opacity:1;transform:none; } }
   .selection-list { border:1px solid var(--border);border-radius:8px;min-height:145px;padding:12px;transition:opacity .2s,border-color .2s,background .2s; }
   .selection-list.active { background:color-mix(in srgb,var(--accent) 5%,var(--bg));border-color:var(--accent); }
-  .selection-list.inactive { opacity:.48; }
+  .selection-list.inactive { display:none; }
+  .selection-list.active { animation:list-in .25s ease both; }
+  .event-heading { cursor:default; }
+  .event-calendars.has-choice .choice[aria-pressed=false] { opacity:.4; }
+  .event-kinds { display:flex;gap:8px;margin:14px 0 4px; }
+  .event-kinds[hidden],.event-words[hidden] { display:none; }
+  .event-words { animation:list-in .25s ease both;margin-top:14px; }
+  #event-choices .choice[aria-pressed=true] { background:color-mix(in srgb,var(--word-color) 22%,transparent);border-color:var(--word-color);color:var(--fg); }
   .list-heading { align-items:center;background:transparent;border:0;border-bottom:1px solid var(--border);border-radius:0;display:flex;font-weight:600;justify-content:space-between;margin:-2px 0 9px;padding:2px 0 9px;text-align:left;width:100%; }
   .list-heading[aria-pressed=true] { color:var(--accent); }
+  .list-head { align-items:center;border-bottom:1px solid var(--border);display:flex;gap:8px;margin:-2px 0 9px;padding:2px 0 9px; }
+  .list-head .list-heading { border-bottom:0;flex:1;margin:0;min-width:0;padding:0; }
+  .list-actions { display:flex;flex-shrink:0;gap:4px; }
+  .list-actions button { background:transparent;border:1px solid var(--border);border-radius:999px;color:var(--fg-muted);font-size:.78em;line-height:1.2;padding:3px 8px; }
+  .list-actions button:hover:not(:disabled),.list-actions button:focus-visible { border-color:var(--accent);color:var(--accent); }
+  .list-actions button:disabled { cursor:default;opacity:.4; }
   .choice-list { display:flex;flex-wrap:wrap;gap:6px; }
   .choice { background:transparent;border:1px solid var(--border);border-radius:999px;font-size:.88em;line-height:1.2;max-width:100%;overflow-wrap:anywhere;padding:6px 10px;text-align:left; }
   .choice:not(.tag-token)[aria-pressed=true] { background:color-mix(in srgb,var(--accent) 14%,transparent);border-color:var(--accent);color:var(--accent); }
@@ -196,13 +213,18 @@
       <header class="page-header"><h1><span class="title-icon" id="title-icon" aria-hidden="true"></span>timekeeper</h1><p class="intro">how did you spend your time?</p></header>
       <hr>
       <section aria-labelledby="selection-heading">
-        <h2 class="section-title" id="selection-heading">calendars or tags <span class="help-tip"><button type="button" aria-label="help with calendars or tags" aria-describedby="selection-help">?</button><span class="help-content" id="selection-help" role="tooltip">choose calendars directly, or select tags to include their assigned calendars</span></span></h2>
+        <h2 class="visually-hidden" id="selection-heading">what to plot</h2><div class="mode-tabs" role="group" aria-labelledby="selection-heading"><button type="button" class="option mode-tab" id="tab-tags" aria-pressed="false">tags</button><button type="button" class="option mode-tab" id="tab-calendars" aria-pressed="true">calendars</button><button type="button" class="option mode-tab" id="tab-events" aria-pressed="false">events</button><span class="help-tip"><button type="button" aria-label="help with tags and calendars" aria-describedby="selection-help">?</button><span class="help-content" id="selection-help" role="tooltip">choose tags to include their assigned calendars, choose calendars directly, or pick one calendar and plot its events by action (the first word of each title) or topic (the rest)</span></span></div>
         <div class="selection-columns">
-          <section class="selection-list active" id="calendar-selection" aria-label="calendars">
-            <button type="button" class="list-heading" id="calendar-mode" aria-pressed="true"><span>calendars</span><span class="muted" id="calendar-count"></span></button><div class="choice-list" id="calendar-choices"></div>
-          </section>
           <section class="selection-list inactive" id="tag-selection" aria-label="tags">
-            <button type="button" class="list-heading" id="tag-mode" aria-pressed="false"><span>tags</span><span class="muted" id="tag-count"></span></button><div class="choice-list" id="tag-choices"></div>
+            <div class="list-head"><button type="button" class="list-heading" id="tag-mode" aria-pressed="false"><span>tags</span><span class="muted" id="tag-count"></span></button><span class="list-actions"><button type="button" id="tag-all">select all</button><button type="button" id="tag-none">deselect all</button></span></div><div class="choice-list" id="tag-choices"></div>
+          </section>
+          <section class="selection-list active" id="calendar-selection" aria-label="calendars">
+            <div class="list-head"><button type="button" class="list-heading" id="calendar-mode" aria-pressed="true"><span>calendars</span><span class="muted" id="calendar-count"></span></button><span class="list-actions"><button type="button" id="calendar-all">select all</button><button type="button" id="calendar-none">deselect all</button></span></div><div class="choice-list" id="calendar-choices"></div>
+          </section>
+          <section class="selection-list inactive" id="event-selection" aria-label="events">
+            <div class="list-head"><span class="list-heading event-heading">calendar</span></div><div class="choice-list event-calendars" id="event-calendars"></div>
+            <div class="event-kinds" id="event-kinds" hidden><button type="button" class="option" id="kind-actions" aria-pressed="false">actions</button><button type="button" class="option" id="kind-topics" aria-pressed="false">topics</button></div>
+            <div class="event-words" id="event-words" hidden><div class="list-head"><span class="list-heading event-heading"><span id="event-words-label">actions</span><span class="muted" id="event-count"></span></span><span class="list-actions"><button type="button" id="event-all">select all</button><button type="button" id="event-none">deselect all</button></span></div><div class="choice-list" id="event-choices"></div></div>
           </section>
         </div>
       </section>
@@ -276,10 +298,10 @@
   function openRangePicker(id){const input=$("#"+id),origin=$("#"+id+"-trigger");ToolkitDates.openDatePickerValue(input.value,iso=>{input.value=iso;updateDateLabels();loadEvents();},origin);}
   $("#from-trigger").onclick=()=>openRangePicker("from");$("#to-trigger").onclick=()=>openRangePicker("to");updateDateLabels();
   let token=null,tokenClient=null,calendars=[],events=[],colors={},refreshTimer=0,eventRequest=0,calendarRequest=0,piePage=0;
-  let prefs={},tags=[],assignments={},tagColors={},calendarColors={},excludedCalendars=new Set(),selectedTags=new Set(),selectedCalendars=new Set(),selectionMode="calendars";
+  let prefs={},tags=[],assignments={},tagColors={},calendarColors={},excludedCalendars=new Set(),selectedTags=new Set(),selectedCalendars=new Set(),selectionMode="calendars",eventCalendar=null,eventKind=null,selectedWords={actions:new Set(),topics:new Set()};
   try{token=JSON.parse(localStorage.getItem(TOKEN_KEY)||"null");if(token&&(!token.access_token||token.expires_at<=Date.now()+30000)){localStorage.removeItem(TOKEN_KEY);token=null;}}catch{token=null;}
   // Settings sync through the site's Drive account (sync.js), not the Calendar sign-in, so they are reloaded when Drive or another tab changes them
-  function loadPrefs(){prefs={};tags=[];assignments={};tagColors={};calendarColors={};excludedCalendars=new Set();selectedTags=new Set();selectedCalendars=new Set();selectionMode="calendars";
+  function loadPrefs(){prefs={};tags=[];assignments={};tagColors={};calendarColors={};excludedCalendars=new Set();selectedTags=new Set();selectedCalendars=new Set();selectionMode="calendars";eventCalendar=null;eventKind=null;selectedWords={actions:new Set(),topics:new Set()};
   try{const d=JSON.parse(localStorage.getItem(DATA_KEY)||"{}");prefs=d&&typeof d==="object"&&!Array.isArray(d)?d:{};
     tags=Array.isArray(prefs.tags)?prefs.tags.filter(t=>typeof t==="string"&&t.trim()).map(t=>t.trim()):[];
     assignments=prefs.assignments&&typeof prefs.assignments==="object"&&!Array.isArray(prefs.assignments)?prefs.assignments:{};
@@ -288,10 +310,12 @@
     excludedCalendars=new Set(Array.isArray(prefs.excludedCalendars)?prefs.excludedCalendars:[]);
     selectedTags=new Set(Array.isArray(prefs.selectedTags)?prefs.selectedTags:(Array.isArray(prefs.selected)?prefs.selected:[]));
     selectedCalendars=new Set(Array.isArray(prefs.selectedCalendars)?prefs.selectedCalendars:[]);
-    if(prefs.selectionMode==="tags"||prefs.selectionMode==="calendars")selectionMode=prefs.selectionMode;
+    if(["tags","calendars","events"].includes(prefs.selectionMode))selectionMode=prefs.selectionMode;
+    eventCalendar=typeof prefs.eventCalendar==="string"?prefs.eventCalendar:null;eventKind=["actions","topics"].includes(prefs.eventKind)?prefs.eventKind:null;
+    const words=prefs.eventWords&&typeof prefs.eventWords==="object"?prefs.eventWords:{};selectedWords={actions:new Set(Array.isArray(words.actions)?words.actions:[]),topics:new Set(Array.isArray(words.topics)?words.topics:[])};
   }catch{}}
   loadPrefs();
-  const save=()=>{prefs=Object.assign({},prefs,{tags,assignments,tagColors,calendarColors,excludedCalendars:[...excludedCalendars],selectedTags:[...selectedTags],selectedCalendars:[...selectedCalendars],selectionMode});delete prefs.selected;try{localStorage.setItem(DATA_KEY,JSON.stringify(prefs));}catch{}};
+  const save=()=>{prefs=Object.assign({},prefs,{tags,assignments,tagColors,calendarColors,excludedCalendars:[...excludedCalendars],selectedTags:[...selectedTags],selectedCalendars:[...selectedCalendars],selectionMode,eventCalendar,eventKind,eventWords:{actions:[...selectedWords.actions],topics:[...selectedWords.topics]}});delete prefs.selected;try{localStorage.setItem(DATA_KEY,JSON.stringify(prefs));}catch{}};
   const say=(v,error=false)=>{$("#status").textContent=v;$("#status").classList.toggle("error",error);};
   const auth=()=>({Authorization:"Bearer "+(token&&token.access_token||"")});
   async function api(url){const r=await fetch(url,{headers:auth()});if(!r.ok){let m="Calendar request failed ("+r.status+")";try{m=(await r.json()).error.message||m;}catch{}const error=Error(m);error.status=r.status;throw error;}return r.json();}
@@ -315,14 +339,29 @@
     $("#calendar-selection").classList.toggle("active",selectionMode==="calendars");$("#calendar-selection").classList.toggle("inactive",selectionMode!=="calendars");
     $("#tag-selection").classList.toggle("active",selectionMode==="tags");$("#tag-selection").classList.toggle("inactive",selectionMode!=="tags");
     $("#calendar-mode").setAttribute("aria-pressed",selectionMode==="calendars");$("#tag-mode").setAttribute("aria-pressed",selectionMode==="tags");
+    $("#tab-calendars").setAttribute("aria-pressed",selectionMode==="calendars");$("#tab-tags").setAttribute("aria-pressed",selectionMode==="tags");$("#tab-events").setAttribute("aria-pressed",selectionMode==="events");
+    $("#event-selection").classList.toggle("active",selectionMode==="events");$("#event-selection").classList.toggle("inactive",selectionMode!=="events");
+    renderEvents();
     $("#calendar-count").textContent=selectedCalendars.size?selectedCalendars.size+" selected":"";
     $("#tag-count").textContent=selectedTags.size?selectedTags.size+" selected":"";
+    const shownCalendars=includedCalendars();
+    $("#calendar-all").disabled=!shownCalendars.length||shownCalendars.every(c=>selectedCalendars.has(c.id));$("#calendar-none").disabled=!selectedCalendars.size;
+    $("#tag-all").disabled=!tags.length||tags.every(t=>selectedTags.has(t));$("#tag-none").disabled=!selectedTags.size;
     const cb=$("#calendar-choices");cb.replaceChildren();if(!calendars.length)cb.innerHTML='<span class="muted-list">connect Google Calendar to load calendars.</span>';else if(!includedCalendars().length)cb.innerHTML='<span class="muted-list">all calendars are excluded; re-enable calendars in the sidebar.</span>';
     includedCalendars().forEach(c=>{const b=document.createElement("button");b.type="button";b.className="choice";b.textContent=c.summary||"untitled calendar";b.setAttribute("aria-pressed",selectedCalendars.has(c.id));b.onclick=()=>{selectionMode="calendars";selectedCalendars.has(c.id)?selectedCalendars.delete(c.id):selectedCalendars.add(c.id);save();render();};cb.append(b);});
     const tb=$("#tag-choices");tb.replaceChildren();if(!tags.length)tb.innerHTML='<span class="muted-list">create tags in the sidebar.</span>';
     tagsSorted().forEach(t=>{const selected=selectedTags.has(t),b=document.createElement("button");b.type="button";b.className="choice tag-token tag-color-"+tagColor(t);paintTag(b,t);b.textContent=t;b.setAttribute("aria-pressed",selected);b.onclick=()=>{selectionMode="tags";selectedTags.has(t)?selectedTags.delete(t):selectedTags.add(t);save();render();};tb.append(b);});
   }
   $("#calendar-mode").onclick=()=>{selectionMode="calendars";save();render();};$("#tag-mode").onclick=()=>{selectionMode="tags";save();render();};
+  $("#tab-calendars").onclick=()=>{if(selectionMode==="calendars")return;selectionMode="calendars";save();render();};$("#tab-tags").onclick=()=>{if(selectionMode==="tags")return;selectionMode="tags";save();render();};
+  $("#calendar-all").onclick=()=>{selectionMode="calendars";includedCalendars().forEach(c=>selectedCalendars.add(c.id));save();render();};
+  $("#calendar-none").onclick=()=>{selectionMode="calendars";selectedCalendars.clear();save();render();};
+  $("#tab-events").onclick=()=>{if(selectionMode==="events")return;selectionMode="events";save();render();};
+  ["actions","topics"].forEach(k=>{$("#kind-"+k).onclick=()=>{selectionMode="events";eventKind=k;save();render();};});
+  $("#event-all").onclick=()=>{selectionMode="events";wordsFor(eventKind).forEach(w=>selectedWords[eventKind].add(w));save();render();};
+  $("#event-none").onclick=()=>{selectionMode="events";selectedWords[eventKind].clear();save();render();};
+  $("#tag-all").onclick=()=>{selectionMode="tags";tags.forEach(t=>selectedTags.add(t));save();render();};
+  $("#tag-none").onclick=()=>{selectionMode="tags";selectedTags.clear();save();render();};
   document.querySelectorAll("#assign-tags .help-tip button,#exclude-calendars .help-tip button").forEach(b=>b.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();}));
   const sidebarToggleTimers=new WeakMap(),sidebarToggleDuration=matchMedia("(prefers-reduced-motion: reduce)").matches?0:240;
   document.querySelectorAll("#right-sidebar details.assign-box > summary").forEach(summary=>summary.addEventListener("click",e=>{
@@ -371,7 +410,25 @@
     calendarsSorted().forEach(c=>{const b=document.createElement("button");b.type="button";b.className="choice";b.textContent=c.summary||"untitled calendar";b.setAttribute("aria-pressed",!excludedCalendars.has(c.id));b.onclick=()=>{if(excludedCalendars.has(c.id))excludedCalendars.delete(c.id);else excludedCalendars.add(c.id);save();render();};excluded.append(b);});
   }
   $("#tag-form").onsubmit=e=>{e.preventDefault();const input=$("#tag-name"),t=input.value.trim();if(!t)return;if(tags.some(x=>x.toLowerCase()===t.toLowerCase())){say("that tag already exists.",true);return;}tags.push(t);tagColors[t]="blue";selectedTags.add(t);input.value="";save();render();};
-  function chosen(){return selectionMode==="calendars"?includedCalendars().filter(c=>selectedCalendars.has(c.id)):includedCalendars().filter(c=>selectedTags.has(assignments[c.id]));}
+  // Events: an action is the first word of a title, a topic the rest
+  const cleanWord=w=>w.toLowerCase().replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu,"");
+  function eventWords(e){const words=String(e.summary||"").trim().split(/\s+/).map(cleanWord).filter(Boolean);return{actions:words[0]||null,topics:words.slice(1).join(" ")||null};}
+  function wordsFor(kind){const set=new Set();events.forEach(e=>{if(e.calendarId!==eventCalendar)return;const w=eventWords(e)[kind];if(w)set.add(w);});return[...set].sort(compare);}
+  const WORD_PALETTE=COLOR_OPTIONS.filter(c=>!["white","silver","grey","charcoal","black"].includes(c.key));
+  function eventSeries(){if(!eventCalendar||!eventKind)return[];const kind=eventKind,all=wordsFor(kind);return all.map((w,i)=>({w,i})).filter(x=>selectedWords[kind].has(x.w)).map(({w,i})=>({id:kind+":"+w,summary:w,backgroundColor:WORD_PALETTE[i%WORD_PALETTE.length].hex,match:e=>e.calendarId===eventCalendar&&eventWords(e)[kind]===w}));}
+  function renderEvents(){
+    const cb=$("#event-calendars");cb.replaceChildren();cb.classList.toggle("has-choice",!!eventCalendar);
+    if(!calendars.length)cb.innerHTML='<span class="muted-list">connect Google Calendar to load calendars.</span>';
+    includedCalendars().forEach(c=>{const b=document.createElement("button");b.type="button";b.className="choice";b.textContent=c.summary||"untitled calendar";b.setAttribute("aria-pressed",c.id===eventCalendar);b.onclick=()=>{selectionMode="events";eventCalendar=c.id===eventCalendar?null:c.id;selectedWords={actions:new Set(),topics:new Set()};save();render();};cb.append(b);});
+    $("#event-kinds").hidden=!eventCalendar;$("#kind-actions").setAttribute("aria-pressed",eventKind==="actions");$("#kind-topics").setAttribute("aria-pressed",eventKind==="topics");
+    const show=!!(eventCalendar&&eventKind);$("#event-words").hidden=!show;if(!show)return;
+    const all=wordsFor(eventKind),picked=selectedWords[eventKind];$("#event-words-label").textContent=eventKind;
+    const n=all.filter(w=>picked.has(w)).length;$("#event-count").textContent=n?n+" selected":"";
+    $("#event-all").disabled=!all.length||all.every(w=>picked.has(w));$("#event-none").disabled=!n;
+    const box=$("#event-choices");box.replaceChildren();if(!all.length){box.innerHTML='<span class="muted-list">no events in this date range.</span>';return;}
+    all.forEach((w,i)=>{const b=document.createElement("button");b.type="button";b.className="choice";b.textContent=w;b.setAttribute("aria-pressed",picked.has(w));b.style.setProperty("--word-color",WORD_PALETTE[i%WORD_PALETTE.length].hex);b.onclick=()=>{selectionMode="events";picked.has(w)?picked.delete(w):picked.add(w);save();render();};box.append(b);});
+  }
+  function chosen(){if(selectionMode==="events")return eventSeries();return selectionMode==="calendars"?includedCalendars().filter(c=>selectedCalendars.has(c.id)):includedCalendars().filter(c=>selectedTags.has(assignments[c.id]));}
   function chosenTags(){if(selectionMode==="tags")return tagsSorted().filter(t=>selectedTags.has(t));const used=new Set(chosen().map(c=>assignments[c.id]).filter(Boolean));return tagsSorted().filter(t=>used.has(t));}
   function periods(lo,hi,view){
     if(view==="total")return[{label:"total",start:lo,end:hi}];
@@ -379,8 +436,10 @@
       const month3=date=>date.toLocaleDateString("en-AU",{month:"short"}).toLowerCase().slice(0,3),currentYear=new Date().getFullYear(),out=[];while(d<hi&&out.length<5000){const a=new Date(d),b=new Date(d);if(view==="day")b.setDate(b.getDate()+1);else if(view==="week")b.setDate(b.getDate()+7);else if(view==="month")b.setMonth(b.getMonth()+1);else if(view==="quarter")b.setMonth(b.getMonth()+3);else b.setFullYear(b.getFullYear()+1);const yearSuffix=a.getFullYear()===currentYear?"":" "+a.getFullYear(),label=view==="day"?month3(a)+" "+a.getDate():view==="week"?month3(a)+" "+a.getDate():view==="month"?month3(a)+yearSuffix:view==="quarter"?month3(a)+"–"+month3(new Date(b.getFullYear(),b.getMonth(),0))+yearSuffix:String(a.getFullYear());out.push({label,start:a,end:b});d.setTime(+b);}return out;
   }
   function aggregate(ps,cs,lo,hi){
-    const rows=ps.map(()=>new Map(cs.map(c=>[c.id,0]))),ids=new Set(cs.map(c=>c.id));
-    events.filter(e=>ids.has(e.calendarId)).forEach(e=>{const t=interval(e);if(!t)return;const a=Math.max(+t[0],+lo),b=Math.min(+t[1],+hi);if(b<=a)return;let l=0,r=ps.length;while(l<r){const m=(l+r)>>1;if(+ps[m].end<=a)l=m+1;else r=m;}for(let i=l;i<ps.length&&+ps[i].start<b;i++){const h=Math.max(0,Math.min(b,+ps[i].end)-Math.max(a,+ps[i].start))/3600000;if(h)rows[i].set(e.calendarId,rows[i].get(e.calendarId)+h);}});
+    const rows=ps.map(()=>new Map(cs.map(c=>[c.id,0]))),ids=new Set(cs.filter(c=>!c.match).map(c=>c.id)),matchers=cs.filter(c=>c.match);
+    // Calendars count their own events; event series count events whose title matches
+    const seriesOf=e=>(ids.has(e.calendarId)?[e.calendarId]:[]).concat(matchers.filter(c=>c.match(e)).map(c=>c.id));
+    events.forEach(e=>{const sids=seriesOf(e);if(!sids.length)return;const t=interval(e);if(!t)return;const a=Math.max(+t[0],+lo),b=Math.min(+t[1],+hi);if(b<=a)return;let l=0,r=ps.length;while(l<r){const m=(l+r)>>1;if(+ps[m].end<=a)l=m+1;else r=m;}for(let i=l;i<ps.length&&+ps[i].start<b;i++){const h=Math.max(0,Math.min(b,+ps[i].end)-Math.max(a,+ps[i].start))/3600000;if(h)sids.forEach(id=>rows[i].set(id,rows[i].get(id)+h));}});
     return rows;
   }
   const tip=(c,p,h)=>(c.summary||"untitled calendar").toLowerCase()+" · "+fmt(h)+" h";
@@ -388,7 +447,7 @@
     const box=$("#legend");box.replaceChildren();if(!cs.length)return;
     const totals=new Map(cs.map(c=>[c.id,0]));matrix.forEach(row=>row.forEach((h,id)=>totals.set(id,totals.get(id)+h)));
     const grandTotal=[...totals.values()].reduce((sum,h)=>sum+h,0),totalHead=document.createElement("div");totalHead.className="legend-heading legend-total";const totalName=document.createElement("span");totalName.className="legend-heading-name";totalName.textContent="total";const totalValue=document.createElement("span");totalValue.className="legend-heading-total";totalValue.textContent=fmt(grandTotal)+" h";totalHead.append(totalName,totalValue);box.append(totalHead);
-    const groups=selectionMode==="tags"?tagsSorted().filter(t=>selectedTags.has(t)).map(t=>({label:t,color:tagColor(t),cs:cs.filter(c=>assignments[c.id]===t)})):[{label:"calendars",cs}];
+    const groups=selectionMode==="tags"?tagsSorted().filter(t=>selectedTags.has(t)).map(t=>({label:t,color:tagColor(t),cs:cs.filter(c=>assignments[c.id]===t)})):[{label:selectionMode==="events"?eventKind:"calendars",cs}];
     groups.forEach(g=>{if(!g.cs.length)return;const wrap=document.createElement("div");wrap.className="legend-group";const groupTotal=g.cs.reduce((sum,c)=>sum+(totals.get(c.id)||0),0);const head=document.createElement("div");head.className="legend-heading"+(g.color?" tag-color-"+g.color:"");if(g.color)head.style.setProperty("--tag-color",paletteHex(g.color));const headName=document.createElement("span");headName.className="legend-heading-name";headName.textContent=g.label;const headTotal=document.createElement("span");headTotal.className="legend-heading-total";headTotal.textContent=fmt(groupTotal)+" h";head.append(headName,headTotal);wrap.append(head);g.cs.forEach(c=>{const line=document.createElement("div");line.className="legend-item";const dot=document.createElement("i");dot.className="swatch";dot.style.background=color(c);const name=document.createElement("span");name.className="legend-label";name.textContent=c.summary||"untitled calendar";const val=document.createElement("span");val.textContent=fmt(totals.get(c.id))+" h";line.append(dot,name,val);wrap.append(line);});box.append(wrap);});
   }
   function axes(label,x,y,rotate){const text=document.createElementNS("http://www.w3.org/2000/svg","text");text.setAttribute("class","chart-axis");text.setAttribute("text-anchor",rotate?"start":"middle");text.setAttribute("x",x);text.setAttribute("y",y);if(rotate)text.setAttribute("transform","rotate(-90 "+x+" "+y+")");text.textContent=label;return text;}
