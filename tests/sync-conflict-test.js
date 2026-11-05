@@ -59,6 +59,10 @@
     window.fetch = async (url, options = {}) => {
       const method = options.method || "GET";
       calls.push({ url, method });
+      if (method === "GET" && url.includes("spaces=appDataFolder")) {
+        return { ok: true, status: 200,
+          json: async () => ({ files: [{ id: testFileId }] }) };
+      }
       if (url.includes("/files/" + testFileId + "?alt=media")
           && method === "GET") {
         return { ok: true, status: 200, json: async () => remote };
