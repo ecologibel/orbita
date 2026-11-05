@@ -332,26 +332,25 @@
   .today-title { font-size: 1.35em; font-weight: 600; }
 
   /* At a glance: today, tomorrow, rest of this week, next week */
-  .peek + .peek .peek-head { margin-top: 18px; }
+  /* Sections as in the timekeeper's sidebar: a teal heading with + or -
+     on the right, a line beneath each, and a dimmed sign when empty */
+  .peek { border-bottom: 1px solid var(--border); padding: 10px 0; }
   .peek-head {
     align-items: center;
     color: var(--accent);
     cursor: pointer;
     display: flex;
-    font-size: 0.9em;
+    font-size: 1em;
     font-weight: 600;
     gap: 8px;
     user-select: none;
   }
-  .peek-arrow {
-    display: inline-block;
-    font-size: 12px;
-    transition: transform 0.2s ease;
-    width: 12px;
-  }
-  .peek:not(.open) .peek-arrow { transform: rotate(-90deg); }
-  .peek-arrow.empty { opacity: 0.35; }
+  .peek-head:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .peek-count { color: var(--fg-muted); font-size: 0.8em; font-weight: 400; }
+  .peek-sign { font-weight: 400; margin-left: auto; }
+  .peek-sign::before { content: "+"; }
+  .peek.open .peek-sign::before { content: "\2212"; }
+  .peek-sign.empty { opacity: 0.35; }
   .peek-body {
     display: grid;
     grid-template-rows: 0fr;
@@ -912,15 +911,17 @@
       head.className = "peek-head";
       head.setAttribute("role", "button");
       head.tabIndex = 0;
-      head.innerHTML = '<span class="peek-arrow'
-        + (groups[sec.id].length ? "" : " empty") + '">▼</span>'
-        + '<span class="peek-label"></span><span class="peek-count"></span>';
+      head.innerHTML = '<span class="peek-label"></span>'
+        + '<span class="peek-count"></span><span class="peek-sign'
+        + (groups[sec.id].length ? "" : " empty") + '" aria-hidden="true"></span>';
       head.querySelector(".peek-label").textContent = sec.label;
       head.querySelector(".peek-count").textContent = groups[sec.id].length;
+      head.setAttribute("aria-expanded", String(!!open[sec.id]));
       const toggle = () => {
         const st = glanceOpen();
         st[sec.id] = !st[sec.id];
         wrapEl.classList.toggle("open", st[sec.id]);
+        head.setAttribute("aria-expanded", String(st[sec.id]));
       };
       head.addEventListener("click", toggle);
       head.addEventListener("keydown", e => {
