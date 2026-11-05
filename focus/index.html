@@ -72,8 +72,161 @@
   #app {
     background: var(--bg);
     color: var(--fg);
+    display: flex;
     min-height: 100vh;
-    padding: 0 20px 140px;
+  }
+  .main-col { flex: 1 1 auto; min-width: 0; padding: 0 20px 140px; }
+
+  /* ---- Settings sidebar: as the dashboard's, resizable and folding to
+     a slim strip. Shown only while picking a task ---- */
+  body.focus-bare .aside-wrap { display: none; }
+  aside {
+    display: flex;
+    flex: 0 0 320px;
+    flex-direction: column;
+    gap: 32px;
+    max-height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 48px 28px 36px;
+    position: sticky;
+    top: 0;
+    transition: flex-basis 0.25s ease, padding 0.25s ease;
+  }
+  aside.dragging { transition: none; }
+  .aside-wrap { display: flex; flex: none; position: relative; }
+  .aside-wrap::before {
+    background: var(--border);
+    bottom: 38px;
+    content: '';
+    left: 0;
+    position: absolute;
+    top: 38px;
+    width: 1px;
+    z-index: 1;
+  }
+  .aside-handle {
+    bottom: 0;
+    cursor: col-resize;
+    left: -4px;
+    position: absolute;
+    top: 0;
+    width: 9px;
+    z-index: 2;
+  }
+  .aside-wrap:has(.aside-handle:hover)::before,
+  .aside-wrap.resizing::before { background: var(--accent); }
+  .fold-btn {
+    background: none;
+    border: none;
+    border-radius: 4px;
+    color: var(--fg-muted);
+    cursor: pointer;
+    font-size: 15px;
+    height: 24px;
+    line-height: 1;
+    width: 24px;
+  }
+  .fold-btn:hover { background: var(--hover); color: var(--accent); }
+  .unfold { display: none; left: 6px; position: absolute; top: 44px; }
+  aside.folded { flex-basis: 36px !important; padding: 48px 0; }
+  aside.folded > * { display: none; }
+  aside.folded > .unfold { display: block; }
+  @keyframes side-in {
+    from { opacity: 0; transform: translateX(12px); }
+    to   { opacity: 1; transform: none; }
+  }
+  aside > div { animation: side-in 0.35s ease 0.08s both; }
+  .side-head {
+    align-items: last baseline;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 18px;
+    padding-bottom: 8px;
+  }
+  .side-title { font-size: 1.25em; font-weight: 600; }
+
+  /* Each group opens and closes with its +/− */
+  .set-group { border-bottom: 1px solid var(--border); padding: 4px 0 10px; }
+  .set-head {
+    align-items: center;
+    background: none;
+    border: none;
+    color: var(--accent);
+    cursor: pointer;
+    display: flex;
+    font: inherit;
+    font-weight: 600;
+    justify-content: space-between;
+    padding: 8px 0;
+    text-transform: lowercase;
+    width: 100%;
+  }
+  .set-sign { font-weight: 400; }
+  .set-body {
+    display: grid;
+    grid-template-rows: 1fr;
+    transition: grid-template-rows 0.24s ease;
+  }
+  .set-group.closed .set-body { grid-template-rows: 0fr; }
+  .set-inner { min-height: 0; overflow: hidden; }
+  .set-row { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 0 10px; }
+  .set-opt {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--fg);
+    cursor: pointer;
+    font: inherit;
+    font-size: 13.5px;
+    padding: 4px 12px;
+    text-transform: lowercase;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .set-opt:hover, .set-opt:focus-visible { border-color: var(--accent); outline: none; }
+  .set-opt[aria-pressed="true"] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--bg);
+  }
+  .set-field {
+    color: var(--fg-muted);
+    display: flex;
+    flex-direction: column;
+    font-size: 13px;
+    gap: 6px;
+    padding-bottom: 6px;
+  }
+  .set-field input:not([type="range"]) {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--fg);
+    font: inherit;
+    font-size: 15px;
+    font-variant-numeric: tabular-nums;
+    outline: none;
+    padding: 6px 10px;
+    width: 8em;
+  }
+  .set-field input:focus { border-color: var(--accent); }
+  .set-field input[type="range"] { accent-color: var(--accent); width: 100%; }
+  .set-note { color: var(--fg-muted); font-size: 12.5px; min-height: 1em; }
+  .set-note.error { color: #e06c75; }
+
+  /* Narrow windows: the settings sit below */
+  @media (max-width: 900px) {
+    #app { flex-direction: column; }
+    aside, aside.folded {
+      flex-basis: auto !important;
+      max-height: none;
+      padding: 36px 28px;
+      position: static;
+    }
+    aside.folded > * { display: revert; }
+    .aside-wrap { border-top: 1px solid var(--border); }
+    .aside-wrap::before, .aside-handle, .fold-btn { display: none; }
   }
 
   /* Brief colour fade while the mode changes */
@@ -669,6 +822,7 @@
 </head>
 <body>
 <div id="app" class="t-dark">
+  <div class="main-col">
   <button id="leave" type="button" title="leave focus mode (esc)">
     <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
       stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -744,11 +898,73 @@
       <div id="pick-list"></div>
     </section>
   </main>
+  </div>
 
+  <!-- Settings: shown beside the picker, like the dashboard's sidebar -->
+  <div class="aside-wrap" id="settings-wrap">
+  <div class="aside-handle" title="drag to resize"></div>
+  <aside id="settings">
+    <button class="fold-btn unfold" type="button" title="show settings"
+      aria-label="show settings">&lt;</button>
+    <div>
+      <div class="side-head">
+        <span class="side-title">settings</span>
+        <button class="fold-btn" id="fold" type="button"
+          title="fold away" aria-label="fold away">&gt;</button>
+      </div>
+
+      <section class="set-group" data-group="timer">
+        <button class="set-head" type="button" aria-expanded="true">
+          <span>timer</span><span class="set-sign" aria-hidden="true">−</span>
+        </button>
+        <div class="set-body"><div class="set-inner">
+          <div class="set-row" role="group" aria-label="set the timer by">
+            <button type="button" class="set-opt" data-mode="duration">duration</button>
+            <button type="button" class="set-opt" data-mode="time">time</button>
+          </div>
+          <label class="set-field">
+            <span id="timer-label">duration (hh:mm)</span>
+            <input id="timer-input" inputmode="numeric" autocomplete="off">
+          </label>
+          <div class="set-note" id="timer-note" role="status"></div>
+        </div></div>
+      </section>
+
+      <section class="set-group" data-group="chime">
+        <button class="set-head" type="button" aria-expanded="true">
+          <span>chime</span><span class="set-sign" aria-hidden="true">−</span>
+        </button>
+        <div class="set-body"><div class="set-inner">
+          <div class="set-row" id="chime-options" role="group"
+            aria-label="chime sound"></div>
+          <label class="set-field">
+            <span>volume</span>
+            <input id="chime-volume" type="range" min="0" max="100" step="1">
+          </label>
+        </div></div>
+      </section>
+
+      <section class="set-group" data-group="ambience">
+        <button class="set-head" type="button" aria-expanded="true">
+          <span>ambience</span><span class="set-sign" aria-hidden="true">−</span>
+        </button>
+        <div class="set-body"><div class="set-inner">
+          <div class="set-row" id="ambience-options" role="group"
+            aria-label="ambience sound"></div>
+          <label class="set-field">
+            <span>volume</span>
+            <input id="ambience-volume" type="range" min="0" max="100" step="1">
+          </label>
+        </div></div>
+      </section>
+    </div>
+  </aside>
+  </div>
 </div>
 
 <script src="../sync.js"></script>
 <script src="../sidebar.js"></script>
+<script src="../sounds.js"></script>
 <script src="../dates.js"></script>
 <script src="../recovery.js"></script>
 <script>
@@ -1129,7 +1345,11 @@
   }
 
   function begin(ref, text) {
-    F.set({ minutes: 10, state: "idle", task: ref, text });
+    // Keep the duration or finish time chosen in the settings
+    const prev = F.get();
+    const next = { minutes: prev.minutes || 10, state: "idle", task: ref, text };
+    if (prev.finishAt && prev.finishAt > Date.now()) next.finishAt = prev.finishAt;
+    F.set(next);
     $("pick-input").value = "";
     render();
   }
@@ -1742,7 +1962,9 @@
     $("ring-arc").style.strokeDasharray = RING;
     $("ring-arc").style.strokeDashoffset = RING * (1 - frac);
     $("ring").className = s.state + (ringFinished ? " finished" : "");
-    $("switch").hidden = s.state === "running" || s.state === "paused";
+    // No other task to switch to while still picking one
+    $("switch").hidden = s.state === "running" || s.state === "paused"
+      || $("focus").classList.contains("picking");
   }
 
   function update(fn) {
@@ -1757,12 +1979,20 @@
       s.state = "idle";
       delete s.endAt;
       delete s.remaining;
+      delete s.finishAt;
     });
+    settingsSet({ timerMode: "duration" });
+    renderSettings();
   }
 
   function start() {
     update(s => {
-      const left = s.state === "paused" ? s.remaining : s.minutes * 60000;
+      // A finish time (from the settings) ends the countdown at that time
+      const until = s.finishAt && s.finishAt > Date.now()
+        ? s.finishAt - Date.now() : null;
+      const left = s.state === "paused" ? s.remaining
+        : until !== null ? until : s.minutes * 60000;
+      delete s.finishAt;
       if (s.state !== "paused") s.total = left;
       s.state = "running";
       s.endAt = Date.now() + left;
@@ -1875,6 +2105,216 @@
     if (e.key === "toolkit-width" || e.key === "toolkit-size") applyShared();
   });
 
+  // ---- Settings sidebar ----
+  //
+  // Timer (a duration, or a time to finish at), chime and ambience.
+  // Kept on this device in "focus-settings"; the chime is played by the
+  // sidebar wherever the timer runs out, and ambience by sounds.js.
+
+  const SET_KEY = "focus-settings";
+  const CHIME_NAMES = ["chime", "ding", "sparkle", "soft"];
+  const S = window.ToolkitSounds;
+
+  function settingsGet() {
+    try { return JSON.parse(read(SET_KEY)) || {}; } catch { return {}; }
+  }
+  function settingsSet(patch) {
+    store(SET_KEY, JSON.stringify(Object.assign(settingsGet(), patch)));
+  }
+
+  // "1:30" → 90; "45" → 45 minutes; null if it isn't a time
+  function parseHM(text) {
+    const m = String(text).trim().match(/^(\d{1,2}):(\d{2})$|^(\d{1,3})$/);
+    if (!m) return null;
+    if (m[3] !== undefined) return +m[3];
+    if (+m[2] > 59) return null;
+    return +m[1] * 60 + +m[2];
+  }
+  const hm = mins => Math.floor(mins / 60) + ":" + String(mins % 60).padStart(2, "0");
+
+  function timerMode() {
+    return settingsGet().timerMode === "time" ? "time" : "duration";
+  }
+
+  function renderTimerInput() {
+    const s = F.get(), input = $("timer-input");
+    if (timerMode() === "time") {
+      input.value = s.finishAt && s.finishAt > Date.now()
+        ? new Date(s.finishAt).toTimeString().slice(0, 5)
+        : settingsGet().finishAt || "";
+    } else {
+      input.value = hm(s.state === "idle" ? s.minutes || 10
+        : Math.ceil(F.left(s) / 60000));
+    }
+  }
+
+  function note(text, error) {
+    $("timer-note").textContent = text || "";
+    $("timer-note").classList.toggle("error", !!error);
+  }
+
+  // Apply the typed timer: to a running timer straight away, or to the
+  // next countdown when idle
+  function applyTimer() {
+    const mode = timerMode(), mins = parseHM($("timer-input").value);
+    if (mins === null) {
+      note(mode === "time" ? "type a time as hh:mm, e.g. 15:30"
+        : "type a duration as hh:mm, e.g. 0:25", true);
+      return;
+    }
+    let ms;
+    if (mode === "time") {
+      if (mins >= 24 * 60) return note("type a time between 0:00 and 23:59", true);
+      const at = new Date();
+      at.setHours(Math.floor(mins / 60), mins % 60, 0, 0);
+      if (+at <= Date.now()) return note("that time has already passed", true);
+      ms = +at - Date.now();
+      settingsSet({ finishAt: hm(mins).padStart(5, "0") });
+      update(s => {
+        if (s.state === "running") { s.endAt = +at; s.total = ms; }
+        else if (s.state === "paused") { s.remaining = ms; s.total = ms; }
+        else { s.minutes = Math.ceil(ms / 60000); s.finishAt = +at; }
+      });
+      note("finishes at " + at.toTimeString().slice(0, 5));
+    } else {
+      if (mins < 1) return note("a duration needs at least 1 minute", true);
+      ms = mins * 60000;
+      update(s => {
+        delete s.finishAt;
+        if (s.state === "running") { s.endAt = Date.now() + ms; s.total = ms; }
+        else if (s.state === "paused") { s.remaining = ms; s.total = ms; }
+        else s.minutes = mins;
+      });
+      note("");
+    }
+    renderClock(F.get(), true);
+  }
+
+  $("timer-input").addEventListener("keydown", e => {
+    if (e.key === "Enter") { e.preventDefault(); applyTimer(); }
+  });
+  $("timer-input").addEventListener("change", applyTimer);
+  document.querySelectorAll(".set-opt[data-mode]").forEach(b => {
+    b.addEventListener("click", () => {
+      settingsSet({ timerMode: b.dataset.mode });
+      if (b.dataset.mode === "duration") update(s => { delete s.finishAt; });
+      note("");
+      renderSettings();
+      $("timer-input").focus();
+    });
+  });
+
+  function optionButton(box, name, pressed, onClick) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "set-opt";
+    b.textContent = name;
+    b.setAttribute("aria-pressed", String(pressed));
+    b.addEventListener("click", onClick);
+    box.appendChild(b);
+  }
+
+  function renderSettings() {
+    const set = settingsGet(), mode = timerMode();
+    document.querySelectorAll(".set-opt[data-mode]").forEach(b =>
+      b.setAttribute("aria-pressed", String(b.dataset.mode === mode)));
+    $("timer-label").textContent = mode === "time"
+      ? "finish at (hh:mm)" : "duration (hh:mm)";
+    $("timer-input").placeholder = mode === "time" ? "15:30" : "0:25";
+    if (document.activeElement !== $("timer-input")) renderTimerInput();
+
+    // Chime: clicking one chooses and plays it
+    const chimeBox = $("chime-options"), chosen = CHIME_NAMES.includes(set.chime)
+      ? set.chime : "chime";
+    chimeBox.innerHTML = "";
+    CHIME_NAMES.forEach(name => optionButton(chimeBox, name, name === chosen, () => {
+      settingsSet({ chime: name });
+      F.chime(name);
+      renderSettings();
+    }));
+    $("chime-volume").value = Math.round((Number.isFinite(set.chimeVolume)
+      ? set.chimeVolume : 0.7) * 100);
+
+    // Ambience: one at a time; clicking the playing one stops it
+    const ambBox = $("ambience-options"), playing = S.current();
+    ambBox.innerHTML = "";
+    S.names.forEach(name => optionButton(ambBox, name, name === playing, () => {
+      if (S.current() === name) S.stopAmbience();
+      else S.play(name);
+    }));
+    $("ambience-volume").value = Math.round((Number.isFinite(set.ambienceVolume)
+      ? set.ambienceVolume : 0.5) * 100);
+  }
+
+  // Chime volume: the chime plays again once the slider is let go
+  $("chime-volume").addEventListener("change", e => {
+    const v = e.target.value / 100;
+    settingsSet({ chimeVolume: v });
+    F.chime(undefined, v);
+  });
+  // Ambience volume changes as the slider moves
+  $("ambience-volume").addEventListener("input", e => {
+    const v = e.target.value / 100;
+    settingsSet({ ambienceVolume: v });
+    S.setVolume(v);
+  });
+  S.onChange(renderSettings);
+
+  // Groups open and close with their +/−; remembered on this device
+  const GROUPS_KEY = "focus-settings-groups";
+  let closedGroups = {};
+  try { closedGroups = JSON.parse(read(GROUPS_KEY)) || {}; } catch {}
+  document.querySelectorAll(".set-group").forEach(g => {
+    const head = g.querySelector(".set-head");
+    const show = open => {
+      g.classList.toggle("closed", !open);
+      head.setAttribute("aria-expanded", String(open));
+      head.querySelector(".set-sign").textContent = open ? "−" : "+";
+    };
+    show(!closedGroups[g.dataset.group]);
+    head.addEventListener("click", () => {
+      const open = g.classList.contains("closed");
+      show(open);
+      closedGroups[g.dataset.group] = !open;
+      store(GROUPS_KEY, JSON.stringify(closedGroups));
+    });
+  });
+
+  // Resize and fold, as on the dashboard
+  const aside = $("settings"), sideWrap = $("settings-wrap");
+  const SIDE_KEY = "focus-settings-width", FOLD_KEY = "focus-settings-folded";
+  const sideWidth = w => Math.max(240, Math.min(520, Math.round(w)));
+  const savedWidth = parseInt(read(SIDE_KEY));
+  if (savedWidth) aside.style.flexBasis = sideWidth(savedWidth) + "px";
+  aside.classList.toggle("folded", read(FOLD_KEY) === "1");
+  const setFolded = folded => {
+    aside.classList.toggle("folded", folded);
+    store(FOLD_KEY, folded ? "1" : "0");
+  };
+  $("fold").addEventListener("click", () => setFolded(true));
+  aside.querySelector(".unfold").addEventListener("click", () => setFolded(false));
+  sideWrap.querySelector(".aside-handle").addEventListener("pointerdown", e => {
+    if (e.button !== 0 || aside.classList.contains("folded")) return;
+    e.preventDefault();
+    const right = sideWrap.getBoundingClientRect().right;
+    aside.classList.add("dragging");
+    sideWrap.classList.add("resizing");
+    document.body.style.cursor = "col-resize";
+    const move = ev => {
+      aside.style.flexBasis = sideWidth(right - ev.clientX) + "px";
+    };
+    const up = () => {
+      document.removeEventListener("pointermove", move);
+      document.removeEventListener("pointerup", up);
+      aside.classList.remove("dragging");
+      sideWrap.classList.remove("resizing");
+      document.body.style.cursor = "";
+      store(SIDE_KEY, parseInt(aside.style.flexBasis));
+    };
+    document.addEventListener("pointermove", move);
+    document.addEventListener("pointerup", up);
+  });
+
   ToolkitSidebar.init({
     active: "focus",
     focusPage: true,
@@ -1904,6 +2344,10 @@
 
   render();
   F.onTick(s => renderClock(s));
+  renderSettings();
+  F.onTick(() => {
+    if (document.activeElement !== $("timer-input")) renderTimerInput();
+  });
 
   // Refresh relative task tokens after local midnight.
   let relativeDate = new Date().toDateString();
