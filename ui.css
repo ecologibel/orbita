@@ -12,6 +12,13 @@
 
 
 /* ---- 1. Tokens ---- */
+
+/* Text size: one base size for every page and view (small, medium,
+   large). Pages size their text in rem, so everything follows it. */
+html:has(.size-s) { font-size: 14px; }
+html:has(.size-m) { font-size: 16px; }
+html:has(.size-l) { font-size: 18px; }
+
 @property --ui-thumb {
   syntax: "<color>";
   inherits: true;
@@ -22,11 +29,11 @@
   --ui-r-sm: 6px;            /* checkboxes, tags in text, small chips */
   --ui-r-md: 10px;           /* cards, menus, dialogs */
   --ui-r-full: 999px;        /* pills, inputs, round controls */
-  --ui-fs-xs: 12px;
-  --ui-fs-sm: 14px;
-  --ui-fs-md: 16px;
-  --ui-fs-lg: 20px;
-  --ui-fs-xl: 28px;
+  --ui-fs-xs: 0.75rem;
+  --ui-fs-sm: 0.875rem;
+  --ui-fs-md: 1rem;
+  --ui-fs-lg: 1.25rem;
+  --ui-fs-xl: 1.75rem;
   --ui-fast: 0.15s;          /* hovers and colour */
   --ui-slow: 0.3s;           /* entries, folds, rows */
   --ui-gap-section: 28px;    /* between sections and around rules */
@@ -284,8 +291,12 @@ body:not(:has(#app)) .intro:not(#_) {
   border: 2px solid var(--accent);
   border-radius: 50%;
   cursor: pointer;
-  position: relative;
   transition: background var(--ui-fast), border-color var(--ui-fast);
+}
+/* Positioned for the tick, without overriding pages that place it */
+:where(.task input[type="checkbox"], .marker input[type="checkbox"],
+       #focal-done, .ui-tick) {
+  position: relative;
 }
 :is(.task input[type="checkbox"], .marker input[type="checkbox"],
     #focal-done, .ui-tick):not(#_):not(#__):checked {
@@ -517,7 +528,10 @@ input[type="range"]:not(#_):not(#__):focus-visible::-webkit-slider-thumb {
   color: var(--pill);
   cursor: pointer;
   display: flex;
-  font: 600 13px/1 inherit;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1;
   height: 26px;
   justify-content: center;
   padding: 0;
@@ -753,7 +767,7 @@ button:is(.ui-tag, .tag-chip):not(#_):not(#__):is(:hover, :focus-visible) {
 }
 :is(.toggle-arrow, .folder-row .tree-chev, .tool .chev):not(#_):not(#__)::before {
   content: "\2212";
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 500;
   line-height: 1;
 }
@@ -780,3 +794,67 @@ button:is(.ui-tag, .tag-chip):not(#_):not(#__):is(:hover, :focus-visible) {
   text-align: center;
   white-space: nowrap;
 }
+
+
+/* ---- 13. Titles, subtitles and section headings ----
+   A page title is black in light mode and white in dark mode, with the
+   page's icon in teal on its left. Subtitles are italic and one size
+   everywhere. Section headings in the main panel match the timekeeper's
+   "view" and "chart", with a rule between sections. */
+:root, .t-dark { --ui-title: #ffffff; }
+:root[data-mode="light"], .t-light { --ui-title: #000000; }
+
+#app :is(#day, .gal-header h1, .page-header h1):not(#_):not(#__),
+body:not(:has(#app)) .help-shell > h1:not(#_):not(#__) {
+  align-items: center;
+  color: var(--ui-title);
+  display: flex;
+  font-size: 2rem;
+  font-weight: 700;
+  gap: 0.35em;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin: 0;
+}
+.title-icon:not(#_) {
+  color: var(--accent, var(--ui-accent));
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 0.9em;
+  width: 0.9em;
+}
+.title-icon svg:not(#_) { height: 100%; width: 100%; }
+
+#app :is(#today-date, .gal-header .intro, .page-header .intro, .simple-prompt,
+         .pick-title):not(#_):not(#__),
+body:not(:has(#app)) .intro:not(#_):not(#__) {
+  color: var(--ui-subtitle);
+  font-size: 1rem;
+  font-style: italic;
+  font-weight: 400;
+}
+#app :is(#today-date, .gal-header .intro, .page-header .intro):not(#_):not(#__),
+body:not(:has(#app)) .help-shell > .intro:not(#_):not(#__) {
+  margin: 8px 0 0;
+}
+
+/* Section headings */
+#app :is(.gal-label, .page-section > h2, .pick-label):not(#_):not(#__),
+body:not(:has(#app)) .help-shell > section > h2:not(#_):not(#__) {
+  border: none;
+  color: var(--ui-heading);
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  margin: 0 0 14px;
+  padding: 0;
+  text-transform: lowercase;
+}
+/* A rule between sections, as the timekeeper's <hr> */
+#app .gal-section + .gal-section:not(#_),
+body:not(:has(#app)) .help-shell > section + section:not(#_) {
+  border-top: 1px solid var(--border, var(--line));
+  margin-top: var(--ui-gap-section);
+  padding-top: var(--ui-gap-section);
+}
+#app .gal-section:first-of-type:not(#_) { margin-top: 0; }

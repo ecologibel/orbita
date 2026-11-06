@@ -98,7 +98,7 @@
     border-radius: 4px;
     color: var(--fg-muted);
     font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 17px;
+    font-size: 1.0625rem;
     font-weight: 600;
     grid-column: 1;
     justify-self: start;
@@ -127,7 +127,7 @@
     border: 1px solid var(--border);
     color: var(--fg-muted);
     cursor: pointer;
-    font-size: 15px;
+    font-size: 0.9375rem;
     padding: 3px 10px;
     border-radius: 4px;
     font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -137,7 +137,7 @@
     color: var(--fg);
   }
   #nav-label {
-    font-size: 15px;
+    font-size: 0.9375rem;
     color: var(--fg);
     font-weight: 600;
     min-width: 180px;
@@ -145,7 +145,7 @@
   }
 
   /* Lowercase headings, toggles and dropdowns */
-  #toolbar, #toolbar button, .section-heading, .toggle-name-input,
+  #toolbar, #toolbar button, #todo-head, .section-heading, .toggle-name-input,
   .add-section-btn, .day-name, .year-month-title {
     text-transform: lowercase;
   }
@@ -156,7 +156,7 @@
     background: var(--sel-bg);
     border: 1px solid var(--sel-bdr);
     color: var(--sel-fg);
-    font-size: 16px;
+    font-size: 1rem;
     padding: 4px 22px 4px 8px;
     border-radius: 4px;
     cursor: pointer;
@@ -186,7 +186,7 @@
     padding: 4px 0;
     z-index: 100;
     min-width: 100%;
-    font-size: 16px;
+    font-size: 1rem;
     font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
   }
   .dropdown.open .dropdown-menu { display: block; }
@@ -306,7 +306,7 @@
     color: var(--fg);
     display: flex;
     flex-direction: column;
-    font-size: 13px;
+    font-size: 0.8125rem;
     min-width: 120px;
     padding: 4px;
     position: fixed;
@@ -347,12 +347,9 @@
   }
 
   /* Task text size for each size option */
-  .size-s { --task-fs: 16px; }
-  .size-m { --task-fs: 18px; }
-  .size-l { --task-fs: 21px; }
-  .size-s .day-tasks { --task-fs: 15px; }
-  .size-m .day-tasks { --task-fs: 17px; }
-  .size-l .day-tasks { --task-fs: 19px; }
+  /* Task text follows the shared size setting (the page's base size) */
+  #app { --task-fs: 1rem; }
+  #app .day-tasks { --task-fs: 0.9375rem; }
 
   /* ---- Task ---- */
   .task {
@@ -472,7 +469,7 @@
   .task .delete-btn {
     background: none; border: none;
     color: var(--fg-muted);
-    cursor: pointer; font-size: 18px;
+    cursor: pointer; font-size: 1.125rem;
     padding: 0 4px; opacity: 0;
     transition: opacity 0.15s;
     margin-top: 1px; flex-shrink: 0;
@@ -520,7 +517,7 @@
     padding: 40px 24px;
   }
   .section-heading {
-    font-size: 17px; font-weight: 600;
+    font-size: 1.0625rem; font-weight: 600;
     color: var(--fg-muted);
     letter-spacing: 0.04em;
     margin-bottom: 16px;
@@ -540,7 +537,7 @@
     margin-bottom: 12px; user-select: none;
   }
   .toggle-arrow {
-    font-size: 14px; color: var(--accent);
+    font-size: 0.875rem; color: var(--accent);
     transition: transform 0.2s ease;
     display: inline-block; width: 14px;
     cursor: pointer; flex-shrink: 0;
@@ -577,7 +574,7 @@
     background: transparent;
     border: none;
     color: var(--accent);
-    font-size: 17px;
+    font-size: 1.0625rem;
     font-weight: 600;
     letter-spacing: 0.04em;
     font-family: 'Segoe UI',
@@ -593,7 +590,7 @@
   .toggle-delete-btn {
     background: none; border: none;
     color: var(--fg-muted);
-    cursor: pointer; font-size: 18px;
+    cursor: pointer; font-size: 1.125rem;
     padding: 0 4px; opacity: 0;
     transition: opacity 0.15s;
   }
@@ -607,7 +604,7 @@
     background: none;
     border: 1px dashed var(--border);
     color: var(--fg-muted);
-    font-size: 16px;
+    font-size: 1rem;
     padding: 8px 16px;
     border-radius: 6px;
     cursor: pointer;
@@ -659,7 +656,7 @@
   .toggle-count {
     color: var(--fg-muted);
     cursor: pointer;
-    font-size: 12px;
+    font-size: 0.75rem;
     margin-right: auto;
     opacity: 0.75;
   }
@@ -673,7 +670,7 @@
     margin: 8px 0 32px;
   }
   .add-row .add-section-btn { margin-bottom: 0; width: auto; }
-  .add-row .counts-btn { flex-shrink: 0; font-size: 14px; }
+  .add-row .counts-btn { flex-shrink: 0; font-size: 0.875rem; }
   .add-row .add-range-input { flex: 1; margin: 0; min-width: 0; }
 
   /* Simple: the prompt above the list */
@@ -733,7 +730,7 @@
     caret-color: var(--accent);
     color: var(--accent);
     font: inherit;
-    font-size: 16px;
+    font-size: 1rem;
     outline: none;
     padding: 8px 16px;
     text-align: center;
@@ -768,7 +765,7 @@
     color: var(--accent);
     cursor: pointer;
     flex: 0 1 auto;
-    font-size: 17px;
+    font-size: 1.0625rem;
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: lowercase;
@@ -798,7 +795,7 @@
 
   /* Week: day and date on one line, dim for past days, teal for today
      and full colour for days to come */
-  #weekly-view .day-name { color: var(--fg); font-size: 16px; }
+  #weekly-view .day-name { color: var(--fg); font-size: 1rem; }
   #weekly-view .day-col.past .day-name { color: var(--fg-muted); }
   #weekly-view .day-col.today .day-name { color: var(--accent); }
 
@@ -807,7 +804,7 @@
     background: color-mix(in srgb, var(--accent) 16%, transparent);
     border-radius: 3px;
     color: var(--accent);
-    font-size: 11px;
+    font-size: 0.6875rem;
     font-weight: 600;
     margin-left: 6px;
     padding: 1px 5px;
@@ -868,12 +865,12 @@
     font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif; flex-shrink: 0;
   }
   .day-name {
-    font-size: 15px; font-weight: 600;
+    font-size: 0.9375rem; font-weight: 600;
     color: var(--fg-muted);
     letter-spacing: 0.04em;
   }
   .day-date {
-    font-size: 19px; font-weight: 600;
+    font-size: 1.1875rem; font-weight: 600;
     color: var(--fg); margin-top: 2px;
   }
   .day-col.today .day-name { color: var(--accent); }
@@ -884,7 +881,7 @@
   }
 
   #month-view .day-header { padding: 8px 4px 6px 6px; }
-  #month-view .day-date { font-size: 19px; }
+  #month-view .day-date { font-size: 1.1875rem; }
   #month-view .day-tasks {
     padding: 4px 4px 4px 6px;
     min-height: 32px;
@@ -924,7 +921,7 @@
     background: var(--today-bg);
   }
   .year-month-title {
-    font-size: 14px; font-weight: 600;
+    font-size: 0.875rem; font-weight: 600;
     color: var(--fg); padding: 8px 5px 8px 7.5px;
     border-bottom: 1px solid var(--border);
     font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -1002,6 +999,20 @@
     border-radius: 5px;
   }
 
+  /* The title sits above every view, lined up with its content */
+  #todo-head {
+    margin: 0 auto;
+    max-width: 720px;
+    padding: 40px 24px 0;
+    transition: max-width 0.25s ease;
+  }
+  .width-wide #todo-head { max-width: calc(50% + 360px); }
+  .width-full #todo-head { max-width: 100%; }
+  #todo-head .intro:empty { display: none; }
+  #app #todo-head > .rule.rule { margin: 22px 0 0; }
+  #todo-head ~ #simple-view, #todo-head ~ #dates-view,
+  #todo-head ~ #done-view { padding-top: 24px; }
+
   /* ---- Width options ----
      Every page shares the simple view's widths: 720px boxes with 24px
      either side (672px of content), wide halfway to full, and full.
@@ -1037,7 +1048,7 @@
     background: linear-gradient(var(--head-tint), var(--head-tint)),
       linear-gradient(var(--today-bg), var(--today-bg)), var(--bg);
   }
-  #month-view .month-head .day-name { color: var(--accent); font-size: 13px; }
+  #month-view .month-head .day-name { color: var(--accent); font-size: 0.8125rem; }
 
   /* Month: its own scroll area, set below the toolbar, rounded */
   #month-view {
@@ -1073,6 +1084,13 @@
   </div>
 
   <div id="content">
+    <!-- The title for every view: icon, title, a short subtitle, a rule -->
+    <header class="page-header" id="todo-head">
+      <h1><span class="title-icon" id="todo-icon" aria-hidden="true"></span><span
+        id="todo-title">to dos</span></h1>
+      <p class="intro" id="todo-sub"></p>
+      <hr class="rule">
+    </header>
     <div id="simple-view" class="hidden">
       <div class="simple-prompt"><svg width="22" height="22"
         viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -3994,8 +4012,27 @@
     if (currentView === "month")   renderMonth();
     if (currentView === "year")    renderYear();
     if (currentView === "done")    renderDone();
+    renderHead();
     if (switched) restoreScroll();
   }
+
+  // Each view's title and subtitle; the calendars show their period
+  function renderHead() {
+    const heads = {
+      simple: ["to dos", ""], dates: ["to dos", "what's coming up"],
+      done: ["done", "what you've finished"], weekly: ["to dos", null],
+      month: ["to dos", null], year: ["to dos", null]
+    };
+    const [title, sub] = heads[currentView] || heads.simple;
+    document.getElementById("todo-icon").innerHTML =
+      ToolkitSidebar.icon(currentView === "done" ? "done" : "todos");
+    document.getElementById("todo-title").textContent = title;
+    document.getElementById("todo-sub").textContent =
+      sub === null ? navLabel.textContent : sub;
+  }
+  // Moving through weeks, months or years updates the subtitle
+  new MutationObserver(() => renderHead()).observe(navLabel,
+    { characterData: true, childList: true, subtree: true });
 
   // ---- Remember scroll (simple, dates, year, done) ----
 

@@ -2283,6 +2283,7 @@
 
   function icon(id) {
     if (id === "code") return CODE_ICON;
+    if (id === "dashboard") return svg(LAYERS);
     const item = ITEMS.find(x => x.id === id);
     return item ? item.icon : "";
   }

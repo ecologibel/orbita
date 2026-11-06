@@ -292,7 +292,7 @@
     border-radius: 4px;
     color: var(--fg-muted);
     cursor: pointer;
-    font-size: 15px;
+    font-size: 0.9375rem;
     height: 24px;
     line-height: 1;
     width: 24px;
@@ -646,8 +646,11 @@
 
   function renderHeading() {
     const now = new Date();
-    document.getElementById("day").textContent =
-      DAY_NAMES[now.getDay()].toLowerCase();
+    // The title: the dashboard's icon, then the day
+    const day = document.getElementById("day");
+    day.innerHTML = '<span class="title-icon" aria-hidden="true">'
+      + ToolkitSidebar.icon("dashboard") + "</span>";
+    day.append(DAY_NAMES[now.getDay()].toLowerCase());
     document.getElementById("today-date").textContent = "@" + now.getDate()
       + " " + MONTH_NAMES[now.getMonth()].slice(0, 3).toLowerCase() + " "
       + now.getFullYear();

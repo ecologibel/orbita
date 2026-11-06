@@ -14,7 +14,7 @@
     --bg: #011627; --surface: #01111f; --fg: #d6deeb; --muted: #8291a5;
     --line: #1e3a52; --accent: #7fdbca;
     background: var(--bg); color: var(--fg);
-    font: 16px/1.65 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    font: 1rem/1.65 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
     margin: 0; min-height: 100%;
   }
   body.t-light {
@@ -28,22 +28,23 @@
     transform: translateY(-150%); z-index: 1000;
   }
   .skip-link:focus { transform: none; }
+  /* The text column follows the shared width setting, as on every page:
+     672px, wide halfway to full, or full */
   .help-shell {
+    --help-col: 672px;
     display: grid;
     gap: 0 34px;
-    grid-template-columns: 190px minmax(0, 760px);
+    grid-template-columns: 190px minmax(0, var(--help-col));
+    justify-content: center;
     margin: 0 auto;
-    max-width: 1080px;
     padding: 38px 28px 70px;
   }
+  .help-shell.width-wide { --help-col: calc(50% + 112px); }
+  .help-shell.width-full { --help-col: 1fr; grid-template-columns: 190px minmax(0, 1fr); }
   .help-shell > h1, .help-shell > .intro, .help-shell > section,
   .help-shell > .muted, .help-shell > .title-rule {
     grid-column: 2;
   }
-  .help-shell.size-s { font-size: 14px; }
-  .help-shell.size-l { font-size: 18px; }
-  .help-shell.width-wide { max-width: 1180px; }
-  .help-shell.width-full { max-width: none; }
   h1, h2, h3 { line-height: 1.25; }
   /* Headings: white in dark mode, dark teal in light mode (ui.css) */
   h1 { font-size: 2rem; margin: 0 0 8px; }
@@ -67,7 +68,7 @@
   }
   .contents a:hover, .contents a:focus-visible { background: var(--bg); }
   .topic-icon {
-    color: var(--accent); flex: 0 0 20px; font-size: 17px;
+    color: var(--accent); flex: 0 0 20px; font-size: 1.0625rem;
     line-height: 1; text-align: center;
   }
   code, kbd { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; }
@@ -270,6 +271,10 @@
     }
   });
   ToolkitSidebar.title("help");
+  // The help icon sits left of the title, as on every page
+  const h1 = document.querySelector(".help-shell > h1");
+  if (h1) h1.insertAdjacentHTML("afterbegin", '<span class="title-icon" '
+    + 'aria-hidden="true">' + ToolkitSidebar.icon("help") + "</span>");
 })();
 
 // ---- Backups ----
