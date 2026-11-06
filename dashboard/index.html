@@ -448,7 +448,7 @@
   .add-row { align-items: center; display: flex; gap: 8px; margin-top: 4px; }
   .add-box {
     border: 2px solid var(--accent);
-    border-radius: 3px;
+    border-radius: 50%;
     flex-shrink: 0;
     height: 16px;
     opacity: 0.5;
@@ -941,11 +941,15 @@
     });
   }
 
+  // A to do just typed in, which grows in when drawn
+  let growText = null;
+
   function fillList(box, items, data) {
     box.innerHTML = "";
     items.forEach(item => {
       const row = document.createElement("div");
-      row.className = "task" + (item.done ? " done" : "");
+      row.className = "task" + (item.done ? " done" : "")
+        + (growText !== null && item.text === growText ? " ui-grow" : "");
       const cb = document.createElement("input");
       cb.type = "checkbox";
       cb.checked = item.done;
@@ -1072,7 +1076,10 @@
     data.simple.push(task);
     store(TODO_KEY, JSON.stringify(data));
     addEl.value = "";
+    // The new to do grows into its list
+    growText = task.text;
     renderToday();
+    growText = null;
     addEl.focus();
   });
 
@@ -1266,6 +1273,9 @@
   renderRecent();
 
   // Keep up with other tabs, and roll over at midnight
+  // Tags wear their colours from every page
+  document.addEventListener("tag-colours", () => renderToday());
+
   window.addEventListener("storage", e => {
     if (e.key === TODO_KEY || e.key === NOTES_KEY) renderToday();
     if (e.key === NOTES_KEY) renderRecent();

@@ -969,7 +969,7 @@
             <input id="ambience-volume" type="range" min="0" max="100" step="1">
           </label>
           <div class="set-row">
-            <button type="button" class="set-opt" id="ambience-auto"
+            <button type="button" class="ui-switch" id="ambience-auto"
               aria-pressed="false"
               title="start your last ambience when the timer starts">with the timer</button>
           </div>
@@ -1541,7 +1541,8 @@
       del.type = "button";
       del.textContent = "×";
       del.title = "delete step";
-      del.addEventListener("click", () => removeStep(k));
+      del.addEventListener("click", () =>
+        ToolkitSidebar.collapse(row).then(() => removeStep(k)));
       row.append(mark, input, del);
       box.appendChild(row);
     });
@@ -1622,6 +1623,9 @@
     setSteps(list);
     $("add-sub").value = "";
     renderSubs();
+    // The new step grows into place
+    const added = $("subs").lastElementChild;
+    if (added) ToolkitSidebar.grow(added);
     $("add-sub").focus();
   });
 
@@ -2419,17 +2423,7 @@
     render();
   });
 
-  // Every button gives a little when pressed
-  document.addEventListener("pointerdown", e => {
-    const b = e.target.closest("button");
-    // Settings toggle titles open and close without the squish
-    if (!b || b.disabled || b.matches(".set-head")) return;
-    b.classList.remove("press");
-    void b.offsetWidth;
-    b.classList.add("press");
-    b.addEventListener("animationend", () => b.classList.remove("press"),
-      { once: true });
-  });
+  // The squish on every button is shared (sidebar.js)
 
   ToolSync.init({
     file:     "to-dos.json",

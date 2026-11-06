@@ -526,7 +526,8 @@
   }
 
   const TOOL_NAMES = { "notes.json": "notes", "to-dos.json": "to dos",
-    "r-codepad.json": "codepad", "timekeeper.json": "timekeeper settings" };
+    "r-codepad.json": "codepad", "tags.json": "tag colours",
+    "timekeeper.json": "timekeeper settings" };
 
   function toolName(cfg) {
     return TOOL_NAMES[cfg.file] || cfg.file.replace(/\.json$/, "");

@@ -37,7 +37,7 @@
     padding: 38px 28px 70px;
   }
   .help-shell > h1, .help-shell > .intro, .help-shell > section,
-  .help-shell > .muted {
+  .help-shell > .muted, .help-shell > .title-rule {
     grid-column: 2;
   }
   .help-shell.size-s { font-size: 14px; }
@@ -45,9 +45,9 @@
   .help-shell.width-wide { max-width: 1180px; }
   .help-shell.width-full { max-width: none; }
   h1, h2, h3 { line-height: 1.25; }
-  /* Section headings in the site's teal, as on the other pages */
-  h2, h3 { color: var(--accent); }
+  /* Headings: white in dark mode, dark teal in light mode (ui.css) */
   h1 { font-size: 2rem; margin: 0 0 8px; }
+  .title-rule { border: 0; border-top: 1px solid var(--line); margin: 22px 0 0; }
   h2 { border-bottom: 1px solid var(--line); font-size: 1.35rem; margin: 38px 0 14px; padding-bottom: 8px; }
   h3 { font-size: 1.05rem; margin: 24px 0 8px; }
   p, ul, ol { margin: 10px 0; }
@@ -107,7 +107,8 @@
 <a class="skip-link" href="#main">skip to help content</a>
 <main id="main" class="help-shell">
   <h1>help</h1>
-  <p class="intro">A guide to using orbita's dashboard, notes, to dos, focus timer, and timekeeper.</p>
+  <p class="intro">a guide to using orbita's dashboard, notes, to dos, focus timer, and timekeeper</p>
+  <hr class="title-rule">
   <nav class="contents" aria-label="help topics">
     <ul>
       <li><a href="#getting-started"><span class="topic-icon" aria-hidden="true">✦</span>getting started</a></li>
@@ -275,10 +276,11 @@
 (function () {
   const box = document.getElementById("backup-list");
   const FILES = { "notes.json": "notes", "to-dos.json": "to dos",
-    "r-codepad.json": "codepad", "timekeeper.json": "timekeeper" };
+    "r-codepad.json": "codepad", "tags.json": "tag colours",
+    "timekeeper.json": "timekeeper" };
   const KEYS = { "notes-data": "notes", "todo-data": "to dos",
     "todo-toggle-sections": "to dos", "r-editor-content": "codepad",
-    "timekeeper-data-v1": "timekeeper" };
+    "tag-colours": "tag colours", "timekeeper-data-v1": "timekeeper" };
   const KINDS = {
     local: "this device's copy, replaced by Drive's",
     remote: "Drive's copy, replaced by this device's",
@@ -333,11 +335,15 @@
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
-  function restore(b) {
-    if (!window.confirm("Restore " + b.tool + " from the backup saved "
-        + when(b) + "? This replaces the current " + b.tool
-        + " and syncs it as your newest edit. The current data is kept as"
-        + " another backup.")) return;
+  async function restore(b) {
+    const ok = await ToolkitSidebar.confirm({
+      title: "restore " + b.tool + "?",
+      body: "This replaces the current " + b.tool + " with the backup saved "
+        + when(b) + " and syncs it as your newest edit. The current data is"
+        + " kept as another backup.",
+      action: "restore"
+    });
+    if (!ok) return;
     const current = {};
     Object.keys(b.data).forEach(k => {
       const v = localStorage.getItem(k);
@@ -347,9 +353,11 @@
       localStorage.setItem("sync-backup-" + b.file + "-restore-" + Date.now(),
         JSON.stringify({ data: current, saved: Date.now() }));
     } catch {
-      window.alert("There isn't enough browser storage to keep a copy of the"
-        + " current data, so nothing was restored. Download or delete an old"
-        + " backup and try again.");
+      ToolkitSidebar.notice({
+        title: "nothing was restored",
+        body: "There isn't enough browser storage to keep a copy of the"
+          + " current data. Download or delete an old backup and try again."
+      });
       return;
     }
     Object.entries(b.data).forEach(([k, v]) => localStorage.setItem(k, v));
@@ -357,9 +365,15 @@
     ToolkitSidebar.toast(b.tool + " restored from the backup saved " + when(b) + ".");
   }
 
-  function remove(b) {
-    if (!window.confirm("Delete this backup of " + b.tool + " from "
-        + when(b) + "? This can't be undone.")) return;
+  async function remove(b) {
+    const ok = await ToolkitSidebar.confirm({
+      title: "delete this backup?",
+      body: "The backup of " + b.tool + " from " + when(b)
+        + " will be deleted. This can't be undone.",
+      action: "delete forever",
+      danger: true
+    });
+    if (!ok) return;
     localStorage.removeItem(b.key);
     render();
   }

@@ -997,6 +997,13 @@
       }
     });
   }
+  // A tag's own colour (sidebar.js keeps them), if it has one
+  function tagHex(tag) {
+    const tk = window.ToolkitSidebar;
+    const key = tk && tk.tagColour && tk.tagColour(tag);
+    return key ? tk.colourHex(key) : null;
+  }
+
   function highlightTags(seg) {
     let out = "", last = 0, m;
     MARK_PATTERN.lastIndex = 0;
@@ -1005,8 +1012,10 @@
       const isTag = m[2][0] === "#";
       const mark = m[2].replace(/[.,;:!?)\]]+$/, "") || m[2];
       if (isTag && mark.length < 2) continue;
+      const hex = isTag ? tagHex(mark) : null;
       out += escapeHtml(seg.slice(last, start)) + '<span class="'
-        + (isTag ? "tag-token" : "mention-token") + '">'
+        + (isTag ? "tag-token" : "mention-token") + '"'
+        + (hex ? ' style="--pill:' + hex + '"' : "") + '>'
         + escapeHtml(mark) + "</span>";
       last = start + mark.length;
     }
@@ -1076,6 +1085,10 @@
         span.className = cls;
         span.textContent = text.slice(a, z);
         if (isDate) setDateTokenAttributes(span, text.slice(a, z), offset + a, anchor);
+        else {
+          const hex = tagHex(span.textContent);
+          if (hex) span.style.setProperty("--pill", hex);
+        }
         frag.appendChild(span);
         last = z;
       });

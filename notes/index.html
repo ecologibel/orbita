@@ -399,8 +399,38 @@
     flex: 0 0 8px;
     height: 8px;
   }
-  .new-row { color: var(--accent); font-size: 14px; }
-  .new-row .tree-chev { visibility: hidden; }
+  /* A folder: a folder shape (a tab at the top left over a rounded
+     body), lightly filled with its colour, holding its toggle, icon and
+     title, and, when open, its notes and subfolders */
+  .folder-shape {
+    --f: var(--pick, var(--accent));
+    background: color-mix(in srgb, var(--f) 8%, transparent);
+    border-radius: 0 10px 10px 10px;
+    margin: 12px 0 6px;
+    padding: 1px 6px 3px;
+    position: relative;
+  }
+  .folder-shape::before {
+    background: inherit;
+    border-radius: 8px 8px 0 0;
+    content: "";
+    height: 8px;
+    left: 0;
+    position: absolute;
+    top: -8px;
+    width: min(40%, 130px);
+  }
+  .folder-shape.open { padding-bottom: 6px; }
+  .folder-shape.empty { --f: color-mix(in srgb, var(--pick, var(--accent)) 55%, transparent); }
+  .folder-shape > .tree-row:hover,
+  .folder-shape > .tree-row:focus-visible {
+    background: color-mix(in srgb, var(--f) 10%, transparent);
+  }
+  .folder-shape > .tree-children > .tree { padding-left: 10px; }
+  .folder-shape .folder-shape { margin-top: 12px; }
+  .folder-shape.drop-into, .folder-shape:has(> .folder-row.drop-into) {
+    box-shadow: 0 0 0 1px var(--accent);
+  }
   .tree-children {
     display: grid;
     grid-template-rows: 1fr;
@@ -612,7 +642,7 @@
     font-weight: 600;
     margin-bottom: 6px;
   }
-  .gal-new { display: flex; flex-wrap: wrap; gap: 4px 18px; }
+  .gal-new { display: flex; flex-wrap: wrap; gap: 8px; }
   .gal-recent .side-empty { padding-left: 6px; }
   .gal-recent .tree-chev { display: none; }
   .gal-recent .tree-path { color: var(--fg-muted); font-size: 11.5px; }
@@ -1147,8 +1177,6 @@
     margin: 0;
     white-space: pre;
   }
-  .new-pair { display: flex; gap: 0 18px; }
-  .new-pair .tree-row { width: auto; }
   /* Rainbow brackets by nesting depth */
   /* Same colours in both modes */
   .cm-paren-0 { color: #ed909a !important; }
@@ -2736,6 +2764,7 @@
         const chip = document.createElement("span");
         chip.className = "tag-chip";
         chip.textContent = "#" + t;
+        ToolkitSidebar.paintTag(chip, t);
         chip.title = "show notes tagged #" + t;
         chip.addEventListener("click", e => {
           e.stopPropagation();
@@ -3026,36 +3055,30 @@
     return row;
   }
 
-  function newRow(parent, depth) {
-    const pair = document.createElement("div");
-    pair.className = "new-pair";
-    [["+ new note", undefined], ["+ new code", "code"]].forEach(([label, kind], i) => {
-      const row = document.createElement("button");
-      row.type = "button";
-      row.className = "tree-row new-row";
-      row.style.setProperty("--depth", i ? 0 : depth);
-      row.append(chevron(true), document.createTextNode(label));
-      if (i) row.firstChild.remove();
-      row.addEventListener("click", () => createNote(parent, kind));
-      pair.appendChild(row);
-    });
-    return pair;
-  }
-
+  // Each folder sits in a folder shape, lightly filled with its colour;
+  // open, its notes and subfolders sit inside it (subfolders as smaller
+  // shapes). The shapes do the indenting, so rows inside start at 0.
   function treeLevel(parent, depth) {
     const level = document.createElement("div");
     level.className = "tree";
     subfolders(parent).forEach(f => {
-      level.appendChild(folderRow(f, depth));
-      if (!openFolders.has(f.id)) return;
-      const kids = document.createElement("div");
-      kids.className = "tree-children" + (animateOpen === f.id ? " closed" : "");
-      kids.dataset.for = f.id;
-      kids.appendChild(treeLevel(f.id, depth + 1));
-      level.appendChild(kids);
+      const open = openFolders.has(f.id);
+      const shape = document.createElement("div");
+      shape.className = "folder-shape" + (open ? " open" : "")
+        + (!treeCount(f.id) && !subfolders(f.id).length ? " empty" : "");
+      shape.dataset.shape = f.id;
+      paint(shape, folderColour(f.id));
+      shape.appendChild(folderRow(f, 0));
+      if (open) {
+        const kids = document.createElement("div");
+        kids.className = "tree-children" + (animateOpen === f.id ? " closed" : "");
+        kids.dataset.for = f.id;
+        kids.appendChild(treeLevel(f.id, depth + 1));
+        shape.appendChild(kids);
+      }
+      level.appendChild(shape);
     });
-    treeNotes(parent).forEach(n => level.appendChild(noteRow(n, depth)));
-    level.appendChild(newRow(parent, depth));
+    treeNotes(parent).forEach(n => level.appendChild(noteRow(n, 0)));
     return level;
   }
 
@@ -3150,7 +3173,7 @@
   function galButton(label, run) {
     const b = document.createElement("button");
     b.type = "button";
-    b.className = "side-link";
+    b.className = "gal-new-btn";
     b.textContent = label;
     b.addEventListener("click", run);
     return b;
@@ -3195,7 +3218,20 @@
     galBody.append(header, hr, fresh, recent, tree);
     playOpen();
     renderSide();
+
+    // Notes and folders new since the last drawing grow into place
+    const known = new Set(notes.map(n => n.id).concat(folders.map(f => f.id)));
+    if (galKnown) {
+      galBody.querySelectorAll(".gal-folders .note-row[data-id], "
+        + ".gal-folders .folder-shape[data-shape]").forEach(el => {
+        if (!galKnown.has(el.dataset.id || el.dataset.shape)) {
+          ToolkitSidebar.grow(el);
+        }
+      });
+    }
+    galKnown = known;
   }
+  let galKnown = null;
 
   // ---- Right sidebar ----
 
@@ -3232,11 +3268,15 @@
     const tagBox = document.getElementById("side-tags");
     tagBox.innerHTML = "";
     document.getElementById("tags-section").hidden = !tags.length;
-    tags.forEach(t => tagBox.appendChild(sideOpt("#" + t, tagFilter === t, () => {
-      tagFilter = tagFilter === t ? "" : t;
-      setSearchOpen(!!(tagFilter || query));
-      renderSide();
-    })));
+    tags.forEach(t => {
+      const b = sideOpt("#" + t, tagFilter === t, () => {
+        tagFilter = tagFilter === t ? "" : t;
+        setSearchOpen(!!(tagFilter || query));
+        renderSide();
+      });
+      ToolkitSidebar.paintTag(b, t);
+      tagBox.appendChild(b);
+    });
 
     const pinBox = document.getElementById("side-pinned");
     pinBox.innerHTML = "";
@@ -3463,11 +3503,7 @@
   // ---- Gallery menus ----
 
   // A note's menu, on its card and inside it: pin, duplicate, copy,
-  // download, bin, then colours
-  const BIN_SYM = '<svg width="13" height="13" viewBox="0 0 24 24" '
-    + 'fill="none" stroke="currentColor" stroke-width="2" '
-    + 'stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16'
-    + 'M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13"/></svg>';
+  // download, delete, then colours
 
   function cardMenu(anchor, n, inNote) {
     if (n.trashed) {
@@ -3479,7 +3515,7 @@
           renderGallery();
         } },
         { confirm: "click again to delete", danger: true, sym: "−",
-          label: "delete permanently", run: () => {
+          label: "delete forever", run: () => {
             withUndo("note deleted", () => {
               notes = notes.filter(x => x !== n);
             });
@@ -3501,20 +3537,21 @@
         else renderGallery();
       } },
       ...(isCode(n) ? [
-        { label: "copy code", sym: "⧉", run: () => {
+        { label: "copy", sym: "⧉", run: () => {
           copyText(n.code);
           ToolkitSidebar.toast("code copied");
         } },
         { label: "download .R", sym: "↓", run: () => downloadR(n) }
       ] : [
-        { label: "copy as md", sym: "⧉", run: () => {
+        { label: "copy md", sym: "⧉", run: () => {
           copyText(noteToMd(n));
           ToolkitSidebar.toast("copied as markdown");
         } },
-        { label: "download as md", sym: "↓", run: () => downloadMd(n) }
+        { label: "download md", sym: "↓", run: () => downloadMd(n) }
       ]),
-      { label: "move to bin", sym: BIN_SYM, run: () => {
+      { label: "delete", sym: "−", danger: true, run: async () => {
         if (inNote) location.hash = "";
+        else await ToolkitSidebar.collapse(anchor.closest(".tree-row, .card"));
         withUndo("moved to bin", () => { n.trashed = Date.now(); });
       } },
       { rule: true },
@@ -3530,8 +3567,26 @@
 
   function folderMenu(anchor, f, card) {
     showMenu(anchor, [
-      { label: "rename", run: () => renameFolder(f, card) },
-      { label: "+ subfolder", run: () => addFolder(f.id) },
+      { label: "rename", sym: "✎", run: () => renameFolder(f, card) },
+      { label: "new note", sym: "+", run: () => createNote(f.id) },
+      { label: "new code", sym: "+", run: () => createNote(f.id, "code") },
+      { label: "new folder", sym: "+", run: () => addFolder(f.id) },
+      { danger: true, sym: "−", label: "delete", run: async () => {
+          await ToolkitSidebar.collapse(anchor.closest(".folder-shape")
+            || anchor.closest(".tree-row"));
+
+          // Its notes and folders move up a level
+          withUndo("folder deleted", () => {
+            notes.forEach(n => {
+              if (n.folder === f.id) n.folder = f.parent;
+            });
+            const moved = subfolders(f.id);
+            folders = folders.filter(x => x !== f);
+            moved.forEach(x => { x.parent = f.parent; });
+            setOrder(subfolders(f.parent));
+          });
+        } },
+      { rule: true },
       { heading: "icon" },
       { active: f.icon || "folder", icons: true, pick: name => {
         galCheckpoint();
@@ -3545,22 +3600,7 @@
         f.colour = col;
         persist();
         renderGallery();
-      } },
-      { rule: true },
-      { confirm: "click again to delete", danger: true,
-        label: "delete folder", run: () => {
-
-          // Its notes and folders move up a level
-          withUndo("folder deleted", () => {
-            notes.forEach(n => {
-              if (n.folder === f.id) n.folder = f.parent;
-            });
-            const moved = subfolders(f.id);
-            folders = folders.filter(x => x !== f);
-            moved.forEach(x => { x.parent = f.parent; });
-            setOrder(subfolders(f.parent));
-          });
-        } }
+      } }
     ]);
   }
 
@@ -3850,26 +3890,95 @@
     wordsEl.textContent = n + (n === 1 ? " word" : " words");
   }
 
+  // A note's tags are pills in their colours; clicking one opens its menu
   function renderTags() {
     tagsEl.innerHTML = "";
     current.tags.forEach(t => {
-      const chip = document.createElement("span");
+      const chip = document.createElement("button");
+      chip.type = "button";
       chip.className = "tag-chip";
       chip.textContent = "#" + t;
-      const x = document.createElement("button");
-      x.type = "button";
-      x.textContent = "×";
-      x.title = "remove #" + t;
-      x.addEventListener("click", () => {
+      ToolkitSidebar.paintTag(chip, t);
+      chip.addEventListener("click", e => {
+        e.stopPropagation();
+        tagMenu(chip, t);
+      });
+      tagsEl.appendChild(chip);
+    });
+  }
+
+  // As on every page: edit and remove on one line, the colours beneath.
+  // Edit renames the tag on every note; remove takes it off this note.
+  function tagMenu(chip, t) {
+    hideMenus();
+    const menu = document.createElement("div");
+    menu.className = "menu ui-tag-menu";
+    const actions = document.createElement("div");
+    actions.className = "ui-tag-actions";
+    const edit = menuItem({ label: "edit", sym: "✎", run: () => {} });
+    const remove = menuItem({ label: "remove", sym: "−", danger: true,
+      run: () => {
         checkpoint();
         current.tags = current.tags.filter(y => y !== t);
         save();
         renderTags();
+      } });
+    // Edit swaps the menu for a box with the tag's name
+    edit.addEventListener("click", e => {
+      e.stopImmediatePropagation();
+      const input = document.createElement("input");
+      input.className = "ui-input";
+      input.value = t;
+      input.setAttribute("aria-label", "new name for #" + t);
+      menu.replaceChildren(input);
+      input.focus();
+      input.select();
+      input.addEventListener("keydown", ev => {
+        ev.stopPropagation();
+        if (ev.key === "Enter") {
+          ev.preventDefault();
+          const name = cleanTag(input.value);
+          hideMenus();
+          if (name && name !== t) renameTag(t, name);
+        } else if (ev.key === "Escape") {
+          ev.preventDefault();
+          hideMenus();
+          chip.focus();
+        }
       });
-      chip.appendChild(x);
-      tagsEl.appendChild(chip);
-    });
+    }, true);
+    actions.append(edit, remove);
+    const rule = document.createElement("div");
+    rule.className = "menu-rule";
+    menu.append(actions, rule, ToolkitSidebar.colourPicker({
+      active: ToolkitSidebar.tagColour(t),
+      onPick: key => {
+        hideMenus();
+        ToolkitSidebar.setTagColour(t, key);
+      }
+    }));
+    placeMenu(menu, chip);
   }
+
+  // Rename a tag on every note, keeping its colour
+  function renameTag(from, to) {
+    galCheckpoint();
+    notes.forEach(n => {
+      if (!n.tags.includes(from)) return;
+      n.tags = [...new Set(n.tags.map(x => x === from ? to : x))];
+    });
+    if (tagFilter === from) tagFilter = to;
+    persist();
+    ToolkitSidebar.renameTagColour(from, to);
+    if (current) renderTags();
+  }
+
+  // Tag colours changed here or on another page: redraw
+  document.addEventListener("tag-colours", () => {
+    if (current) renderTags();
+    if (current) renderBlocks();
+    else renderGallery();
+  });
 
   // "+ tag" turns into a box for typing a tag
   const addTagBtn = noteEl.querySelector(".add-tag");
@@ -3927,7 +4036,18 @@
       blocksEl.appendChild(blockEl(b, hidden.has(b.id), counts[b.indent]));
     });
     markEmptyToggles();
+
+    // Blocks new since the last drawing of this note grow into place
+    const ids = new Set(current.blocks.map(b => b.id));
+    if (shownNote === current && shownIds) {
+      blocksEl.querySelectorAll(".block[data-id]").forEach(el => {
+        if (!shownIds.has(el.dataset.id)) ToolkitSidebar.grow(el);
+      });
+    }
+    shownIds = ids;
+    shownNote = current;
   }
+  let shownIds = null, shownNote = null;
 
   function numberLabel(n, depth) {
     if (depth % 3 === 1) {
@@ -5099,53 +5219,53 @@
   function rowMenu(anchor, b, r) {
     const n = b.rows.length;
     showMenu(anchor, [
-      { label: "insert above", run: () => tableChange(b,
+      { label: "insert above", sym: "↥", run: () => tableChange(b,
         () => addRowAt(b, r), [r, 0]) },
-      { label: "insert below", run: () => tableChange(b,
+      { label: "insert below", sym: "↧", run: () => tableChange(b,
         () => addRowAt(b, r + 1), [r + 1, 0]) },
-      { label: "duplicate", run: () => tableChange(b, () => {
+      { label: "duplicate", sym: "+", run: () => tableChange(b, () => {
         addRowAt(b, r + 1);
         b.rows[r + 1] = [...b.rows[r]];
         b.rowColors[r + 1] = b.rowColors[r];
       }) },
-      { label: "move up", run: () => r > 0
+      { label: "move up", sym: "⇡", run: () => r > 0
         && tableChange(b, () => swapRows(b, r, r - 1)) },
-      { label: "move down", run: () => r < n - 1
+      { label: "move down", sym: "⇣", run: () => r < n - 1
         && tableChange(b, () => swapRows(b, r, r + 1)) },
+      { danger: true, sym: "−", label: "delete", run: () => tableChange(b,
+        () => removeRow(b, r)) },
+      { rule: true },
       { heading: "row colour" },
       { active: b.rowColors[r], pick: col => tableChange(b, () => {
         b.rowColors[r] = col;
-      }), swatches: true },
-      { rule: true },
-      { danger: true, label: "delete row", run: () => tableChange(b,
-        () => removeRow(b, r)) }
+      }), swatches: true }
     ]);
   }
 
   function colMenu(anchor, b, c) {
     const n = b.rows[0].length;
     showMenu(anchor, [
-      { label: "insert left", run: () => tableChange(b,
+      { label: "insert left", sym: "↤", run: () => tableChange(b,
         () => addColAt(b, c), [0, c]) },
-      { label: "insert right", run: () => tableChange(b,
+      { label: "insert right", sym: "↦", run: () => tableChange(b,
         () => addColAt(b, c + 1), [0, c + 1]) },
-      { label: "duplicate", run: () => tableChange(b, () => {
+      { label: "duplicate", sym: "+", run: () => tableChange(b, () => {
         addColAt(b, c + 1);
         b.rows.forEach(row => { row[c + 1] = row[c]; });
         b.widths[c + 1] = b.widths[c];
         b.colColors[c + 1] = b.colColors[c];
       }) },
-      { label: "move left", run: () => c > 0
+      { label: "move left", sym: "⇠", run: () => c > 0
         && tableChange(b, () => swapCols(b, c, c - 1)) },
-      { label: "move right", run: () => c < n - 1
+      { label: "move right", sym: "⇢", run: () => c < n - 1
         && tableChange(b, () => swapCols(b, c, c + 1)) },
+      { danger: true, sym: "−", label: "delete", run: () => tableChange(b,
+        () => removeCol(b, c)) },
+      { rule: true },
       { heading: "column colour" },
       { active: b.colColors[c], pick: col => tableChange(b, () => {
         b.colColors[c] = col;
-      }), swatches: true },
-      { rule: true },
-      { danger: true, label: "delete column", run: () => tableChange(b,
-        () => removeCol(b, c)) }
+      }), swatches: true }
     ]);
   }
 
@@ -5584,13 +5704,7 @@
       else delete m.dataset.c;
       syncBlock(c);
       updateFmt();
-    }, true));
-    menu.querySelectorAll(".swatch").forEach(s => {
-      if (s.title === "default") {
-        s.title = "teal";
-        s.style.background = "color-mix(in srgb, var(--accent) 30%, var(--bg))";
-      }
-    });
+    }, true, "teal (default)"));
     placeMenu(menu, btn);
   }
 
@@ -6291,32 +6405,16 @@
     return btn;
   }
 
-  // Swatches for no colour and each named colour
-  function swatches(active, pick, tint) {
-    const sw = document.createElement("div");
-    sw.className = "swatches";
-    [null, ...COLOURS].forEach(col => {
-      const s = document.createElement("button");
-      s.className = "swatch" + (active === col ? " active" : "");
-      s.type = "button";
-      s.title = col ? ToolkitSidebar.palette.find(c => c.key === col).name
-        : "default";
-      if (tint) {
-        s.style.background = col
-          ? "color-mix(in srgb, var(--h-" + col + ") 30%, var(--bg))"
-          : "var(--past-bg)";
-      } else {
-        s.textContent = "A";
-        s.style.color = col ? "var(--c-" + col + ")" : "var(--fg)";
-      }
-      s.addEventListener("click", e => {
-        e.stopPropagation();
+  // The shared colour menu: 29 colours and "none". Text colours show an
+  // "a"; fills (tint) are plain
+  function swatches(active, pick, tint, noneLabel) {
+    return ToolkitSidebar.colourPicker({
+      active, heading: false, letter: !tint, noneLabel,
+      onPick: col => {
         hideMenus();
         pick(col);
-      });
-      sw.appendChild(s);
+      }
     });
-    return sw;
   }
 
   function showMenu(anchor, items) {
@@ -6336,32 +6434,7 @@
       } else if (it.swatches) {
         menu.appendChild(swatches(it.active, it.pick, true));
       } else if (it.palette) {
-        const grid = document.createElement("div");
-        grid.className = "palette-grid";
-        ToolkitSidebar.palette.forEach(c => {
-          const b = document.createElement("button");
-          b.type = "button";
-          b.title = c.name;
-          b.setAttribute("aria-label", c.name);
-          b.style.setProperty("--pick", c.hex);
-          if (c.key === it.active) b.classList.add("active");
-          b.addEventListener("click", e => {
-            e.stopPropagation();
-            hideMenus();
-            it.pick(c.key);
-          });
-          grid.appendChild(b);
-        });
-        const none = document.createElement("button");
-        none.type = "button";
-        none.className = "palette-none" + (it.active ? "" : " active");
-        none.textContent = "no colour";
-        none.addEventListener("click", e => {
-          e.stopPropagation();
-          hideMenus();
-          it.pick(null);
-        });
-        menu.append(grid, none);
+        menu.appendChild(swatches(it.active, it.pick, true));
       } else if (it.icons) {
         const grid = document.createElement("div");
         grid.className = "icon-grid";
@@ -6414,10 +6487,6 @@
     typedLine.className = "menu-typed";
     typedLine.hidden = true;
     menu.appendChild(typedLine);
-    const tip = document.createElement("div");
-    tip.className = "menu-tip";
-    tip.textContent = "type / to turn into · enter adds below · backspace deletes";
-    menu.appendChild(tip);
 
     // Actions first: duplicate, copy, move and delete
     const span = () => selectedSpan()
@@ -6455,7 +6524,7 @@
       select([]);
       commit();
     } }));
-    menu.appendChild(menuItem({ label: "copy as markdown", sym: "⧉",
+    menu.appendChild(menuItem({ label: "copy md", sym: "⧉",
       run: () => {
         const sp = span();
         const md = blocksToMd(blocks().slice(sp[0], sp[1]));
@@ -6463,15 +6532,22 @@
         select([]);
         ToolkitSidebar.toast("copied as markdown");
       } }));
-    menu.appendChild(menuItem({ label: "move to another note", sym: "→",
+    menu.appendChild(menuItem({ label: "move", sym: "→",
       run: () => moveToNote(handle, span()) }));
-    menu.appendChild(menuItem({ label: "delete", sym: "−",
-      run: removeBlocks }));
+    menu.appendChild(menuItem({ label: "delete", sym: "−", danger: true,
+      run: () => {
+        // The blocks fold away first
+        const sp = span();
+        const els = blocks().slice(sp[0], sp[1]).map(x =>
+          blocksEl.querySelector('.block[data-id="' + x.id + '"]'));
+        Promise.all(els.map(el => ToolkitSidebar.collapse(el)))
+          .then(removeBlocks);
+      } }));
     rule();
 
     Object.entries(TYPES).forEach(([type, name]) => {
       menu.appendChild(menuItem({ active: b.type === type, label: name,
-        hint: TYPE_HINTS[type], sym: TYPE_SYMS[type],
+        sym: TYPE_SYMS[type],
         run: () => turnInto(type) }));
     });
 
@@ -6514,7 +6590,6 @@
       typedLine.textContent = typed
         + (typed.length > 1 ? (match ? "  →  " + TYPES[match] : "  ·  no match")
           : "");
-      tip.hidden = !!typed;
     };
     menu.addEventListener("keydown", e => {
       // Arrow keys, Enter on a highlighted item and Esc are menuKeys' own
