@@ -98,7 +98,7 @@
     border-radius: 4px;
     color: var(--fg-muted);
     font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 17px;
+    font-size: 1.0625rem;
     font-weight: 600;
     grid-column: 1;
     justify-self: start;
@@ -127,7 +127,7 @@
     border: 1px solid var(--border);
     color: var(--fg-muted);
     cursor: pointer;
-    font-size: 15px;
+    font-size: 0.9375rem;
     padding: 3px 10px;
     border-radius: 4px;
     font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -137,7 +137,7 @@
     color: var(--fg);
   }
   #nav-label {
-    font-size: 15px;
+    font-size: 0.9375rem;
     color: var(--fg);
     font-weight: 600;
     min-width: 180px;
@@ -145,7 +145,7 @@
   }
 
   /* Lowercase headings, toggles and dropdowns */
-  #toolbar, #toolbar button, .section-heading, .toggle-name-input,
+  #toolbar, #toolbar button, #todo-head, .section-heading, .toggle-name-input,
   .add-section-btn, .day-name, .year-month-title {
     text-transform: lowercase;
   }
@@ -156,7 +156,7 @@
     background: var(--sel-bg);
     border: 1px solid var(--sel-bdr);
     color: var(--sel-fg);
-    font-size: 16px;
+    font-size: 1rem;
     padding: 4px 22px 4px 8px;
     border-radius: 4px;
     cursor: pointer;
@@ -186,7 +186,7 @@
     padding: 4px 0;
     z-index: 100;
     min-width: 100%;
-    font-size: 16px;
+    font-size: 1rem;
     font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
   }
   .dropdown.open .dropdown-menu { display: block; }
@@ -306,7 +306,7 @@
     color: var(--fg);
     display: flex;
     flex-direction: column;
-    font-size: 13px;
+    font-size: 0.8125rem;
     min-width: 120px;
     padding: 4px;
     position: fixed;
@@ -347,12 +347,9 @@
   }
 
   /* Task text size for each size option */
-  .size-s { --task-fs: 16px; }
-  .size-m { --task-fs: 18px; }
-  .size-l { --task-fs: 21px; }
-  .size-s .day-tasks { --task-fs: 15px; }
-  .size-m .day-tasks { --task-fs: 17px; }
-  .size-l .day-tasks { --task-fs: 19px; }
+  /* Task text follows the shared size setting (the page's base size) */
+  #app { --task-fs: 1rem; }
+  #app .day-tasks { --task-fs: 0.9375rem; }
 
   /* ---- Task ---- */
   .task {
@@ -472,7 +469,7 @@
   .task .delete-btn {
     background: none; border: none;
     color: var(--fg-muted);
-    cursor: pointer; font-size: 18px;
+    cursor: pointer; font-size: 1.125rem;
     padding: 0 4px; opacity: 0;
     transition: opacity 0.15s;
     margin-top: 1px; flex-shrink: 0;
@@ -520,7 +517,7 @@
     padding: 40px 24px;
   }
   .section-heading {
-    font-size: 17px; font-weight: 600;
+    font-size: 1.0625rem; font-weight: 600;
     color: var(--fg-muted);
     letter-spacing: 0.04em;
     margin-bottom: 16px;
@@ -540,7 +537,7 @@
     margin-bottom: 12px; user-select: none;
   }
   .toggle-arrow {
-    font-size: 14px; color: var(--accent);
+    font-size: 0.875rem; color: var(--accent);
     transition: transform 0.2s ease;
     display: inline-block; width: 14px;
     cursor: pointer; flex-shrink: 0;
@@ -577,7 +574,7 @@
     background: transparent;
     border: none;
     color: var(--accent);
-    font-size: 17px;
+    font-size: 1.0625rem;
     font-weight: 600;
     letter-spacing: 0.04em;
     font-family: 'Segoe UI',
@@ -593,7 +590,7 @@
   .toggle-delete-btn {
     background: none; border: none;
     color: var(--fg-muted);
-    cursor: pointer; font-size: 18px;
+    cursor: pointer; font-size: 1.125rem;
     padding: 0 4px; opacity: 0;
     transition: opacity 0.15s;
   }
@@ -607,7 +604,7 @@
     background: none;
     border: 1px dashed var(--border);
     color: var(--fg-muted);
-    font-size: 16px;
+    font-size: 1rem;
     padding: 8px 16px;
     border-radius: 6px;
     cursor: pointer;
@@ -659,14 +656,21 @@
   .toggle-count {
     color: var(--fg-muted);
     cursor: pointer;
-    font-size: 12px;
+    font-size: 0.75rem;
     margin-right: auto;
     opacity: 0.75;
   }
   .hide-counts .toggle-count { visibility: hidden; }
-  .add-row { display: flex; gap: 10px; margin-bottom: 32px; }
-  .add-row .add-section-btn { margin-bottom: 0; }
-  .add-row .counts-btn { flex-shrink: 0; width: auto; }
+  /* Below the toggles: + add date or range, then the counts switch */
+  .add-row {
+    align-items: center;
+    display: flex;
+    gap: 16px;
+    justify-content: space-between;
+    margin: 8px 0 32px;
+  }
+  .add-row .add-section-btn { margin-bottom: 0; width: auto; }
+  .add-row .counts-btn { flex-shrink: 0; font-size: 0.875rem; }
   .add-row .add-range-input { flex: 1; margin: 0; min-width: 0; }
 
   /* Simple: the prompt above the list */
@@ -726,7 +730,7 @@
     caret-color: var(--accent);
     color: var(--accent);
     font: inherit;
-    font-size: 16px;
+    font-size: 1rem;
     outline: none;
     padding: 8px 16px;
     text-align: center;
@@ -761,7 +765,7 @@
     color: var(--accent);
     cursor: pointer;
     flex: 0 1 auto;
-    font-size: 17px;
+    font-size: 1.0625rem;
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: lowercase;
@@ -791,7 +795,7 @@
 
   /* Week: day and date on one line, dim for past days, teal for today
      and full colour for days to come */
-  #weekly-view .day-name { color: var(--fg); font-size: 16px; }
+  #weekly-view .day-name { color: var(--fg); font-size: 1rem; }
   #weekly-view .day-col.past .day-name { color: var(--fg-muted); }
   #weekly-view .day-col.today .day-name { color: var(--accent); }
 
@@ -800,7 +804,7 @@
     background: color-mix(in srgb, var(--accent) 16%, transparent);
     border-radius: 3px;
     color: var(--accent);
-    font-size: 11px;
+    font-size: 0.6875rem;
     font-weight: 600;
     margin-left: 6px;
     padding: 1px 5px;
@@ -861,12 +865,12 @@
     font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif; flex-shrink: 0;
   }
   .day-name {
-    font-size: 15px; font-weight: 600;
+    font-size: 0.9375rem; font-weight: 600;
     color: var(--fg-muted);
     letter-spacing: 0.04em;
   }
   .day-date {
-    font-size: 19px; font-weight: 600;
+    font-size: 1.1875rem; font-weight: 600;
     color: var(--fg); margin-top: 2px;
   }
   .day-col.today .day-name { color: var(--accent); }
@@ -877,7 +881,7 @@
   }
 
   #month-view .day-header { padding: 8px 4px 6px 6px; }
-  #month-view .day-date { font-size: 19px; }
+  #month-view .day-date { font-size: 1.1875rem; }
   #month-view .day-tasks {
     padding: 4px 4px 4px 6px;
     min-height: 32px;
@@ -917,7 +921,7 @@
     background: var(--today-bg);
   }
   .year-month-title {
-    font-size: 14px; font-weight: 600;
+    font-size: 0.875rem; font-weight: 600;
     color: var(--fg); padding: 8px 5px 8px 7.5px;
     border-bottom: 1px solid var(--border);
     font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -995,6 +999,20 @@
     border-radius: 5px;
   }
 
+  /* The title sits above every view, lined up with its content */
+  #todo-head {
+    margin: 0 auto;
+    max-width: 720px;
+    padding: 40px 24px 0;
+    transition: max-width 0.25s ease;
+  }
+  .width-wide #todo-head { max-width: calc(50% + 360px); }
+  .width-full #todo-head { max-width: 100%; }
+  #todo-head .intro:empty { display: none; }
+  #app #todo-head > .rule.rule { margin: 22px 0 0; }
+  #todo-head ~ #simple-view, #todo-head ~ #dates-view,
+  #todo-head ~ #done-view { padding-top: 24px; }
+
   /* ---- Width options ----
      Every page shares the simple view's widths: 720px boxes with 24px
      either side (672px of content), wide halfway to full, and full.
@@ -1030,7 +1048,7 @@
     background: linear-gradient(var(--head-tint), var(--head-tint)),
       linear-gradient(var(--today-bg), var(--today-bg)), var(--bg);
   }
-  #month-view .month-head .day-name { color: var(--accent); font-size: 13px; }
+  #month-view .month-head .day-name { color: var(--accent); font-size: 0.8125rem; }
 
   /* Month: its own scroll area, set below the toolbar, rounded */
   #month-view {
@@ -1066,6 +1084,13 @@
   </div>
 
   <div id="content">
+    <!-- The title for every view: icon, title, a short subtitle, a rule -->
+    <header class="page-header" id="todo-head">
+      <h1><span class="title-icon" id="todo-icon" aria-hidden="true"></span><span
+        id="todo-title">to dos</span></h1>
+      <p class="intro" id="todo-sub"></p>
+      <hr class="rule">
+    </header>
     <div id="simple-view" class="hidden">
       <div class="simple-prompt"><svg width="22" height="22"
         viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -1837,8 +1862,12 @@
       const mark = isTag ? trimTag(m[2]) : m[2].replace(/[.,;:!?)\]]+$/, "") || m[2];
       if (isTag && mark.length < 2) continue;
       const cls = isTag ? "tag-token" : "mention-token";
+      // A tag wears its colour, as on every page
+      const key = isTag && ToolkitSidebar.tagColour(mark);
+      const hex = key && ToolkitSidebar.colourHex(key);
+      const style = hex ? ' style="--pill:' + hex + '"' : "";
       out += escapeHtml(seg.slice(last, start))
-        + '<span class="' + cls + '">' + escapeHtml(mark) + '</span>';
+        + '<span class="' + cls + '"' + style + '>' + escapeHtml(mark) + '</span>';
       last = start + mark.length;
     }
     return out + escapeHtml(seg.slice(last));
@@ -1906,20 +1935,26 @@
       ? Math.max(8, r.top - h - 4) : r.bottom + 4) + "px";
   }
 
-  // A tag chip's menu: edit (rename it on this task) or remove it from
-  // this task, its text included
-  function openTagMenu(chip, tag, onEdit, onRemove) {
+  // A tag's menu: edit and remove on one line, its colour beneath. Edit
+  // renames the tag on every to do; remove takes it off this one; the
+  // colour is the tag's everywhere in the app.
+  function openTagMenu(chip, tag, onRemove) {
     closeTagMenu();
     tagMenu = document.createElement("div");
-    tagMenu.className = "tag-menu";
+    tagMenu.className = "tag-menu ui-tag-menu";
     tagMenu.setAttribute("role", "menu");
-    const edit = document.createElement("button");
-    edit.type = "button";
-    edit.textContent = "edit";
-    const remove = document.createElement("button");
-    remove.type = "button";
-    remove.className = "danger";
-    remove.textContent = "remove";
+    const actions = document.createElement("div");
+    actions.className = "ui-tag-actions";
+    const item = (label, sym, cls) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "menu-item sym" + (cls ? " " + cls : "");
+      b.innerHTML = '<span class="m-sym">' + sym + '</span><span class="m-name"></span>';
+      b.querySelector(".m-name").textContent = label;
+      return b;
+    };
+    const edit = item("edit", "✎");
+    const remove = item("remove", "−", "danger");
     edit.addEventListener("click", () => {
       const input = document.createElement("input");
       input.value = tag.replace(/^#/, "");
@@ -1932,7 +1967,7 @@
           e.preventDefault();
           const name = input.value.trim().replace(/^#+/, "").replace(/\s+/g, "-");
           closeTagMenu();
-          if (name && "#" + name !== tag) onEdit("#" + name);
+          if (name && "#" + name !== tag) renameTagEverywhere(tag, "#" + name);
         } else if (e.key === "Escape") {
           e.preventDefault();
           closeTagMenu();
@@ -1944,10 +1979,43 @@
       closeTagMenu();
       onRemove();
     });
-    tagMenu.append(edit, remove);
+    actions.append(edit, remove);
+    const rule = document.createElement("div");
+    rule.className = "menu-rule";
+    const picker = ToolkitSidebar.colourPicker({
+      active: ToolkitSidebar.tagColour(tag),
+      onPick: key => {
+        closeTagMenu();
+        ToolkitSidebar.setTagColour(tag, key);
+      }
+    });
+    tagMenu.append(actions, rule, picker);
     placeFloat(tagMenu, chip);
     edit.focus();
   }
+
+  // Rename a tag on every to do (text and kept tags), keeping its colour
+  function renameTagEverywhere(from, to) {
+    const data = loadData();
+    const lower = from.toLowerCase();
+    allLists(data).forEach(([, list]) => (list || []).forEach(t => {
+      const had = allTaskTags(t, t.text).some(x => x.toLowerCase() === lower);
+      if (!had) return;
+      t.text = swapTagInText(t.text, from, to);
+      t.tags = allTaskTags(t, t.text)
+        .map(x => x.toLowerCase() === lower ? to : x)
+        .filter((x, i, all) => all.indexOf(x) === i);
+    }));
+    saveData(data);
+    ToolkitSidebar.renameTagColour(from, to);
+    renderCurrentView();
+  }
+
+  // Tag colours changed here or on another page: redraw
+  document.addEventListener("tag-colours", () => {
+    closeTagMenu();
+    renderCurrentView();
+  });
 
   document.addEventListener("pointerdown", e => {
     if (tagMenu && !tagMenu.contains(e.target)
@@ -2180,6 +2248,7 @@
 
         // Calendar views add a blank task on Enter
         if (opts.noPlaceholder) pendingAdd = opts.listKey;
+        markGrow();
         onUpdate();
         renderCurrentView();
         focusLast(opts.listKey);
@@ -2195,8 +2264,10 @@
     const del = document.createElement("button");
     del.className = "delete-btn";
     del.textContent = "\u00d7";
-    del.addEventListener("click", () => {
+    del.addEventListener("click", async () => {
       const before = localStorage.getItem(STORAGE_KEY);
+      // The row folds away before it goes
+      await ToolkitSidebar.collapse(div);
       onDelete(task);
       if (window.ToolkitSidebar) {
         ToolkitSidebar.toast("to do deleted", () => {
@@ -2226,20 +2297,12 @@
         const chip = document.createElement("button");
         chip.className = "tag-chip";
         chip.textContent = tag;
+        ToolkitSidebar.paintTag(chip, tag);
         {
           chip.type = "button";
-          chip.title = "edit or remove " + tag;
           chip.addEventListener("click", e => {
             e.stopPropagation();
-            openTagMenu(chip, tag, name => {
-              task.tags = allTaskTags(task, txt.value)
-                .map(t => t === tag ? name : t)
-                .filter((t, i, all) => all.indexOf(t) === i);
-              task.text = swapTagInText(task.text, tag, name);
-              txt.value = task.text;
-              syncHighlight();
-              onUpdate();
-            }, () => {
+            openTagMenu(chip, tag, () => {
               task.tags = allTaskTags(task, txt.value).filter(t => t !== tag);
               task.text = swapTagInText(task.text, tag, "");
               txt.value = task.text;
@@ -2424,7 +2487,24 @@
   // directly beneath; at the very start, a blank task goes above
   let pendingAt = null;
 
+  // A row added with Enter grows in when its blank box takes the focus
+  let growNextBlank = false;
+  document.addEventListener("focusin", e => {
+    if (!growNextBlank) return;
+    const t = e.target;
+    if (t.tagName !== "TEXTAREA" || t.value !== "") return;
+    growNextBlank = false;
+    const row = t.closest(".task");
+    if (row) ToolkitSidebar.grow(row);
+  });
+
+  function markGrow() {
+    growNextBlank = true;
+    setTimeout(() => { growNextBlank = false; }, 250);
+  }
+
   function enterAt(task, opts, before, after) {
+    markGrow();
     const data = loadData();
     const list = getList(data, opts.listKey);
     const i = opts.index;
@@ -2760,9 +2840,10 @@
       del.className = "toggle-delete-btn";
       del.textContent = "×";
       del.title = "remove this date or range";
-      del.addEventListener("click", e => {
+      del.addEventListener("click", async e => {
         e.stopPropagation();
         const before = localStorage.getItem(STORAGE_KEY);
+        await ToolkitSidebar.collapse(del.closest(".toggle-section"));
         data.dateSections = data.dateSections.filter(c => c.id !== sec.id);
         saveData(data);
         renderDates();
@@ -2852,6 +2933,7 @@
         },
         section: sec.id
       });
+      row.classList.add("ui-grow");
       el.after(row);
       setTimeout(() => row.querySelector("textarea").focus(), 0);
     }
@@ -2916,6 +2998,10 @@
 
     section.appendChild(header);
     section.appendChild(body);
+    if (grownSection && grownSection === sec.id) {
+      grownSection = null;
+      section.classList.add("ui-grow");
+    }
     el.appendChild(section);
   }
 
@@ -2939,8 +3025,10 @@
             input.title = "try a day, month, or range such as 1 nov to 7 nov";
             return;
           }
-          data.dateSections.push({ id: "d_" + Date.now(), spec });
+          const id = "d_" + Date.now();
+          data.dateSections.push({ id, spec });
           saveData(data);
+          grownSection = id;
         }
         renderDates();
       };
@@ -2955,15 +3043,17 @@
         if (!input.value.trim()) renderDates();
       });
     });
-    // Show or hide how many items each section holds
+    // An on/off switch: hide how many items each section holds
     const counts = document.createElement("button");
-    counts.className = "add-section-btn counts-btn";
+    counts.type = "button";
+    counts.className = "ui-switch counts-btn";
     const shown = () => localStorage.getItem(COUNTS_KEY) !== "0";
-    counts.textContent = shown() ? "hide counts" : "show counts";
+    counts.textContent = "hide counts";
+    counts.setAttribute("aria-pressed", String(!shown()));
     counts.addEventListener("click", () => {
       localStorage.setItem(COUNTS_KEY, shown() ? "0" : "1");
       el.classList.toggle("hide-counts", !shown());
-      counts.textContent = shown() ? "hide counts" : "show counts";
+      counts.setAttribute("aria-pressed", String(!shown()));
     });
 
     const row = document.createElement("div");
@@ -2973,6 +3063,8 @@
   }
 
   const COUNTS_KEY = "todo-show-counts";
+  // A date section just added, which grows in when drawn
+  let grownSection = null;
 
   function renderDatesAnimated() {
     const el = document.getElementById("dates-view");
@@ -3083,12 +3175,13 @@
       buildSection(el, sec, buckets[sec.id].sort(byOrder), data, tState,
         { addable: true, showDate: sec.range.start < sec.range.end });
     });
-    buildAddRange(el, data);
     buildSection(el, { id: "to-schedule", name: "To schedule", token: "" },
       toSchedule.sort(byOrder), data, tState,
       { addable: true, cls: "toggle-muted" });
     buildSection(el, { id: "_done", name: "Done" },
       done.sort(byDoneAt), data, tState, { cls: "toggle-done" });
+    // Adding a range and hiding counts sit below all the toggles
+    buildAddRange(el, data);
 
     // Keep typing beneath the task just added with Enter
     if (datesAfter) {
@@ -3672,7 +3765,7 @@
 
       const header = document.createElement("div");
       header.className = "day-header";
-      header.innerHTML = '<div class="day-date" style="font-size:14px;">'
+      header.innerHTML = '<div class="day-date" style="font-size:0.875rem;">'
         + (date.getDate() === 1
           ? "1 " + MONTH_NAMES[date.getMonth()].slice(0, 3).toLowerCase()
           : date.getDate())
@@ -3919,8 +4012,27 @@
     if (currentView === "month")   renderMonth();
     if (currentView === "year")    renderYear();
     if (currentView === "done")    renderDone();
+    renderHead();
     if (switched) restoreScroll();
   }
+
+  // Each view's title and subtitle; the calendars show their period
+  function renderHead() {
+    const heads = {
+      simple: ["to dos", ""], dates: ["to dos", "what's coming up"],
+      done: ["done", "what you've finished"], weekly: ["to dos", null],
+      month: ["to dos", null], year: ["to dos", null]
+    };
+    const [title, sub] = heads[currentView] || heads.simple;
+    document.getElementById("todo-icon").innerHTML =
+      ToolkitSidebar.icon(currentView === "done" ? "done" : "todos");
+    document.getElementById("todo-title").textContent = title;
+    document.getElementById("todo-sub").textContent =
+      sub === null ? navLabel.textContent : sub;
+  }
+  // Moving through weeks, months or years updates the subtitle
+  new MutationObserver(() => renderHead()).observe(navLabel,
+    { characterData: true, childList: true, subtree: true });
 
   // ---- Remember scroll (simple, dates, year, done) ----
 

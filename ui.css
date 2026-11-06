@@ -1,34 +1,860 @@
-/* ---- Shared look for pill and option buttons ----
-   Loaded after each page's own styles. Pills and square option buttons
-   have a light, semi-transparent teal fill with teal text; hovering
-   strengthens it, and a selected one has a stronger teal fill, with dark
-   teal text in light mode. The :not(#_) adds an id's weight, so these win
-   over each page's own button rules.
+/* ==== Shared look for every page ====
+   Loaded after each page's own styles, so these rules set the standard.
+   :not(#_) and :not(#__) add one or two ids' weight, so they win over
+   the pages' own button rules without !important.
 
-   Timekeeper tag and calendar pills (.choice) keep their own colours. */
+   Contents
+     1. Tokens            6. Checkboxes, switches, sliders
+     2. Pills             7. Menus and colour pickers
+     3. Squish, motion    8. Tooltip, toast, dialog
+     4. Headings, titles  9. Scrollbars
+     5. Inputs           10. Icon buttons, empty states, drag        */
 
-:is(.set-opt, .side-opt, .option, .list-actions button, .min-btn,
-    .backup-actions button:not(.danger)):not(#_) {
-  background: color-mix(in srgb, var(--accent) 8%, transparent);
-  border-color: color-mix(in srgb, var(--accent) 38%, transparent);
-  color: var(--accent);
+
+/* ---- 1. Tokens ---- */
+
+/* Text size: one base size for every page and view (small, medium,
+   large). Pages size their text in rem, so everything follows it. */
+html:has(.size-s) { font-size: 14px; }
+html:has(.size-m) { font-size: 16px; }
+html:has(.size-l) { font-size: 18px; }
+
+@property --ui-thumb {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
 }
 
-:is(.set-opt, .side-opt, .option, .list-actions button, .min-btn,
-    .backup-actions button:not(.danger)):not(#_):is(:hover, :focus-visible):not(:disabled) {
-  background: color-mix(in srgb, var(--accent) 16%, transparent);
-  border-color: var(--accent);
+:root {
+  --ui-r-sm: 6px;            /* checkboxes, tags in text, small chips */
+  --ui-r-md: 10px;           /* cards, menus, dialogs */
+  --ui-r-full: 999px;        /* pills, inputs, round controls */
+  --ui-fs-xs: 0.75rem;
+  --ui-fs-sm: 0.875rem;
+  --ui-fs-md: 1rem;
+  --ui-fs-lg: 1.25rem;
+  --ui-fs-xl: 1.75rem;
+  --ui-fast: 0.15s;          /* hovers and colour */
+  --ui-slow: 0.3s;           /* entries, folds, rows */
+  --ui-gap-section: 28px;    /* between sections and around rules */
+
+  /* For pieces placed outside a page's #app (menus, tooltip, toast) */
+  --ui-accent: #7fdbca;
+  --ui-surface: #01111f;
+  --ui-border: #1e3a52;
+  --ui-fg: #d6deeb;
+  --ui-muted: #7d8b9a;
+  --ui-heading: #ffffff;
+  --ui-subtitle: #7fa3a2;
+  --ui-danger: #ef6b73;
+  --ui-shadow-menu: 0 6px 20px rgba(0, 0, 0, 0.4);
+  --ui-shadow-dialog: 0 18px 50px rgba(0, 0, 0, 0.55);
+  --ui-thumb-on: color-mix(in srgb, #7fdbca 40%, #1e3a52);
+}
+:root[data-mode="light"], .t-light {
+  --ui-accent: #0c9e9a;
+  --ui-surface: #f6fafa;
+  --ui-border: #a3c4c6;
+  --ui-fg: #24292e;
+  --ui-muted: #5d6873;
+  --ui-heading: #086b69;
+  --ui-subtitle: #4f7f7e;
+  --ui-danger: #c93441;
+  --ui-shadow-menu: 0 6px 20px rgba(36, 70, 75, 0.18);
+  --ui-shadow-dialog: 0 18px 50px rgba(36, 70, 75, 0.28);
+  --ui-thumb-on: color-mix(in srgb, #0c9e9a 45%, #a3c4c6);
+}
+.t-dark {
+  --ui-heading: #ffffff;
+  --ui-subtitle: #7fa3a2;
+  --ui-danger: #ef6b73;
+}
+
+
+/* ---- 2. Pills ----
+   Every text button is a pill. --pill sets its colour (teal unless a tag,
+   calendar or danger action gives another).
+     unselected: light fill, border and text in its colour
+     hover:      stronger fill, full-colour border
+     selected:   solid fill the colour of its border, white text
+     disabled:   40% opacity, no hover, no squish                        */
+
+:is(.ui-pill,
+    /* focus */ .set-opt, .min-btn, #c-pick, #c-back,
+    /* notes */ .side-opt, .text-btn, .code-bar button, .sort-bar button,
+                .add-tag, .gal-new-btn,
+    /* to-dos */ #toolbar #nav-controls button, .add-section-btn,
+    /* timekeeper */ .option, .choice, .list-actions button,
+                .side-actions button, .tag-form button, .pie-pager button,
+                .tag-color-actions button, .tag-delete-warning button,
+    /* help */ .backup-actions button, .help-actions button,
+    /* shared */ #tk-toast button, .tk-modal .tkm-pills .tkm-choice,
+                .tk-ap-pill
+):not(#_):not(#__) {
+  --pill-c: var(--pill, var(--accent, var(--ui-accent)));
+  --pill-solid: color-mix(in srgb, var(--pill-c) 78%, #000);
+  /* No display here: pages show and hide their buttons with it */
+  background: color-mix(in srgb, var(--pill-c) 9%, transparent);
+  border: 1px solid color-mix(in srgb, var(--pill-c) 42%, transparent);
+  border-radius: var(--ui-r-full);
+  color: var(--pill-c);
+  cursor: pointer;
+  font-family: inherit;
+  line-height: 1.2;
+  padding: 5px 12px;
+  text-transform: lowercase;
+  transition: background var(--ui-fast), border-color var(--ui-fast),
+    color var(--ui-fast), opacity var(--ui-fast);
+}
+/* Light mode: text a shade darker so pale colours stay readable */
+:is(.t-light, [data-mode="light"] body:not(:has(#app)))
+  :is(.ui-pill, .set-opt, .min-btn, #c-pick, #c-back, .side-opt, .text-btn,
+      .code-bar button, .sort-bar button, .add-tag, .gal-new-btn,
+      #toolbar #nav-controls button, .add-section-btn, .option, .choice,
+      .list-actions button, .side-actions button,
+      .tag-form button, .pie-pager button, .tag-color-actions button,
+      .tag-delete-warning button, .backup-actions button,
+      .help-actions button):not(#_):not(#__) {
+  color: color-mix(in srgb, var(--pill-c) 74%, #000);
+}
+
+:is(.ui-pill, .set-opt, .min-btn, #c-pick, #c-back, .side-opt, .text-btn,
+    .code-bar button, .sort-bar button, .add-tag, .gal-new-btn,
+    #toolbar #nav-controls button, .add-section-btn, .option, .choice,
+    .list-actions button, .side-actions button,
+    .tag-form button, .pie-pager button, .tag-color-actions button,
+    .tag-delete-warning button, .backup-actions button, .help-actions button,
+    #tk-toast button, .tk-modal .tkm-pills .tkm-choice, .tk-ap-pill
+):not(#_):not(#__):is(:hover, :focus-visible):not(:disabled) {
+  background: color-mix(in srgb, var(--pill-c) 18%, transparent);
+  border-color: var(--pill-c);
   outline: none;
 }
+:is(.ui-pill, .set-opt, .min-btn, #c-pick, #c-back, .side-opt, .text-btn,
+    .code-bar button, .sort-bar button, .add-tag, .gal-new-btn,
+    #toolbar #nav-controls button, .add-section-btn, .option, .choice,
+    .list-actions button, .side-actions button,
+    .tag-form button, .pie-pager button, .tag-color-actions button,
+    .tag-delete-warning button, .backup-actions button, .help-actions button,
+    #tk-toast button, .tk-modal .tkm-pills .tkm-choice, .tk-ap-pill
+):not(#_):not(#__):focus-visible {
+  box-shadow: 0 0 0 2px var(--ui-accent);
+}
 
-/* Two ids' weight, so selected stays strong over the base and hover */
-:is(.set-opt, .side-opt, .option, .min-btn):not(#_):not(#__):is([aria-pressed="true"], .on, .active) {
-  background: color-mix(in srgb, var(--accent) 36%, transparent);
+/* Selected, and primary actions (always shown selected) */
+:is(.ui-pill, .set-opt, .min-btn, #c-pick, #c-back, .side-opt, .text-btn,
+    .code-bar button, .sort-bar button, .add-tag, .gal-new-btn,
+    #toolbar #nav-controls button, .add-section-btn, .option, .choice,
+    .list-actions button, .side-actions button,
+    .tag-form button, .pie-pager button, .tag-color-actions button,
+    .tag-delete-warning button, .backup-actions button, .help-actions button,
+    #tk-toast button, .tk-modal .tkm-pills .tkm-choice, .tk-ap-pill
+):not(#_):not(#__):is([aria-pressed="true"], .on, .active, .selected,
+                       .primary, [type="submit"]),
+:is(.t-light, [data-mode="light"] body:not(:has(#app)))
+  :is(.ui-pill, .set-opt, .min-btn, #c-pick, #c-back, .side-opt, .text-btn,
+      .code-bar button, .sort-bar button, .add-tag, .gal-new-btn,
+      #toolbar #nav-controls button, .add-section-btn, .option, .choice,
+      .list-actions button, .side-actions button,
+      .tag-form button, .pie-pager button, .tag-color-actions button,
+      .tag-delete-warning button, .backup-actions button,
+      .help-actions button):not(#_):not(#__):is([aria-pressed="true"], .on,
+        .active, .selected, .primary, [type="submit"]) {
+  background: var(--pill-solid);
+  border-color: var(--pill-solid);
+  color: var(--pill-ink, #ffffff);
+  opacity: 1;
+}
+
+/* Destructive: a red pill that goes solid on hover or press */
+:is(.ui-pill, .text-btn, .backup-actions button, .help-actions button,
+    .tag-delete-warning button, .tk-modal .tkm-pills .tkm-choice
+):not(#_):not(#__):is(.danger, .armed) {
+  --pill: var(--ui-danger);
+}
+:is(.ui-pill, .text-btn, .backup-actions button, .help-actions button,
+    .tag-delete-warning button, .tk-modal .tkm-pills .tkm-choice
+):not(#_):not(#__):is(.danger, .armed):is(:hover, :active, :focus-visible) {
+  background: var(--pill-solid);
+  border-color: var(--pill-solid);
+  color: #ffffff;
+}
+
+:is(.ui-pill, .set-opt, .min-btn, #c-pick, #c-back, .side-opt, .text-btn,
+    .code-bar button, .sort-bar button, .add-tag, .gal-new-btn,
+    #toolbar #nav-controls button, .add-section-btn, .option, .choice,
+    .list-actions button, .side-actions button,
+    .tag-form button, .pie-pager button, .tag-color-actions button,
+    .tag-delete-warning button, .backup-actions button, .help-actions button
+):not(#_):not(#__):disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+/* Pale colours (white, silver) take dark text when solid */
+.ui-ink-dark { --pill-ink: #202327; }
+
+
+/* ---- 3. Squish and motion ---- */
+@keyframes ui-press {
+  0%   { scale: 1; }
+  35%  { scale: 0.9; }
+  70%  { scale: 1.05; }
+  100% { scale: 1; }
+}
+.press:not(#_):not(#__) { animation: ui-press 0.3s ease; }
+
+/* Arrivals: a fade and a ~6px rise */
+@keyframes ui-rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes ui-pop {
+  from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .press:not(#_):not(#__) { animation: none; }
+}
+
+
+/* ---- 4. Headings, title panels and sections ---- */
+
+/* Headings: dark teal in light mode, white in dark mode. Toggle titles
+   (+/−) stay accent teal. */
+#app :is(h1, h2, h3, #day, .side-title, .today-title, .side-heading,
+         .section-label, .gal-label, .side-label, .view-field-heading,
+         .list-heading, .pick-label, .section-heading, .year-month-title,
+         .legend-total):not(#_),
+body:not(:has(#app)) :is(h1, h2, h3):not(#_) {
+  color: var(--ui-heading);
+}
+/* Toggles keep the accent; their headings are toggles, not titles */
+#app :is(.list-heading[aria-pressed="true"]):not(#_) { color: var(--accent); }
+
+/* Title panel subtitles: smaller, a quieter teal than the accent */
+#app :is(#today-date, .gal-header .intro, .page-header .intro):not(#_),
+body:not(:has(#app)) .intro:not(#_) {
+  color: var(--ui-subtitle);
+  font-size: 0.95em;
+  font-style: normal;
+}
+
+/* Section headings: small and lowercase */
+#app :is(.section-label, .gal-label, .side-label):not(#_) {
+  font-size: 0.85em;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: lowercase;
+}
+
+/* Sections are separated by rules, with the same space around each */
+#app :is(.rule, .gal-rule, main hr):not(#_) {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: var(--ui-gap-section) 0;
+}
+
+
+/* ---- 5. Inputs, selects and search boxes ----
+   The pill shape and height, a neutral border that turns teal on focus */
+:is(#search, #pick-input, .add-range-input, .tag-form input, .tag-menu input,
+    .tkm-input, .set-field input:not([type="range"]), .dropdown-btn, .date-trigger,
+    #app select, .ui-input):not(#_):not(#__) {
+  background: transparent;
+  border: 1px solid var(--border, var(--ui-border));
+  border-radius: var(--ui-r-full);
+  color: var(--fg, var(--ui-fg));
+  outline: none;
+  padding: 6px 14px;
+  transition: border-color var(--ui-fast), box-shadow var(--ui-fast);
+}
+:is(#search, #pick-input, .add-range-input, .tag-form input, .tag-menu input,
+    .tkm-input, .set-field input:not([type="range"]), .dropdown-btn, .date-trigger,
+    #app select, .ui-input):not(#_):not(#__):is(:focus, :focus-visible) {
+  border-color: var(--accent, var(--ui-accent));
+  box-shadow: 0 0 0 1px var(--accent, var(--ui-accent));
+}
+.dropdown-btn:not(#_):not(#__) { padding-right: 26px; }
+.dropdown-btn:not(#_):not(#__):hover { border-color: var(--accent); }
+
+
+/* ---- 6. Checkboxes, switches and sliders ---- */
+
+/* Task ticks are round: teal ring, solid teal with a white tick when done */
+:is(.task input[type="checkbox"], .marker input[type="checkbox"],
+    #focal-done, .ui-tick):not(#_):not(#__) {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background var(--ui-fast), border-color var(--ui-fast);
+}
+/* Positioned for the tick, without overriding pages that place it */
+:where(.task input[type="checkbox"], .marker input[type="checkbox"],
+       #focal-done, .ui-tick) {
+  position: relative;
+}
+:is(.task input[type="checkbox"], .marker input[type="checkbox"],
+    #focal-done, .ui-tick):not(#_):not(#__):checked {
+  background: var(--accent);
   border-color: var(--accent);
-  color: var(--fg);
+}
+:is(.task input[type="checkbox"], .marker input[type="checkbox"],
+    #focal-done, .ui-tick):not(#_):not(#__):checked::after {
+  border: solid #ffffff;
+  border-width: 0 2px 2px 0;
+  content: "";
+  height: 45%;
+  left: 50%;
+  position: absolute;
+  top: 44%;
+  transform: translate(-50%, -60%) rotate(45deg);
+  width: 22%;
+}
+/* Settings checkboxes are square */
+.ui-check:not(#_):not(#__) {
+  -webkit-appearance: none;
+  appearance: none;
+  border: 2px solid var(--accent);
+  border-radius: 4px;
+  cursor: pointer;
+  height: 16px;
+  position: relative;
+  width: 16px;
+}
+.ui-check:not(#_):not(#__):checked { background: var(--accent); }
+.ui-check:not(#_):not(#__):checked::after {
+  border: solid #ffffff;
+  border-width: 0 2px 2px 0;
+  content: "";
+  height: 8px;
+  left: 4px;
+  position: absolute;
+  top: 1px;
+  transform: rotate(45deg);
+  width: 4px;
 }
 
-/* Light mode: selected text in dark teal */
-.t-light :is(.set-opt, .side-opt, .option, .min-btn):not(#_):not(#__):is([aria-pressed="true"], .on, .active) {
-  color: #086b69;
+/* On/off settings: a switch beside its label */
+.ui-switch:not(#_):not(#__) {
+  align-items: center;
+  background: none;
+  border: none;
+  color: var(--fg);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  gap: 10px;
+  padding: 2px 0;
+  text-transform: lowercase;
 }
+.ui-switch:not(#_):not(#__)::before {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: var(--ui-r-full);
+  content: "";
+  flex-shrink: 0;
+  height: 18px;
+  order: -1;
+  transition: background var(--ui-fast), border-color var(--ui-fast);
+  width: 32px;
+}
+.ui-switch:not(#_):not(#__)::after {
+  background: var(--accent);
+  border-radius: 50%;
+  content: "";
+  height: 12px;
+  left: 4px;
+  position: absolute;
+  transition: transform var(--ui-fast), background var(--ui-fast);
+  width: 12px;
+}
+.ui-switch:not(#_):not(#__) { position: relative; }
+.ui-switch:not(#_):not(#__)[aria-pressed="true"]::before {
+  background: color-mix(in srgb, var(--accent) 78%, #000);
+  border-color: color-mix(in srgb, var(--accent) 78%, #000);
+}
+.ui-switch:not(#_):not(#__)[aria-pressed="true"]::after {
+  background: #ffffff;
+  transform: translateX(14px);
+}
+.ui-switch:not(#_):not(#__):hover::before { border-color: var(--accent); }
+.ui-switch:not(#_):not(#__):focus-visible { outline: none; }
+.ui-switch:not(#_):not(#__):focus-visible::before {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+/* Sliders: a thin neutral track, filled teal to the knob */
+input[type="range"]:not(#_):not(#__) {
+  --fill: 50%;
+  -webkit-appearance: none;
+  appearance: none;
+  background: linear-gradient(to right,
+    var(--accent, var(--ui-accent)) 0 var(--fill),
+    var(--border, var(--ui-border)) var(--fill) 100%);
+  border-radius: var(--ui-r-full);
+  cursor: pointer;
+  height: 4px;
+  outline: none;
+}
+input[type="range"]:not(#_):not(#__)::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--accent, var(--ui-accent));
+  border: none;
+  border-radius: 50%;
+  height: 14px;
+  transition: transform var(--ui-fast);
+  width: 14px;
+}
+input[type="range"]:not(#_):not(#__)::-moz-range-thumb {
+  background: var(--accent, var(--ui-accent));
+  border: none;
+  border-radius: 50%;
+  height: 14px;
+  width: 14px;
+}
+input[type="range"]:not(#_):not(#__):is(:hover, :active, :focus-visible)::-webkit-slider-thumb {
+  transform: scale(1.3);
+}
+input[type="range"]:not(#_):not(#__):focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, var(--ui-accent)) 35%, transparent);
+}
+
+
+/* ---- 7. Menus ----
+   A surface card with a thin border, soft shadow and 10px corners; rows
+   turn light teal on hover; thin rules between groups. Text actions sit
+   in two columns; headings, rules and pickers span both. */
+:is(.menu, .tag-menu, .tag-suggest, .dropdown-menu, .tag-picker-popover,
+    .ui-menu):not(#_):not(#__) {
+  animation: ui-pop 0.14s ease both;
+  background: var(--bg-surface, var(--ui-surface));
+  border: 1px solid var(--border, var(--ui-border));
+  border-radius: var(--ui-r-md);
+  box-shadow: var(--ui-shadow-menu);
+  color: var(--fg, var(--ui-fg));
+  padding: 6px;
+}
+:is(.menu, .tag-menu, .dropdown-menu, .ui-menu):not(#_):not(#__) {
+  column-gap: 2px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(max-content, 1fr));
+  row-gap: 1px;
+}
+.dropdown.open .dropdown-menu:not(#_):not(#__) { display: grid; }
+:is(.menu, .tag-menu, .dropdown-menu, .ui-menu):not(#_):not(#__)
+  > :not(.menu-item, .dropdown-item, .ui-menu-item) {
+  grid-column: 1 / -1;
+}
+:is(.menu-item, .tag-suggest button, .dropdown-item,
+    .ui-menu-item):not(#_):not(#__) {
+  background: none;
+  border: none;
+  border-radius: var(--ui-r-sm);
+  color: var(--fg, var(--ui-fg));
+  cursor: pointer;
+  font: inherit;
+  padding: 5px 10px 5px 8px;
+  text-align: left;
+  transition: background var(--ui-fast), color var(--ui-fast);
+}
+:is(.menu-item, .tag-suggest button, .dropdown-item,
+    .ui-menu-item):not(#_):not(#__):is(:hover, :focus-visible, .hl) {
+  background: color-mix(in srgb, var(--accent, var(--ui-accent)) 14%, transparent);
+  outline: none;
+}
+:is(.menu-item, .dropdown-item, .ui-menu-item):not(#_):not(#__).active {
+  color: var(--accent, var(--ui-accent));
+}
+/* Delete is always last, in red */
+:is(.menu-item, .ui-menu-item):not(#_):not(#__).danger {
+  color: var(--ui-danger);
+}
+:is(.menu-item, .ui-menu-item):not(#_):not(#__).danger:is(:hover, :focus-visible) {
+  background: color-mix(in srgb, var(--ui-danger) 15%, transparent);
+}
+:is(.menu-rule, .ui-menu-rule):not(#_):not(#__) {
+  background: var(--border, var(--ui-border));
+  height: 1px;
+  margin: 5px 4px;
+}
+:is(.menu-label, .ui-menu-label):not(#_):not(#__) {
+  color: var(--ui-heading);
+  font-size: var(--ui-fs-xs);
+  font-weight: 600;
+  padding: 4px 8px 2px;
+  text-transform: lowercase;
+}
+
+/* A symbol before each action, close to its label */
+.menu-item.sym:not(#_):not(#__),
+.ui-menu-item:not(#_):not(#__) {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+}
+.menu-item .m-sym:not(#_):not(#__),
+.ui-menu-item .m-sym:not(#_):not(#__) {
+  color: var(--accent, var(--ui-accent));
+  flex: 0 0 auto;
+  min-width: 1em;
+  text-align: center;
+  width: auto;
+}
+.menu-item.danger .m-sym:not(#_):not(#__),
+.ui-menu-item.danger .m-sym:not(#_):not(#__) { color: var(--ui-danger); }
+
+/* Colour pickers: 29 colours and "none", six to a row. Each is a pill in
+   its colour: light fill and border, solid when chosen. Text colours show
+   an "a". */
+.ui-colours:not(#_):not(#__) {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(6, 26px);
+  justify-content: start;
+  padding: 4px 6px 6px;
+}
+.ui-colours button:not(#_):not(#__) {
+  --pill-solid: color-mix(in srgb, var(--pill) 82%, #000);
+  align-items: center;
+  background: color-mix(in srgb, var(--pill) 62%, transparent);
+  border: 1.5px solid var(--pill);
+  border-radius: 50%;
+  color: var(--pill);
+  cursor: pointer;
+  display: flex;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1;
+  height: 26px;
+  justify-content: center;
+  padding: 0;
+  transition: background var(--ui-fast), border-color var(--ui-fast);
+  width: 26px;
+}
+.t-light .ui-colours button:not(#_):not(#__),
+[data-mode="light"] .ui-colours button:not(#_):not(#__) {
+  color: color-mix(in srgb, var(--pill) 72%, #000);
+}
+.ui-colours button:not(#_):not(#__):is(:hover, :focus-visible) {
+  background: color-mix(in srgb, var(--pill) 85%, transparent);
+  outline: none;
+}
+/* Text colours show an "a" on a light fill, as a pill */
+.ui-colours button.letter:not(#_):not(#__) {
+  background: color-mix(in srgb, var(--pill) 18%, transparent);
+}
+.ui-colours button.letter:not(#_):not(#__):is(:hover, :focus-visible) {
+  background: color-mix(in srgb, var(--pill) 34%, transparent);
+}
+/* Charcoal and black need an outline to show on dark backgrounds */
+.t-dark .ui-colours button.deep:not(#_):not(#__),
+:root[data-mode="dark"] .ui-colours button.deep:not(#_):not(#__) {
+  border-color: #8a929b;
+}
+.ui-colours button:not(#_):not(#__).active {
+  background: var(--pill-solid);
+  border-color: var(--pill-solid);
+  box-shadow: 0 0 0 2px var(--bg-surface, var(--ui-surface)),
+    0 0 0 3.5px var(--fg, var(--ui-fg));
+  color: var(--pill-ink, #ffffff);
+}
+/* White and silver are pale even when solid */
+.ui-colours button.pale:not(#_):not(#__) { --pill-ink: #202327; }
+.t-light .ui-colours button.pale:not(#_):not(#__) {
+  border-color: color-mix(in srgb, #55595f 45%, transparent);
+}
+/* "none": a light outline, no fill */
+.ui-colours button.none:not(#_):not(#__) {
+  background: transparent;
+  border: 1.5px dashed var(--border, var(--ui-border));
+  color: var(--fg-muted, var(--ui-muted));
+}
+.ui-colours button.none:not(#_):not(#__):is(:hover, :focus-visible) {
+  border-color: var(--accent, var(--ui-accent));
+}
+.ui-colours button.none:not(#_):not(#__).active {
+  border: 2px solid var(--accent, var(--ui-accent));
+}
+
+
+/* ---- 8. Tooltip, toast and dialog ---- */
+
+/* One small dark tooltip in both modes */
+#ui-tip {
+  background: #0b1a28;
+  border-radius: var(--ui-r-sm);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  color: #e8eef5;
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: var(--ui-fs-xs);
+  line-height: 1.35;
+  max-width: 260px;
+  opacity: 0;
+  padding: 4px 8px;
+  pointer-events: none;
+  position: fixed;
+  text-transform: lowercase;
+  transform: translateY(3px);
+  transition: opacity var(--ui-fast), transform var(--ui-fast);
+  z-index: 3000;
+}
+#ui-tip.below { transform: translateY(-3px); }
+#ui-tip.show { opacity: 1; transform: none; }
+
+/* The toast: bottom centre, in the page's mode */
+#tk-toast:not(#_) {
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-r-md);
+  box-shadow: var(--ui-shadow-menu);
+  color: var(--ui-fg);
+  font-size: var(--ui-fs-sm);
+  padding: 7px 8px 7px 16px;
+}
+#tk-toast button:not(#_):not(#__) {
+  --pill: var(--ui-accent);
+  padding: 3px 11px;
+}
+
+/* Dialog: plain choices are pills on the right, the action last */
+.tk-modal .tkm-box:not(#_) {
+  border-radius: var(--ui-r-md);
+  box-shadow: var(--ui-shadow-dialog);
+}
+.tk-modal .tkm-box h2:not(#_) { color: var(--ui-heading); }
+.tk-modal .tkm-buttons.tkm-pills:not(#_) { justify-content: flex-end; }
+.tk-modal .tkm-pills .tkm-choice:not(#_):not(#__) {
+  --pill: var(--tkm-accent);
+  flex: 0 0 auto;
+  padding: 6px 16px;
+}
+.tk-modal .tkm-pills .tkm-choice:not(#_):not(#__).danger {
+  --pill: var(--ui-danger);
+}
+.tk-modal .tkm-pills .tkm-label:not(#_) {
+  color: inherit;
+  font-size: var(--ui-fs-sm);
+  font-weight: 600;
+}
+
+
+/* ---- 9. Scrollbars ----
+   Hidden until something scrolls, then they fade. The page's main panes
+   keep their scrollbar's space, so nothing widens as it fades. */
+html, body, #app, #app * {
+  scrollbar-color: var(--ui-thumb) transparent;
+  scrollbar-width: thin;
+}
+.ui-scrolled {
+  transition: --ui-thumb 0.6s ease 0.2s;
+}
+.ui-scrolling {
+  --ui-thumb: var(--ui-thumb-on);
+  transition: --ui-thumb 0.1s ease;
+}
+#app :is(main, #content, aside, #right-sidebar, .main-col, .side-col):not(#_) {
+  scrollbar-gutter: stable;
+}
+
+
+/* ---- 10. Icon buttons, empty states and drag ---- */
+
+/* Bare icon controls: no box, teal on hover */
+:is(.fold-btn, .more-btn, .pin-toggle, .delete-btn, .sub-del,
+    .toggle-delete-btn, .focus-btn, .tkm-close):not(#_):hover {
+  background: none;
+  color: var(--accent, var(--ui-accent));
+}
+
+/* Empty states: a centred, muted line */
+#app :is(.empty, .empty-msg, .side-empty, .done-empty, .pick-empty,
+         .empty-chart, .empty-list, .ui-empty):not(#_) {
+  color: var(--fg-muted, var(--ui-muted));
+  font-style: normal;
+  text-transform: lowercase;
+}
+.ui-empty:not(#_) {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px 0;
+  text-align: center;
+}
+
+/* Drag: the dragged row lifts, a teal line shows where it lands */
+:is(.task.dragging, .tree-row.dragging, .card.dragging, .block.dragging):not(#_) {
+  box-shadow: var(--ui-shadow-menu);
+  opacity: 0.55;
+}
+
+
+/* ---- 11. Tags ----
+   Tags are pills in their own colour, the same on every page. Tags
+   written inside text are tinted only, so the text keeps its spacing. */
+:is(.ui-tag, .tag-chip):not(#_):not(#__) {
+  --pill-c: var(--pill, var(--accent, var(--ui-accent)));
+  background: color-mix(in srgb, var(--pill-c) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--pill-c) 45%, transparent);
+  border-radius: var(--ui-r-full);
+  color: var(--pill-c);
+  font-family: inherit;
+  line-height: 1.5;
+  padding: 0 8px;
+  white-space: nowrap;
+}
+.t-light :is(.ui-tag, .tag-chip):not(#_):not(#__) {
+  color: color-mix(in srgb, var(--pill-c) 72%, #000);
+}
+button:is(.ui-tag, .tag-chip):not(#_):not(#__) { cursor: pointer; }
+button:is(.ui-tag, .tag-chip):not(#_):not(#__):is(:hover, :focus-visible) {
+  background: color-mix(in srgb, var(--pill-c) 22%, transparent);
+  border-color: var(--pill-c);
+  outline: none;
+}
+/* Pale tags read better with a darker outline in light mode */
+.t-light :is(.ui-tag, .tag-chip).ui-ink-dark:not(#_):not(#__) {
+  border-color: color-mix(in srgb, #55595f 45%, transparent);
+  color: #3b3f45;
+}
+/* On a done task, tags keep their colour, a little faded */
+:is(.task.done, .block.checked) :is(.ui-tag, .tag-chip):not(#_):not(#__) {
+  opacity: 0.7;
+}
+:is(.task-highlight, .content, .task-text) .tag-token:not(#_) {
+  background: color-mix(in srgb, var(--pill, var(--accent)) 16%, transparent);
+  border-radius: 4px;
+  color: var(--pill, var(--accent));
+}
+.t-light :is(.task-highlight, .content, .task-text) .tag-token:not(#_) {
+  color: color-mix(in srgb, var(--pill, var(--accent)) 72%, #000);
+}
+.task.done :is(.task-highlight, .task-text) .tag-token:not(#_):not(#__) {
+  color: var(--pill, var(--accent));
+  opacity: 0.7;
+  text-decoration: line-through;
+}
+
+/* A tag's menu: edit and remove on one line, colours beneath */
+.ui-tag-menu .ui-tag-actions:not(#_) {
+  display: grid;
+  gap: 2px;
+  grid-column: 1 / -1;
+  grid-template-columns: 1fr 1fr;
+}
+
+
+/* ---- 12. Toggles ----
+   Every collapsible heading uses + and − (as in the timekeeper's
+   sidebar): teal, dimmed when empty, and no squish. The old arrows are
+   drawn as signs here, so each page keeps its own markup. */
+:is(.toggle-arrow, .folder-row .tree-chev, .tool .chev):not(#_):not(#__) {
+  align-items: center;
+  color: var(--accent);
+  display: inline-flex;
+  flex: 0 0 14px;
+  font-size: 0;
+  justify-content: center;
+  transform: none;
+  width: 14px;
+}
+:is(.toggle-arrow, .folder-row .tree-chev, .tool .chev):not(#_):not(#__)::before {
+  content: "\2212";
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1;
+}
+:is(.type-toggle:not(.open) .toggle-arrow, .toggle-arrow.collapsed,
+    .folder-row:not(.open) .tree-chev, .tool:not(.open) .chev
+):not(#_):not(#__)::before {
+  content: "+";
+}
+/* The slash menu keeps its typed shortcuts, on the right */
+.menu-item .m-hint:not(#_):not(#__) { margin-left: auto; }
+.menu-item .m-hint:empty:not(#_):not(#__) { display: none; }
+
+/* The ambience flyout sits by the always-dark sidebar */
+#tk-amb-pop:not(#_) { --accent: #7fdbca; --border: #1e3a52; --fg: #d6deeb; }
+#tk-amb-pop .tk-ap-head > span:not(#_) { color: #ffffff; }
+
+/* Anything marked hidden stays hidden, whatever display a shared rule gives it */
+[hidden]:not(#_):not(#__) { display: none !important; }
+
+/* Date fields in the timekeeper: snug, centred */
+.date-trigger:not(#_):not(#__) {
+  min-width: 0;
+  padding: 5px 10px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+
+/* ---- 13. Titles, subtitles and section headings ----
+   A page title is black in light mode and white in dark mode, with the
+   page's icon in teal on its left. Subtitles are italic and one size
+   everywhere. Section headings in the main panel match the timekeeper's
+   "view" and "chart", with a rule between sections. */
+:root, .t-dark { --ui-title: #ffffff; }
+:root[data-mode="light"], .t-light { --ui-title: #000000; }
+
+#app :is(#day, .gal-header h1, .page-header h1):not(#_):not(#__),
+body:not(:has(#app)) .help-shell > h1:not(#_):not(#__) {
+  align-items: center;
+  color: var(--ui-title);
+  display: flex;
+  font-size: 2rem;
+  font-weight: 700;
+  gap: 0.35em;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin: 0;
+}
+.title-icon:not(#_) {
+  color: var(--accent, var(--ui-accent));
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 0.9em;
+  width: 0.9em;
+}
+.title-icon svg:not(#_) { height: 100%; width: 100%; }
+
+#app :is(#today-date, .gal-header .intro, .page-header .intro, .simple-prompt,
+         .pick-title):not(#_):not(#__),
+body:not(:has(#app)) .intro:not(#_):not(#__) {
+  color: var(--ui-subtitle);
+  font-size: 1rem;
+  font-style: italic;
+  font-weight: 400;
+}
+#app :is(#today-date, .gal-header .intro, .page-header .intro):not(#_):not(#__),
+body:not(:has(#app)) .help-shell > .intro:not(#_):not(#__) {
+  margin: 8px 0 0;
+}
+
+/* Section headings */
+#app :is(.gal-label, .page-section > h2, .pick-label):not(#_):not(#__),
+body:not(:has(#app)) .help-shell > section > h2:not(#_):not(#__) {
+  border: none;
+  color: var(--ui-heading);
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  margin: 0 0 14px;
+  padding: 0;
+  text-transform: lowercase;
+}
+/* A rule between sections, as the timekeeper's <hr> */
+#app .gal-section + .gal-section:not(#_),
+body:not(:has(#app)) .help-shell > section + section:not(#_) {
+  border-top: 1px solid var(--border, var(--line));
+  margin-top: var(--ui-gap-section);
+  padding-top: var(--ui-gap-section);
+}
+#app .gal-section:first-of-type:not(#_) { margin-top: 0; }

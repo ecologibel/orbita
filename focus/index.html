@@ -106,7 +106,7 @@
     border-radius: 4px;
     color: var(--fg-muted);
     cursor: pointer;
-    font-size: 15px;
+    font-size: 0.9375rem;
     height: 24px;
     line-height: 1;
     width: 24px;
@@ -163,7 +163,7 @@
     color: var(--fg);
     cursor: pointer;
     font: inherit;
-    font-size: 13.5px;
+    font-size: 0.8438rem;
     padding: 4px 12px;
     text-transform: lowercase;
     transition: background 0.15s, border-color 0.15s, color 0.15s;
@@ -178,7 +178,7 @@
     color: var(--fg-muted);
     display: flex;
     flex-direction: column;
-    font-size: 13px;
+    font-size: 0.8125rem;
     gap: 6px;
     padding-bottom: 6px;
   }
@@ -188,7 +188,7 @@
     border-radius: 6px;
     color: var(--fg);
     font: inherit;
-    font-size: 15px;
+    font-size: 0.9375rem;
     font-variant-numeric: tabular-nums;
     outline: none;
     padding: 6px 10px;
@@ -196,7 +196,7 @@
   }
   .set-field input:focus { border-color: var(--accent); }
   .set-field input[type="range"] { accent-color: var(--accent); width: 100%; }
-  .set-note { color: var(--fg-muted); font-size: 12.5px; min-height: 1em; }
+  .set-note { color: var(--fg-muted); font-size: 0.7812rem; min-height: 1em; }
   .set-note.error { color: #e06c75; }
 
   /* Narrow windows: the settings sit below */
@@ -227,7 +227,7 @@
     color: var(--fg-muted);
     cursor: pointer;
     display: flex;
-    font-size: 14px;
+    font-size: 0.875rem;
     gap: 6px;
     left: 16px;
     opacity: 0.45;
@@ -252,7 +252,7 @@
     cursor: pointer;
     display: flex;
     font: inherit;
-    font-size: 14px;
+    font-size: 0.875rem;
     gap: 6px;
     margin: -10px 0 6px -6px;
     padding: 4px 6px;
@@ -281,9 +281,8 @@
   .width-full main { max-width: calc(100% - 68px); }
 
   /* Task text size follows the shared size setting */
-  .size-s { --task-fs: 16px; }
-  .size-m { --task-fs: 18px; }
-  .size-l { --task-fs: 21px; }
+  /* The focal task is a little larger than the page's base size */
+  #app { --task-fs: 1.125rem; }
   section[hidden] { display: none; }
   #focus.picking #panel,
   #focus.picking #c-btns { display: none; }
@@ -298,7 +297,7 @@
     cursor: pointer;
     display: inline-block;
     font: inherit;
-    font-size: 14px;
+    font-size: 0.875rem;
     margin-top: 6px;
     padding: 5px 16px;
     text-transform: lowercase;
@@ -347,7 +346,7 @@
     border-radius: 8px;
     box-shadow: var(--shadow);
     color: var(--fg);
-    font-size: 17px;
+    font-size: 1.0625rem;
     outline: none;
     padding: 12px 16px;
     width: 100%;
@@ -356,7 +355,7 @@
   #pick-input::placeholder { color: var(--fg-muted); }
   .pick-label {
     color: var(--fg-muted);
-    font-size: 13px;
+    font-size: 0.8125rem;
     letter-spacing: 0.04em;
     margin: 22px 4px 6px;
     text-transform: lowercase;
@@ -369,7 +368,7 @@
     color: var(--fg);
     cursor: pointer;
     display: flex;
-    font-size: 15px;
+    font-size: 0.9375rem;
     gap: 10px;
     line-height: 1.4;
     padding: 5px 12px;
@@ -385,7 +384,7 @@
   .pick-row .pr-src {
     color: var(--fg-muted);
     flex-shrink: 0;
-    font-size: 13px;
+    font-size: 0.8125rem;
     max-width: 40%;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -429,7 +428,7 @@
   .min-btn:hover { border-color: var(--accent); }
   .min-btn {
     color: var(--accent);
-    font-size: 15px;
+    font-size: 0.9375rem;
     font-variant-numeric: tabular-nums;
     min-width: 52px;
     padding: 8px 10px;
@@ -500,7 +499,7 @@
     border-radius: 4px;
     cursor: text;
     flex: 1;
-    font-size: 22px;
+    font-size: 1.375rem;
     font-weight: 600;
     line-height: 1.4;
     margin: -2px -6px;
@@ -520,7 +519,7 @@
     cursor: pointer;
     flex-shrink: 0;
     font: inherit;
-    font-size: 22px;
+    font-size: 1.375rem;
     line-height: 1.4;
     margin-left: auto;
     padding: 0 4px;
@@ -660,14 +659,14 @@
     color: var(--accent);
     position: relative;
     top: -16px;
-    font-size: 76px;
+    font-size: 4.75rem;
     font-variant-numeric: tabular-nums;
     font-weight: 600;
     line-height: 1.1;
   }
   #c-state {
     color: var(--fg-muted);
-    font-size: 13px;
+    font-size: 0.8125rem;
     height: 18px;
     text-transform: lowercase;
   }
@@ -719,7 +718,7 @@
     color: var(--accent);
     flex-shrink: 0;
     font: inherit;
-    font-size: 17px;
+    font-size: 1.0625rem;
     line-height: 1;
     padding: 0;
     text-align: center;
@@ -731,7 +730,7 @@
     border: none;
     color: var(--fg);
     flex: 1;
-    font-size: 17px;
+    font-size: 1.0625rem;
     min-width: 0;
     outline: none;
     padding: 2px 0;
@@ -742,7 +741,7 @@
     border: none;
     color: var(--fg-muted);
     cursor: pointer;
-    font-size: 18px;
+    font-size: 1.125rem;
     opacity: 0;
     padding: 0 4px;
     transition: opacity 0.15s;
@@ -799,7 +798,7 @@
   }
   #c-cheer {
     color: var(--bg);
-    font-size: 32px;
+    font-size: 2rem;
     font-weight: 700;
     line-height: 1.15;
     max-width: 220px;
@@ -812,7 +811,7 @@
     border: none;
     color: var(--bg);
     cursor: pointer;
-    font-size: 14px;
+    font-size: 0.875rem;
     gap: 6px;
     margin-top: 10px;
     opacity: 0.6;
@@ -828,9 +827,9 @@
     main { padding-top: 70px; }
     .focal { flex-wrap: wrap; }
     #ring { height: 240px; width: 240px; }
-    #c-time { font-size: 64px; top: -14px; }
+    #c-time { font-size: 4rem; top: -14px; }
     .face-below { top: -14px; }
-    #c-cheer { font-size: 28px; max-width: 190px; }
+    #c-cheer { font-size: 1.75rem; max-width: 190px; }
   }
 </style>
 <link rel="stylesheet" href="../ui.css">
@@ -971,7 +970,7 @@
             <input id="ambience-volume" type="range" min="0" max="100" step="1">
           </label>
           <div class="set-row">
-            <button type="button" class="set-opt" id="ambience-auto"
+            <button type="button" class="ui-switch" id="ambience-auto"
               aria-pressed="false"
               title="start your last ambience when the timer starts">with the timer</button>
           </div>
@@ -1543,7 +1542,8 @@
       del.type = "button";
       del.textContent = "×";
       del.title = "delete step";
-      del.addEventListener("click", () => removeStep(k));
+      del.addEventListener("click", () =>
+        ToolkitSidebar.collapse(row).then(() => removeStep(k)));
       row.append(mark, input, del);
       box.appendChild(row);
     });
@@ -1624,6 +1624,9 @@
     setSteps(list);
     $("add-sub").value = "";
     renderSubs();
+    // The new step grows into place
+    const added = $("subs").lastElementChild;
+    if (added) ToolkitSidebar.grow(added);
     $("add-sub").focus();
   });
 
@@ -2421,17 +2424,7 @@
     render();
   });
 
-  // Every button gives a little when pressed
-  document.addEventListener("pointerdown", e => {
-    const b = e.target.closest("button");
-    // Settings toggle titles open and close without the squish
-    if (!b || b.disabled || b.matches(".set-head")) return;
-    b.classList.remove("press");
-    void b.offsetWidth;
-    b.classList.add("press");
-    b.addEventListener("animationend", () => b.classList.remove("press"),
-      { once: true });
-  });
+  // The squish on every button is shared (sidebar.js)
 
   ToolSync.init({
     file:     "to-dos.json",

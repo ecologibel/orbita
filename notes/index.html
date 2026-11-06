@@ -231,7 +231,7 @@
     border-radius: 4px;
     color: var(--fg-muted);
     cursor: pointer;
-    font-size: 15px;
+    font-size: 0.9375rem;
     height: 24px;
     line-height: 1;
     width: 24px;
@@ -287,7 +287,7 @@
     border: 1px solid var(--border);
     border-radius: 6px;
     color: var(--fg);
-    font-size: 15px;
+    font-size: 0.9375rem;
     margin: 4px 0 8px;
     outline: none;
     padding: 7px 10px;
@@ -296,7 +296,40 @@
   #search:focus { border-color: var(--accent); }
   #search::placeholder { color: var(--fg-muted); opacity: 0.7; }
   .side-section { display: flex; flex-direction: column; gap: 6px; }
-  .side-label { color: var(--fg-muted); font-size: 12px; text-transform: lowercase; }
+  /* Sections are toggles, as in the other sidebars: a teal heading with
+     + or − on the right, a line beneath, and a dimmed sign when empty */
+  .side-toggle { border-bottom: 1px solid var(--border); gap: 0; padding: 10px 0; }
+  .side-sec-head {
+    align-items: center;
+    background: none;
+    border: none;
+    color: var(--accent);
+    cursor: pointer;
+    display: flex;
+    font: inherit;
+    font-size: 1rem;
+    font-weight: 600;
+    gap: 8px;
+    padding: 0;
+    text-align: left;
+    text-transform: lowercase;
+    width: 100%;
+  }
+  .side-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .side-sign { font-weight: 400; margin-left: auto; }
+  .side-sign::before { content: "+"; }
+  .side-toggle.open .side-sign::before { content: "\2212"; }
+  .side-toggle.empty .side-sign { opacity: 0.35; }
+  .side-body {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.25s ease;
+  }
+  .side-toggle.open .side-body { grid-template-rows: 1fr; }
+  .side-inner { min-height: 0; overflow: hidden; }
+  .side-toggle.open .side-inner { padding-top: 10px; }
+  .side-toggle.drop-into { background: var(--hover); }
+  .side-label { color: var(--fg-muted); font-size: 0.75rem; text-transform: lowercase; }
   .side-opts, .side-tags { display: flex; flex-wrap: wrap; gap: 6px; }
   .side-opt {
     background: transparent;
@@ -305,12 +338,12 @@
     color: var(--fg);
     cursor: pointer;
     font: inherit;
-    font-size: 13px;
+    font-size: 0.8125rem;
     padding: 3px 10px;
   }
   .side-opt:hover, .side-opt:focus-visible { border-color: var(--accent); outline: none; }
   .side-opt.on { background: var(--accent); border-color: var(--accent); color: var(--bg); }
-  .side-empty { color: var(--fg-muted); font-size: 13px; }
+  .side-empty { color: var(--fg-muted); font-size: 0.8125rem; }
   .side-actions { align-items: flex-start; }
   .side-link {
     align-items: center;
@@ -321,7 +354,7 @@
     cursor: pointer;
     display: flex;
     font: inherit;
-    font-size: 14px;
+    font-size: 0.875rem;
     gap: 8px;
     padding: 4px 6px;
     margin-left: -6px;
@@ -343,7 +376,7 @@
     cursor: pointer;
     display: flex;
     font: inherit;
-    font-size: 15px;
+    font-size: 0.9375rem;
     gap: 8px;
     min-height: 34px;
     padding: 3px 6px 3px calc(var(--depth, 0) * 24px + 6px);
@@ -360,14 +393,14 @@
   .tree-chev {
     color: var(--fg-muted);
     flex: 0 0 12px;
-    font-size: 10px;
+    font-size: 0.625rem;
     transition: transform 0.24s ease;
   }
   .folder-row.open .tree-chev { transform: rotate(90deg); }
   .tree-icon { color: var(--accent); display: flex; flex-shrink: 0; }
   .tree-icon svg { height: 17px; width: 17px; }
   /* Folders are smaller rows than notes */
-  .folder-row { font-size: 13.5px; min-height: 30px; }
+  .folder-row { font-size: 0.8438rem; min-height: 30px; }
   .folder-row .folder-name { font-weight: 600; }
   /* Folders are toggles: teal, like toggles in a note, and dimmed when
      there's nothing in them */
@@ -387,7 +420,7 @@
     white-space: nowrap;
   }
   .tree-name.untitled { color: var(--fg-muted); font-style: italic; }
-  .tree-count, .tree-date { color: var(--fg-muted); flex-shrink: 0; font-size: 12px; }
+  .tree-count, .tree-date { color: var(--fg-muted); flex-shrink: 0; font-size: 0.75rem; }
   .tree-row .more-btn {
     opacity: 0;
     position: static;
@@ -399,8 +432,111 @@
     flex: 0 0 8px;
     height: 8px;
   }
-  .new-row { color: var(--accent); font-size: 14px; }
-  .new-row .tree-chev { visibility: hidden; }
+  /* Recent notes: a row of note and code shapes */
+  .recent-row { display: flex; flex-wrap: wrap; gap: 12px; }
+  .recent-card {
+    --f: var(--pick, var(--accent));
+    color: var(--fg);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    height: 112px;
+    outline: none;
+    padding: 14px 12px 10px;
+    position: relative;
+    width: 140px;
+  }
+  .recent-card.rc-code { padding-top: 28px; }
+  .rc-shape {
+    height: 100%;
+    inset: 0;
+    overflow: visible;
+    position: absolute;
+    width: 100%;
+    z-index: 0;
+  }
+  .rc-body {
+    fill: color-mix(in srgb, var(--f) 9%, transparent);
+    stroke: color-mix(in srgb, var(--f) 55%, transparent);
+    stroke-width: 1;
+    transition: fill 0.15s;
+  }
+  .rc-fold { fill: none; stroke: color-mix(in srgb, var(--f) 55%, transparent); }
+  .rc-dot { fill: color-mix(in srgb, var(--f) 55%, transparent); }
+  .recent-card:hover .rc-body, .recent-card:focus-visible .rc-body {
+    fill: color-mix(in srgb, var(--f) 18%, transparent);
+  }
+  .recent-card:focus-visible .rc-body { stroke: var(--f); }
+  .rc-name, .rc-date { position: relative; z-index: 1; }
+  .rc-name {
+    -webkit-box-orient: vertical;
+    display: -webkit-box;
+    font-size: 0.875rem;
+    font-weight: 600;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    padding-right: 14px;
+  }
+  .rc-name.untitled { color: var(--fg-muted); font-style: italic; font-weight: 400; }
+  .recent-card.coloured .rc-name { color: var(--ink); }
+  .rc-date { color: var(--fg-muted); font-size: 0.75rem; margin-top: auto; }
+  .recent-card .more-btn {
+    bottom: 6px;
+    opacity: 0;
+    position: absolute;
+    right: 6px;
+    top: auto;
+    z-index: 2;
+  }
+  .recent-card:hover .more-btn, .recent-card:focus-within .more-btn { opacity: 1; }
+
+  /* A folder: a folder shape (a tab at the top left over a rounded
+     body) with an outline, lightly filled with its colour, as wide as
+     its contents. It holds its toggle, icon and title, and, when open,
+     its notes and subfolders. Fills are solid mixes over what's beneath,
+     so the tab can cover the body's top line. */
+  .folder-shape {
+    --f: var(--pick, var(--accent));
+    --fill: color-mix(in srgb, var(--f) 8%, var(--under, var(--bg)));
+    --stroke: color-mix(in srgb, var(--f) 45%, var(--under, var(--bg)));
+    background: var(--fill);
+    border: 1px solid var(--stroke);
+    border-radius: 0 10px 10px 10px;
+    margin: 13px 0 6px;
+    max-width: 100%;
+    min-width: 240px;
+    padding: 1px 6px 3px;
+    position: relative;
+    width: fit-content;
+  }
+  .folder-shape::before {
+    background: var(--fill);
+    border: 1px solid var(--stroke);
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    content: "";
+    height: 10px;
+    left: -1px;
+    position: absolute;
+    top: -10px;
+    width: min(45%, 110px);
+  }
+  .folder-shape > .tree-children { --under: var(--fill); }
+  .folder-shape.open { padding-bottom: 6px; }
+  .folder-shape.empty { --f: color-mix(in srgb, var(--pick, var(--accent)) 55%, var(--bg)); }
+  .folder-shape > .tree-row:hover,
+  .folder-shape > .tree-row:focus-visible {
+    background: color-mix(in srgb, var(--f) 12%, var(--fill));
+  }
+  .folder-shape .tree-count { opacity: 0.55; }
+  .folder-shape > .tree-children > .tree { padding-left: 10px; }
+  .folder-shape .folder-shape { margin-top: 13px; }
+  .folder-shape.drop-into, .folder-shape:has(> .folder-row.drop-into) {
+    border-color: var(--accent);
+  }
   .tree-children {
     display: grid;
     grid-template-rows: 1fr;
@@ -416,7 +552,7 @@
 
   /* Search results in the sidebar */
   #search-results .tree-row { padding-left: 6px; }
-  #search-results .tree-path { color: var(--fg-muted); font-size: 11.5px; }
+  #search-results .tree-path { color: var(--fg-muted); font-size: 0.7188rem; }
   .result-text { display: flex; flex: 1; flex-direction: column; min-width: 0; }
 
   /* Narrow windows: the sidebar sits below */
@@ -455,7 +591,7 @@
     border: 1px solid var(--border);
     border-radius: 6px;
     color: var(--fg);
-    font-size: 15px;
+    font-size: 0.9375rem;
     margin-bottom: 28px;
     outline: none;
     padding: 7px 10px;
@@ -474,7 +610,7 @@
     border-top: 1px solid var(--border);
     margin: 32px 0;
   }
-  .empty-msg { color: var(--fg-muted); font-size: 14px; }
+  .empty-msg { color: var(--fg-muted); font-size: 0.875rem; }
 
   /* Note panels, coloured like past months in the year view */
   .card {
@@ -499,7 +635,7 @@
   }
   .card-name {
     color: var(--fg);
-    font-size: 16px;
+    font-size: 1rem;
     font-weight: 600;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -515,11 +651,11 @@
     gap: 3px 6px;
     margin-top: 1px;
   }
-  .card-date { color: var(--accent); font-size: 12px; }
+  .card-date { color: var(--accent); font-size: 0.75rem; }
   .card-preview {
     color: var(--fg-muted);
     flex: 1;
-    font-size: 13px;
+    font-size: 0.8125rem;
     line-height: 1.55;
     -webkit-mask-image: linear-gradient(#000 70%, transparent);
     mask-image: linear-gradient(#000 70%, transparent);
@@ -583,7 +719,7 @@
     color: var(--fg-muted);
     cursor: pointer;
     font: inherit;
-    font-size: 12.5px;
+    font-size: 0.7812rem;
     padding: 2px 8px 6px;
     text-align: left;
   }
@@ -612,31 +748,32 @@
     font-weight: 600;
     margin-bottom: 6px;
   }
-  .gal-new { display: flex; flex-wrap: wrap; gap: 4px 18px; }
+  .gal-new { display: flex; flex-wrap: wrap; gap: 8px; }
   .gal-recent .side-empty { padding-left: 6px; }
   .gal-recent .tree-chev { display: none; }
-  .gal-recent .tree-path { color: var(--fg-muted); font-size: 11.5px; }
+  .gal-recent .tree-path { color: var(--fg-muted); font-size: 0.7188rem; }
   .side-section[hidden] { display: none; }
 
   /* The bin in the sidebar: a section that opens to list binned notes */
+  /* The bin: a toggle like the other sections */
   .bin-toggle {
     align-items: center;
     background: none;
     border: none;
-    border-radius: 6px;
     color: var(--accent);
     cursor: pointer;
     display: flex;
     font: inherit;
-    font-size: 14px;
+    font-size: 1rem;
+    font-weight: 600;
     gap: 8px;
-    margin-left: -6px;
-    padding: 4px 6px;
+    padding: 0;
     text-align: left;
-    width: calc(100% + 12px);
+    width: 100%;
   }
-  .bin-toggle:hover, .bin-toggle:focus-visible { background: var(--hover); outline: none; }
-  .bin-toggle svg { height: 16px; width: 16px; }
+  .bin-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .bin-toggle svg { display: none; }
+  .bin-toggle .bin-count { font-weight: 400; }
   .bin-toggle .bin-count { color: var(--fg-muted); font-size: 0.85em; }
   .bin-toggle .bin-sign { margin-left: auto; }
   .bin-toggle .bin-sign::before { content: "+"; }
@@ -654,7 +791,7 @@
     border-radius: 4px;
     color: var(--fg-muted);
     cursor: pointer;
-    font-size: 16px;
+    font-size: 1rem;
     height: 24px;
     line-height: 1;
     opacity: 0;
@@ -712,7 +849,7 @@
   .folder-icon { color: var(--accent); flex-shrink: 0; }
   .folder-text { min-width: 0; }
   .folder-name {
-    font-size: 15px;
+    font-size: 0.9375rem;
     font-weight: 600;
     outline: none;
     overflow: hidden;
@@ -725,7 +862,7 @@
     cursor: text;
     text-overflow: clip;
   }
-  .folder-count { color: var(--fg-muted); font-size: 12px; }
+  .folder-count { color: var(--fg-muted); font-size: 0.75rem; }
   .folder-card.open { border-color: var(--accent); }
 
   /* Dashed cards add a note or folder */
@@ -735,7 +872,7 @@
     border: 1.5px dashed var(--border);
     box-shadow: none;
     color: var(--fg-muted);
-    font-size: 15px;
+    font-size: 0.9375rem;
     justify-content: center;
   }
   .new-card:hover { border-color: var(--accent); color: var(--accent); }
@@ -790,12 +927,12 @@
   .panel-head {
     color: var(--accent);
     cursor: pointer;
-    font-size: 14px;
+    font-size: 0.875rem;
     font-weight: 600;
     margin-bottom: 10px;
     user-select: none;
   }
-  .panel-head .arrow { display: inline-block; font-size: 11px; width: 16px; }
+  .panel-head .arrow { display: inline-block; font-size: 0.6875rem; width: 16px; }
   .panel .rule { margin: 12px 0; }
   .panel-actions { margin-top: 12px; }
   .text-btn {
@@ -804,7 +941,7 @@
     border-radius: 4px;
     color: var(--fg-muted);
     cursor: pointer;
-    font-size: 13px;
+    font-size: 0.8125rem;
     padding: 3px 9px;
   }
   .text-btn:hover { border-color: var(--accent); color: var(--fg); }
@@ -858,7 +995,7 @@
   .crumbs {
     color: var(--fg-muted);
     display: flex;
-    font-size: 13px;
+    font-size: 0.8125rem;
     gap: 5px;
     position: absolute;
     right: calc(100% + 28px);
@@ -885,7 +1022,7 @@
     color: var(--fg-muted);
     cursor: pointer;
     display: inline-flex;
-    font-size: 13px;
+    font-size: 0.8125rem;
     gap: 4px;
     opacity: 0.55;
     padding: 0 4px;
@@ -898,7 +1035,7 @@
   .edited, .word-count {
     bottom: 12px;
     color: var(--fg-muted);
-    font-size: 12px;
+    font-size: 0.75rem;
     opacity: 0.6;
     position: absolute;
   }
@@ -933,7 +1070,7 @@
     background: var(--accent);
     border-radius: 8px;
     color: var(--bg);
-    font-size: 10px;
+    font-size: 0.625rem;
     font-weight: 700;
     line-height: 16px;
     min-width: 16px;
@@ -987,7 +1124,7 @@
   .sort-bar {
     color: var(--fg-muted);
     display: flex;
-    font-size: 12px;
+    font-size: 0.75rem;
     gap: 4px;
     justify-content: flex-end;
     margin: -8px 0 10px;
@@ -999,7 +1136,7 @@
     border-radius: 3px;
     color: var(--fg-muted);
     cursor: pointer;
-    font-size: 12px;
+    font-size: 0.75rem;
     opacity: 0.75;
     padding: 1px 5px;
   }
@@ -1025,7 +1162,7 @@
     color: var(--accent);
     cursor: pointer;
     display: inline-block;
-    font-size: 14px;
+    font-size: 0.875rem;
     margin-left: -3px;
     outline: none;
     padding: 0 3px;
@@ -1045,7 +1182,7 @@
     border-radius: 3px;
     color: var(--accent);
     display: inline-flex;
-    font-size: 13px;
+    font-size: 0.8125rem;
     gap: 2px;
     line-height: 1.5;
     padding: 0 5px;
@@ -1055,7 +1192,7 @@
     border: none;
     color: inherit;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 0.8125rem;
     line-height: 1;
     opacity: 0.6;
     padding: 0 0 0 2px;
@@ -1067,7 +1204,7 @@
     border-radius: 3px;
     color: var(--fg-muted);
     cursor: pointer;
-    font-size: 13px;
+    font-size: 0.8125rem;
     opacity: 0.55;
     padding: 0 4px;
     text-transform: lowercase;
@@ -1082,14 +1219,14 @@
     color: var(--accent);
     field-sizing: content;
     font: inherit;
-    font-size: 13px;
+    font-size: 0.8125rem;
     min-width: 6ch;
     outline: none;
     padding: 0 4px;
   }
   .tag-input::placeholder { color: var(--accent); opacity: 0.45; }
   .card-tags { display: flex; flex-wrap: wrap; gap: 4px; }
-  .card-tags .tag-chip { cursor: pointer; font-size: 11px; padding: 0 4px; }
+  .card-tags .tag-chip { cursor: pointer; font-size: 0.6875rem; padding: 0 4px; }
   .card-tags .tag-chip:hover {
     background: color-mix(in srgb, var(--accent) 30%, transparent);
   }
@@ -1097,7 +1234,7 @@
     align-items: center;
     color: var(--fg-muted);
     display: flex;
-    font-size: 13px;
+    font-size: 0.8125rem;
     gap: 6px;
     margin: -4px 0 14px;
   }
@@ -1145,8 +1282,6 @@
     margin: 0;
     white-space: pre;
   }
-  .new-pair { display: flex; gap: 0 18px; }
-  .new-pair .tree-row { width: auto; }
   /* Rainbow brackets by nesting depth */
   /* Same colours in both modes */
   .cm-paren-0 { color: #ed909a !important; }
@@ -1358,7 +1493,7 @@
     color: var(--accent);
     cursor: pointer;
     display: inline-block;
-    font-size: 14px;
+    font-size: 0.875rem;
     line-height: 1;
     text-align: center;
     transition: transform 0.2s ease;
@@ -1552,7 +1687,7 @@
     color: var(--fg-muted);
     cursor: pointer;
     display: flex;
-    font-size: 14px;
+    font-size: 0.875rem;
     justify-content: center;
     opacity: 0;
     position: absolute;
@@ -1693,7 +1828,7 @@
     z-index: 1000;
   }
   .menu {
-    font-size: 14px;
+    font-size: 0.875rem;
     max-height: 70vh;
     min-width: 190px;
     overflow-y: auto;
@@ -1701,21 +1836,21 @@
   }
   .menu-label {
     color: var(--fg-muted);
-    font-size: 12px;
+    font-size: 0.75rem;
     padding: 6px 8px 2px;
   }
   /* What's been typed into the block menu, e.g. "/tog → toggle" */
   .menu-typed {
     border-bottom: 1px solid var(--border);
     color: var(--accent);
-    font-size: 13px;
+    font-size: 0.8125rem;
     margin-bottom: 4px;
     padding: 6px 8px;
   }
   .menu-typed[hidden] { display: none; }
   .menu-tip {
     color: var(--fg-muted);
-    font-size: 11.5px;
+    font-size: 0.7188rem;
     padding: 2px 8px 6px;
   }
   .menu-item {
@@ -1725,7 +1860,7 @@
     color: var(--fg);
     cursor: pointer;
     display: block;
-    font-size: 14px;
+    font-size: 0.875rem;
     padding: 5px 8px;
     text-align: left;
     width: 100%;
@@ -1745,7 +1880,7 @@
     border: 1px solid var(--border);
     border-radius: 4px;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 0.75rem;
     font-weight: 600;
     height: 22px;
     width: 22px;
@@ -1757,7 +1892,7 @@
     border: 1px solid var(--border);
     border-radius: 4px;
     color: var(--fg);
-    font-size: 14px;
+    font-size: 0.875rem;
     outline: none;
     padding: 5px 8px;
     width: 100%;
@@ -1772,7 +1907,7 @@
     border-radius: 4px;
     color: var(--fg);
     cursor: pointer;
-    font-size: 14px;
+    font-size: 0.875rem;
     height: 28px;
     min-width: 30px;
   }
@@ -1816,7 +1951,7 @@
   mark[data-c="teal"] { background: color-mix(in srgb, var(--h-teal) 30%, transparent) !important; }
   mark[data-c="sage"] { background: color-mix(in srgb, var(--h-sage) 30%, transparent) !important; }
   mark[data-c="pink"] { background: color-mix(in srgb, var(--h-pink) 30%, transparent) !important; }
-  #fmt .f-markc { font-size: 10px; padding-left: 2px; padding-right: 4px; }
+  #fmt .f-markc { font-size: 0.625rem; padding-left: 2px; padding-right: 4px; }
 
   /* Menu items with a teal symbol column, names lined up, and a dim
      shortcut on the right */
@@ -1829,14 +1964,14 @@
   .menu-item .m-sym {
     color: var(--accent);
     display: flex;
-    font-size: 13px;
+    font-size: 0.8125rem;
     justify-content: flex-start;
     white-space: nowrap;
   }
   .menu-item .m-hint {
     color: var(--fg-muted);
     font-family: 'Ubuntu Mono', 'Consolas', monospace;
-    font-size: 12px;
+    font-size: 0.75rem;
     opacity: 0.7;
     padding-left: 12px;
     white-space: pre;
@@ -1943,19 +2078,28 @@
           <div id="search-results"></div>
         </div>
       </div>
-      <div class="side-section">
-        <div class="side-label">sort</div>
-        <div class="side-opts" id="sort-opts"></div>
+      <div class="side-section side-toggle" data-sec="sort">
+        <button class="side-sec-head" type="button"><span>sort</span><span
+          class="side-sign" aria-hidden="true"></span></button>
+        <div class="side-body"><div class="side-inner">
+          <div class="side-opts" id="sort-opts"></div>
+        </div></div>
       </div>
-      <div class="side-section" id="tags-section">
-        <div class="side-label">tags</div>
-        <div class="side-tags" id="side-tags"></div>
+      <div class="side-section side-toggle" id="tags-section" data-sec="tags">
+        <button class="side-sec-head" type="button"><span>tags</span><span
+          class="side-sign" aria-hidden="true"></span></button>
+        <div class="side-body"><div class="side-inner">
+          <div class="side-tags" id="side-tags"></div>
+        </div></div>
       </div>
-      <div class="side-section" id="pinned-section">
-        <div class="side-label">pinned</div>
-        <div id="side-pinned"></div>
+      <div class="side-section side-toggle" id="pinned-section" data-sec="pinned">
+        <button class="side-sec-head" type="button"><span>pinned</span><span
+          class="side-sign" aria-hidden="true"></span></button>
+        <div class="side-body"><div class="side-inner">
+          <div id="side-pinned"></div>
+        </div></div>
       </div>
-      <div class="side-section" id="bin-section">
+      <div class="side-section side-toggle" id="bin-section">
         <button class="bin-toggle" id="side-bin" type="button"
           aria-expanded="false" aria-controls="side-bin-list"
           title="bin: drop notes here"></button>
@@ -2730,6 +2874,7 @@
         const chip = document.createElement("span");
         chip.className = "tag-chip";
         chip.textContent = "#" + t;
+        ToolkitSidebar.paintTag(chip, t);
         chip.title = "show notes tagged #" + t;
         chip.addEventListener("click", e => {
           e.stopPropagation();
@@ -2862,6 +3007,28 @@
     if (e.key === "Escape" && trashPop && !document.querySelector(".menu")) {
       closeTrash();
     }
+  });
+
+  // Sidebar sections open and close; each remembers its state
+  const SIDE_OPEN_KEY = "notes-side-open";
+  function sideOpen() {
+    try { return JSON.parse(localStorage.getItem(SIDE_OPEN_KEY)) || {}; }
+    catch { return {}; }
+  }
+  document.querySelectorAll(".side-toggle[data-sec]").forEach(sec => {
+    const head = sec.querySelector(".side-sec-head");
+    const set = open => {
+      sec.classList.toggle("open", open);
+      head.setAttribute("aria-expanded", String(open));
+    };
+    set(sideOpen()[sec.dataset.sec] !== false);
+    head.addEventListener("click", () => {
+      const open = !sec.classList.contains("open");
+      set(open);
+      const all = sideOpen();
+      all[sec.dataset.sec] = open;
+      try { localStorage.setItem(SIDE_OPEN_KEY, JSON.stringify(all)); } catch {}
+    });
   });
 
   // Drop a note on the bin to bin it, or on pinned to pin it
@@ -3020,36 +3187,69 @@
     return row;
   }
 
-  function newRow(parent, depth) {
-    const pair = document.createElement("div");
-    pair.className = "new-pair";
-    [["+ new note", undefined], ["+ new code", "code"]].forEach(([label, kind], i) => {
-      const row = document.createElement("button");
-      row.type = "button";
-      row.className = "tree-row new-row";
-      row.style.setProperty("--depth", i ? 0 : depth);
-      row.append(chevron(true), document.createTextNode(label));
-      if (i) row.firstChild.remove();
-      row.addEventListener("click", () => createNote(parent, kind));
-      pair.appendChild(row);
+  // A recent note on its shape: a page with a folded corner, or an
+  // editor window for code; lightly filled in its colour, with an outline
+  const NOTE_SHAPE = '<svg class="rc-shape" viewBox="0 0 140 112" aria-hidden="true">'
+    + '<path class="rc-body" d="M6 .5H118L139.5 22V106a5.5 5.5 0 0 1-5.5 5.5H6'
+    + 'A5.5 5.5 0 0 1 .5 106V6A5.5 5.5 0 0 1 6 .5Z"/>'
+    + '<path class="rc-fold" d="M118 .5V17a5 5 0 0 0 5 5H139.5"/></svg>';
+  const CODE_SHAPE = '<svg class="rc-shape" viewBox="0 0 140 112" aria-hidden="true">'
+    + '<rect class="rc-body" x=".5" y=".5" width="139" height="111" rx="6"/>'
+    + '<path class="rc-fold" d="M.5 20H139.5"/>'
+    + '<circle class="rc-dot" cx="10" cy="10.5" r="2.6"/>'
+    + '<circle class="rc-dot" cx="18.5" cy="10.5" r="2.6"/>'
+    + '<circle class="rc-dot" cx="27" cy="10.5" r="2.6"/></svg>';
+
+  function recentCard(n) {
+    const card = document.createElement("div");
+    card.className = "recent-card " + (isCode(n) ? "rc-code" : "rc-note");
+    card.dataset.id = n.id;
+    card.tabIndex = 0;
+    card.setAttribute("role", "link");
+    card.innerHTML = isCode(n) ? CODE_SHAPE : NOTE_SHAPE;
+    const name = document.createElement("span");
+    name.className = "rc-name" + (n.title.trim() ? "" : " untitled");
+    name.textContent = n.title.trim() || "untitled";
+    const date = document.createElement("span");
+    date.className = "rc-date";
+    date.textContent = "@" + fmtLong(fromIso(n.date));
+    card.append(name, date, moreButton(btn => cardMenu(btn, n)));
+    paint(card, noteColour(n));
+    const go = () => { location.hash = n.id; };
+    card.addEventListener("click", e => {
+      if (!e.target.closest(".more-btn")) go();
     });
-    return pair;
+    card.addEventListener("keydown", e => {
+      if (e.target === card && e.key === "Enter") go();
+    });
+    dragSource(card, "note", n.id);
+    return card;
   }
 
+  // Each folder sits in a folder shape, lightly filled with its colour;
+  // open, its notes and subfolders sit inside it (subfolders as smaller
+  // shapes). The shapes do the indenting, so rows inside start at 0.
   function treeLevel(parent, depth) {
     const level = document.createElement("div");
     level.className = "tree";
     subfolders(parent).forEach(f => {
-      level.appendChild(folderRow(f, depth));
-      if (!openFolders.has(f.id)) return;
-      const kids = document.createElement("div");
-      kids.className = "tree-children" + (animateOpen === f.id ? " closed" : "");
-      kids.dataset.for = f.id;
-      kids.appendChild(treeLevel(f.id, depth + 1));
-      level.appendChild(kids);
+      const open = openFolders.has(f.id);
+      const shape = document.createElement("div");
+      shape.className = "folder-shape" + (open ? " open" : "")
+        + (!treeCount(f.id) && !subfolders(f.id).length ? " empty" : "");
+      shape.dataset.shape = f.id;
+      paint(shape, folderColour(f.id));
+      shape.appendChild(folderRow(f, 0));
+      if (open) {
+        const kids = document.createElement("div");
+        kids.className = "tree-children" + (animateOpen === f.id ? " closed" : "");
+        kids.dataset.for = f.id;
+        kids.appendChild(treeLevel(f.id, depth + 1));
+        shape.appendChild(kids);
+      }
+      level.appendChild(shape);
     });
-    treeNotes(parent).forEach(n => level.appendChild(noteRow(n, depth)));
-    level.appendChild(newRow(parent, depth));
+    treeNotes(parent).forEach(n => level.appendChild(noteRow(n, 0)));
     return level;
   }
 
@@ -3144,7 +3344,7 @@
   function galButton(label, run) {
     const b = document.createElement("button");
     b.type = "button";
-    b.className = "side-link";
+    b.className = "gal-new-btn";
     b.textContent = label;
     b.addEventListener("click", run);
     return b;
@@ -3159,7 +3359,9 @@
 
     const header = document.createElement("header");
     header.className = "gal-header";
-    header.innerHTML = '<h1>notes</h1><p class="intro">your personal brain dump</p>';
+    header.innerHTML = '<h1><span class="title-icon" aria-hidden="true">'
+      + ToolkitSidebar.icon("notes") + '</span>notes</h1>'
+      + '<p class="intro">your personal brain dump</p>';
     const hr = document.createElement("hr");
     hr.className = "gal-rule";
 
@@ -3173,7 +3375,10 @@
 
     const recent = galSection("recent", "gal-recent");
     const latest = live().filter(n => !n.pinned).sort(byEdited).slice(0, 4);
-    latest.forEach(n => recent.appendChild(noteRow(n, 0, folderPath(n.folder))));
+    const recentRow = document.createElement("div");
+    recentRow.className = "recent-row";
+    latest.forEach(n => recentRow.appendChild(recentCard(n)));
+    if (latest.length) recent.appendChild(recentRow);
     if (!latest.length) {
       const msg = document.createElement("div");
       msg.className = "side-empty";
@@ -3194,7 +3399,20 @@
     galBody.append(header, hr, fresh, line(), recent, line(), tree);
     playOpen();
     renderSide();
+
+    // Notes and folders new since the last drawing grow into place
+    const known = new Set(notes.map(n => n.id).concat(folders.map(f => f.id)));
+    if (galKnown) {
+      galBody.querySelectorAll(".gal-folders .note-row[data-id], "
+        + ".gal-folders .folder-shape[data-shape]").forEach(el => {
+        if (!galKnown.has(el.dataset.id || el.dataset.shape)) {
+          ToolkitSidebar.grow(el);
+        }
+      });
+    }
+    galKnown = known;
   }
+  let galKnown = null;
 
   // ---- Right sidebar ----
 
@@ -3231,16 +3449,22 @@
     const tagBox = document.getElementById("side-tags");
     tagBox.innerHTML = "";
     document.getElementById("tags-section").hidden = !tags.length;
-    tags.forEach(t => tagBox.appendChild(sideOpt("#" + t, tagFilter === t, () => {
-      tagFilter = tagFilter === t ? "" : t;
-      setSearchOpen(!!(tagFilter || query));
-      renderSide();
-    })));
+    tags.forEach(t => {
+      const b = sideOpt("#" + t, tagFilter === t, () => {
+        tagFilter = tagFilter === t ? "" : t;
+        setSearchOpen(!!(tagFilter || query));
+        renderSide();
+      });
+      ToolkitSidebar.paintTag(b, t);
+      tagBox.appendChild(b);
+    });
 
     const pinBox = document.getElementById("side-pinned");
     pinBox.innerHTML = "";
     const pinned = live().filter(n => n.pinned).sort(byEdited);
     pinned.forEach(n => pinBox.appendChild(noteRow(n, 0)));
+    document.getElementById("pinned-section").classList
+      .toggle("empty", !pinned.length);
     if (!pinned.length) {
       const empty = document.createElement("div");
       empty.className = "side-empty";
@@ -3462,11 +3686,7 @@
   // ---- Gallery menus ----
 
   // A note's menu, on its card and inside it: pin, duplicate, copy,
-  // download, bin, then colours
-  const BIN_SYM = '<svg width="13" height="13" viewBox="0 0 24 24" '
-    + 'fill="none" stroke="currentColor" stroke-width="2" '
-    + 'stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16'
-    + 'M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13"/></svg>';
+  // download, delete, then colours
 
   function cardMenu(anchor, n, inNote) {
     if (n.trashed) {
@@ -3478,7 +3698,7 @@
           renderGallery();
         } },
         { confirm: "click again to delete", danger: true, sym: "−",
-          label: "delete permanently", run: () => {
+          label: "delete forever", run: () => {
             withUndo("note deleted", () => {
               notes = notes.filter(x => x !== n);
             });
@@ -3500,20 +3720,21 @@
         else renderGallery();
       } },
       ...(isCode(n) ? [
-        { label: "copy code", sym: "⧉", run: () => {
+        { label: "copy", sym: "⧉", run: () => {
           copyText(n.code);
           ToolkitSidebar.toast("code copied");
         } },
         { label: "download .R", sym: "↓", run: () => downloadR(n) }
       ] : [
-        { label: "copy as md", sym: "⧉", run: () => {
+        { label: "copy md", sym: "⧉", run: () => {
           copyText(noteToMd(n));
           ToolkitSidebar.toast("copied as markdown");
         } },
-        { label: "download as md", sym: "↓", run: () => downloadMd(n) }
+        { label: "download md", sym: "↓", run: () => downloadMd(n) }
       ]),
-      { label: "move to bin", sym: BIN_SYM, run: () => {
+      { label: "delete", sym: "−", danger: true, run: async () => {
         if (inNote) location.hash = "";
+        else await ToolkitSidebar.collapse(anchor.closest(".tree-row, .card, .recent-card"));
         withUndo("moved to bin", () => { n.trashed = Date.now(); });
       } },
       { rule: true },
@@ -3529,8 +3750,26 @@
 
   function folderMenu(anchor, f, card) {
     showMenu(anchor, [
-      { label: "rename", run: () => renameFolder(f, card) },
-      { label: "+ subfolder", run: () => addFolder(f.id) },
+      { label: "rename", sym: "✎", run: () => renameFolder(f, card) },
+      { label: "new note", sym: "+", run: () => createNote(f.id) },
+      { label: "new code", sym: "+", run: () => createNote(f.id, "code") },
+      { label: "new folder", sym: "+", run: () => addFolder(f.id) },
+      { danger: true, sym: "−", label: "delete", run: async () => {
+          await ToolkitSidebar.collapse(anchor.closest(".folder-shape")
+            || anchor.closest(".tree-row"));
+
+          // Its notes and folders move up a level
+          withUndo("folder deleted", () => {
+            notes.forEach(n => {
+              if (n.folder === f.id) n.folder = f.parent;
+            });
+            const moved = subfolders(f.id);
+            folders = folders.filter(x => x !== f);
+            moved.forEach(x => { x.parent = f.parent; });
+            setOrder(subfolders(f.parent));
+          });
+        } },
+      { rule: true },
       { heading: "icon" },
       { active: f.icon || "folder", icons: true, pick: name => {
         galCheckpoint();
@@ -3544,22 +3783,7 @@
         f.colour = col;
         persist();
         renderGallery();
-      } },
-      { rule: true },
-      { confirm: "click again to delete", danger: true,
-        label: "delete folder", run: () => {
-
-          // Its notes and folders move up a level
-          withUndo("folder deleted", () => {
-            notes.forEach(n => {
-              if (n.folder === f.id) n.folder = f.parent;
-            });
-            const moved = subfolders(f.id);
-            folders = folders.filter(x => x !== f);
-            moved.forEach(x => { x.parent = f.parent; });
-            setOrder(subfolders(f.parent));
-          });
-        } }
+      } }
     ]);
   }
 
@@ -3849,26 +4073,95 @@
     wordsEl.textContent = n + (n === 1 ? " word" : " words");
   }
 
+  // A note's tags are pills in their colours; clicking one opens its menu
   function renderTags() {
     tagsEl.innerHTML = "";
     current.tags.forEach(t => {
-      const chip = document.createElement("span");
+      const chip = document.createElement("button");
+      chip.type = "button";
       chip.className = "tag-chip";
       chip.textContent = "#" + t;
-      const x = document.createElement("button");
-      x.type = "button";
-      x.textContent = "×";
-      x.title = "remove #" + t;
-      x.addEventListener("click", () => {
+      ToolkitSidebar.paintTag(chip, t);
+      chip.addEventListener("click", e => {
+        e.stopPropagation();
+        tagMenu(chip, t);
+      });
+      tagsEl.appendChild(chip);
+    });
+  }
+
+  // As on every page: edit and remove on one line, the colours beneath.
+  // Edit renames the tag on every note; remove takes it off this note.
+  function tagMenu(chip, t) {
+    hideMenus();
+    const menu = document.createElement("div");
+    menu.className = "menu ui-tag-menu";
+    const actions = document.createElement("div");
+    actions.className = "ui-tag-actions";
+    const edit = menuItem({ label: "edit", sym: "✎", run: () => {} });
+    const remove = menuItem({ label: "remove", sym: "−", danger: true,
+      run: () => {
         checkpoint();
         current.tags = current.tags.filter(y => y !== t);
         save();
         renderTags();
+      } });
+    // Edit swaps the menu for a box with the tag's name
+    edit.addEventListener("click", e => {
+      e.stopImmediatePropagation();
+      const input = document.createElement("input");
+      input.className = "ui-input";
+      input.value = t;
+      input.setAttribute("aria-label", "new name for #" + t);
+      menu.replaceChildren(input);
+      input.focus();
+      input.select();
+      input.addEventListener("keydown", ev => {
+        ev.stopPropagation();
+        if (ev.key === "Enter") {
+          ev.preventDefault();
+          const name = cleanTag(input.value);
+          hideMenus();
+          if (name && name !== t) renameTag(t, name);
+        } else if (ev.key === "Escape") {
+          ev.preventDefault();
+          hideMenus();
+          chip.focus();
+        }
       });
-      chip.appendChild(x);
-      tagsEl.appendChild(chip);
-    });
+    }, true);
+    actions.append(edit, remove);
+    const rule = document.createElement("div");
+    rule.className = "menu-rule";
+    menu.append(actions, rule, ToolkitSidebar.colourPicker({
+      active: ToolkitSidebar.tagColour(t),
+      onPick: key => {
+        hideMenus();
+        ToolkitSidebar.setTagColour(t, key);
+      }
+    }));
+    placeMenu(menu, chip);
   }
+
+  // Rename a tag on every note, keeping its colour
+  function renameTag(from, to) {
+    galCheckpoint();
+    notes.forEach(n => {
+      if (!n.tags.includes(from)) return;
+      n.tags = [...new Set(n.tags.map(x => x === from ? to : x))];
+    });
+    if (tagFilter === from) tagFilter = to;
+    persist();
+    ToolkitSidebar.renameTagColour(from, to);
+    if (current) renderTags();
+  }
+
+  // Tag colours changed here or on another page: redraw
+  document.addEventListener("tag-colours", () => {
+    if (current) renderTags();
+    if (current) renderBlocks();
+    else renderGallery();
+  });
 
   // "+ tag" turns into a box for typing a tag
   const addTagBtn = noteEl.querySelector(".add-tag");
@@ -3926,7 +4219,18 @@
       blocksEl.appendChild(blockEl(b, hidden.has(b.id), counts[b.indent]));
     });
     markEmptyToggles();
+
+    // Blocks new since the last drawing of this note grow into place
+    const ids = new Set(current.blocks.map(b => b.id));
+    if (shownNote === current && shownIds) {
+      blocksEl.querySelectorAll(".block[data-id]").forEach(el => {
+        if (!shownIds.has(el.dataset.id)) ToolkitSidebar.grow(el);
+      });
+    }
+    shownIds = ids;
+    shownNote = current;
   }
+  let shownIds = null, shownNote = null;
 
   function numberLabel(n, depth) {
     if (depth % 3 === 1) {
@@ -5098,53 +5402,53 @@
   function rowMenu(anchor, b, r) {
     const n = b.rows.length;
     showMenu(anchor, [
-      { label: "insert above", run: () => tableChange(b,
+      { label: "insert above", sym: "↥", run: () => tableChange(b,
         () => addRowAt(b, r), [r, 0]) },
-      { label: "insert below", run: () => tableChange(b,
+      { label: "insert below", sym: "↧", run: () => tableChange(b,
         () => addRowAt(b, r + 1), [r + 1, 0]) },
-      { label: "duplicate", run: () => tableChange(b, () => {
+      { label: "duplicate", sym: "+", run: () => tableChange(b, () => {
         addRowAt(b, r + 1);
         b.rows[r + 1] = [...b.rows[r]];
         b.rowColors[r + 1] = b.rowColors[r];
       }) },
-      { label: "move up", run: () => r > 0
+      { label: "move up", sym: "⇡", run: () => r > 0
         && tableChange(b, () => swapRows(b, r, r - 1)) },
-      { label: "move down", run: () => r < n - 1
+      { label: "move down", sym: "⇣", run: () => r < n - 1
         && tableChange(b, () => swapRows(b, r, r + 1)) },
+      { danger: true, sym: "−", label: "delete", run: () => tableChange(b,
+        () => removeRow(b, r)) },
+      { rule: true },
       { heading: "row colour" },
       { active: b.rowColors[r], pick: col => tableChange(b, () => {
         b.rowColors[r] = col;
-      }), swatches: true },
-      { rule: true },
-      { danger: true, label: "delete row", run: () => tableChange(b,
-        () => removeRow(b, r)) }
+      }), swatches: true }
     ]);
   }
 
   function colMenu(anchor, b, c) {
     const n = b.rows[0].length;
     showMenu(anchor, [
-      { label: "insert left", run: () => tableChange(b,
+      { label: "insert left", sym: "↤", run: () => tableChange(b,
         () => addColAt(b, c), [0, c]) },
-      { label: "insert right", run: () => tableChange(b,
+      { label: "insert right", sym: "↦", run: () => tableChange(b,
         () => addColAt(b, c + 1), [0, c + 1]) },
-      { label: "duplicate", run: () => tableChange(b, () => {
+      { label: "duplicate", sym: "+", run: () => tableChange(b, () => {
         addColAt(b, c + 1);
         b.rows.forEach(row => { row[c + 1] = row[c]; });
         b.widths[c + 1] = b.widths[c];
         b.colColors[c + 1] = b.colColors[c];
       }) },
-      { label: "move left", run: () => c > 0
+      { label: "move left", sym: "⇠", run: () => c > 0
         && tableChange(b, () => swapCols(b, c, c - 1)) },
-      { label: "move right", run: () => c < n - 1
+      { label: "move right", sym: "⇢", run: () => c < n - 1
         && tableChange(b, () => swapCols(b, c, c + 1)) },
+      { danger: true, sym: "−", label: "delete", run: () => tableChange(b,
+        () => removeCol(b, c)) },
+      { rule: true },
       { heading: "column colour" },
       { active: b.colColors[c], pick: col => tableChange(b, () => {
         b.colColors[c] = col;
-      }), swatches: true },
-      { rule: true },
-      { danger: true, label: "delete column", run: () => tableChange(b,
-        () => removeCol(b, c)) }
+      }), swatches: true }
     ]);
   }
 
@@ -5583,13 +5887,7 @@
       else delete m.dataset.c;
       syncBlock(c);
       updateFmt();
-    }, true));
-    menu.querySelectorAll(".swatch").forEach(s => {
-      if (s.title === "default") {
-        s.title = "teal";
-        s.style.background = "color-mix(in srgb, var(--accent) 30%, var(--bg))";
-      }
-    });
+    }, true, "teal (default)"));
     placeMenu(menu, btn);
   }
 
@@ -6290,32 +6588,16 @@
     return btn;
   }
 
-  // Swatches for no colour and each named colour
-  function swatches(active, pick, tint) {
-    const sw = document.createElement("div");
-    sw.className = "swatches";
-    [null, ...COLOURS].forEach(col => {
-      const s = document.createElement("button");
-      s.className = "swatch" + (active === col ? " active" : "");
-      s.type = "button";
-      s.title = col ? ToolkitSidebar.palette.find(c => c.key === col).name
-        : "default";
-      if (tint) {
-        s.style.background = col
-          ? "color-mix(in srgb, var(--h-" + col + ") 30%, var(--bg))"
-          : "var(--past-bg)";
-      } else {
-        s.textContent = "A";
-        s.style.color = col ? "var(--c-" + col + ")" : "var(--fg)";
-      }
-      s.addEventListener("click", e => {
-        e.stopPropagation();
+  // The shared colour menu: 29 colours and "none". Text colours show an
+  // "a"; fills (tint) are plain
+  function swatches(active, pick, tint, noneLabel) {
+    return ToolkitSidebar.colourPicker({
+      active, heading: false, letter: !tint, noneLabel,
+      onPick: col => {
         hideMenus();
         pick(col);
-      });
-      sw.appendChild(s);
+      }
     });
-    return sw;
   }
 
   function showMenu(anchor, items) {
@@ -6335,32 +6617,7 @@
       } else if (it.swatches) {
         menu.appendChild(swatches(it.active, it.pick, true));
       } else if (it.palette) {
-        const grid = document.createElement("div");
-        grid.className = "palette-grid";
-        ToolkitSidebar.palette.forEach(c => {
-          const b = document.createElement("button");
-          b.type = "button";
-          b.title = c.name;
-          b.setAttribute("aria-label", c.name);
-          b.style.setProperty("--pick", c.hex);
-          if (c.key === it.active) b.classList.add("active");
-          b.addEventListener("click", e => {
-            e.stopPropagation();
-            hideMenus();
-            it.pick(c.key);
-          });
-          grid.appendChild(b);
-        });
-        const none = document.createElement("button");
-        none.type = "button";
-        none.className = "palette-none" + (it.active ? "" : " active");
-        none.textContent = "no colour";
-        none.addEventListener("click", e => {
-          e.stopPropagation();
-          hideMenus();
-          it.pick(null);
-        });
-        menu.append(grid, none);
+        menu.appendChild(swatches(it.active, it.pick, true));
       } else if (it.icons) {
         const grid = document.createElement("div");
         grid.className = "icon-grid";
@@ -6413,10 +6670,6 @@
     typedLine.className = "menu-typed";
     typedLine.hidden = true;
     menu.appendChild(typedLine);
-    const tip = document.createElement("div");
-    tip.className = "menu-tip";
-    tip.textContent = "type / to turn into · enter adds below · backspace deletes";
-    menu.appendChild(tip);
 
     // Actions first: duplicate, copy, move and delete
     const span = () => selectedSpan()
@@ -6454,7 +6707,7 @@
       select([]);
       commit();
     } }));
-    menu.appendChild(menuItem({ label: "copy as markdown", sym: "⧉",
+    menu.appendChild(menuItem({ label: "copy md", sym: "⧉",
       run: () => {
         const sp = span();
         const md = blocksToMd(blocks().slice(sp[0], sp[1]));
@@ -6462,15 +6715,22 @@
         select([]);
         ToolkitSidebar.toast("copied as markdown");
       } }));
-    menu.appendChild(menuItem({ label: "move to another note", sym: "→",
+    menu.appendChild(menuItem({ label: "move", sym: "→",
       run: () => moveToNote(handle, span()) }));
-    menu.appendChild(menuItem({ label: "delete", sym: "−",
-      run: removeBlocks }));
+    menu.appendChild(menuItem({ label: "delete", sym: "−", danger: true,
+      run: () => {
+        // The blocks fold away first
+        const sp = span();
+        const els = blocks().slice(sp[0], sp[1]).map(x =>
+          blocksEl.querySelector('.block[data-id="' + x.id + '"]'));
+        Promise.all(els.map(el => ToolkitSidebar.collapse(el)))
+          .then(removeBlocks);
+      } }));
     rule();
 
     Object.entries(TYPES).forEach(([type, name]) => {
       menu.appendChild(menuItem({ active: b.type === type, label: name,
-        hint: TYPE_HINTS[type], sym: TYPE_SYMS[type],
+        sym: TYPE_SYMS[type],
         run: () => turnInto(type) }));
     });
 
@@ -6513,7 +6773,6 @@
       typedLine.textContent = typed
         + (typed.length > 1 ? (match ? "  →  " + TYPES[match] : "  ·  no match")
           : "");
-      tip.hidden = !!typed;
     };
     menu.addEventListener("keydown", e => {
       // Arrow keys, Enter on a highlighted item and Esc are menuKeys' own

@@ -108,12 +108,10 @@
     }
   ];
 
-  // The 30-colour menu, as in the timekeeper, for colour menus site-wide
+  // The colour menu for every page: 29 colours, then "none"
   const PALETTE = [
-    ["white", "#FFFFFF"], ["silver", "#C5C9CE"], ["grey", "#858B93"],
-    ["charcoal", "#41464D"], ["black", "#202327"],
-    ["army green", "#A4C65A"], ["emerald", "#35B98B"], ["green", "#36B84A"],
-    ["lime", "#91D52E"], ["chartreuse", "#C1D62E"],
+    ["emerald", "#35B98B"], ["green", "#36B84A"], ["lime", "#91D52E"],
+    ["army green", "#A4C65A"], ["chartreuse", "#C1D62E"],
     ["yellow", "#F0D52E"], ["gold", "#E9AD22"], ["amber", "#F49A20"],
     ["orange", "#F47721"], ["tangerine", "#F05B35"],
     ["clay", "#D18A70"], ["coral", "#F05261"], ["red", "#E52F42"],
@@ -121,10 +119,13 @@
     ["magenta", "#D62DB5"], ["orchid", "#BD45CF"], ["purple", "#A16BD0"],
     ["violet", "#A05BE8"], ["indigo", "#7778D5"],
     ["blue", "#2379E5"], ["azure", "#219FCB"], ["cyan", "#20C4D0"],
-    ["teal", "#238F91"], ["sage", "#91BFA0"]
+    ["teal", "#238F91"], ["sage", "#91BFA0"],
+    // Four evenly spaced greys come last; the menus add "none" as the 30th
+    ["white", "#FFFFFF"], ["silver", "#AAAEB3"], ["charcoal", "#55595F"],
+    ["black", "#202327"]
   ].map(([name, hex]) => ({ hex, key: name.replace(/ /g, "-"), name }));
   const LEGACY_COLOURS = { apricot: "tangerine", berry: "burgundy",
-    brown: "clay", pink: "rose", rust: "orange", sky: "azure",
+    brown: "clay", grey: "charcoal", pink: "rose", rust: "orange", sky: "azure",
     terracotta: "coral", turquoise: "cyan" };
 
   // A stored colour as a palette key (older names mapped), or null
@@ -897,6 +898,7 @@
     if (kind === "mode") {
       mode = next;
       store(MODE_KEY, mode);
+      markMode(mode);
       cfg.mode.apply(mode, true);
     } else {
       cfg[kind].set(next);
@@ -1416,6 +1418,7 @@
     mode = CYCLE.mode.includes(saved) ? saved
       : CYCLE.mode.includes(cfg.mode.initial) ? cfg.mode.initial : "dark";
     store(MODE_KEY, mode);
+    markMode(mode);
     cfg.mode.apply(mode, false);
 
     addStyles();
@@ -1435,6 +1438,12 @@
     }
     startFocus();
 
+    // Tag colours are shared by every page
+    if (window.ToolSync) {
+      ToolSync.init({ file: "tags.json", keys: [TAG_KEY],
+        onRemote: () => document.dispatchEvent(new CustomEvent("tag-colours")) });
+    }
+
     // Catch up if sync.js started before the sidebar
     if (syncState) setSync(syncState.state, syncState.label);
     else if (window.ToolSync && ToolSync.notify) ToolSync.notify();
@@ -1444,6 +1453,7 @@
       if (e.key === MODE_KEY && CYCLE.mode.includes(e.newValue)
         && e.newValue !== mode) {
         mode = e.newValue;
+        markMode(mode);
         cfg.mode.apply(mode, true);
         refresh();
       }
@@ -1884,10 +1894,13 @@
 
     const row = document.createElement("div");
     row.className = "tkm-buttons";
+    // Plain choices are pills on the right; ones with details stay cards
+    if (!(opts.buttons || []).some(b => b.detail)) row.classList.add("tkm-pills");
     (opts.buttons || []).forEach(btn => {
       const b = document.createElement("button");
       b.type = "button";
-      b.className = "tkm-choice";
+      b.className = "tkm-choice" + (btn.danger ? " danger" : "")
+        + (btn.primary ? " primary" : "");
       b.dataset.value = btn.value;
       const label = document.createElement("span");
       label.className = "tkm-label";
@@ -1953,8 +1966,314 @@
       if (e.target === wrap) done(null);
     });
     document.addEventListener("keydown", onKey, true);
-    (input || row.querySelector("button") || close).focus();
+    // A confirm window focuses its action, so Enter confirms
+    (input || (opts.focus ? row.querySelector("button:last-child")
+      : row.querySelector("button")) || close).focus();
     return result;
+  }
+
+  // ---- Shared UI behaviour ----
+  //
+  // Every page loads this file, so these run everywhere: the squish on
+  // pills and buttons, rows that grow in and collapse out, one tooltip
+  // style, and scrollbars that show while scrolling and then fade.
+
+  const reducedMotion = () =>
+    matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Toggle titles open and close without the squish
+  const NO_SQUISH = ".set-head, .peek-head, .toggle-header, .toggle-arrow, "
+    + ".bin-toggle, .panel-head, .folder-row, summary, .side-sec-head, "
+    + "[data-no-squish], button.tool";
+
+  function squish(el) {
+    if (!el || reducedMotion()) return;
+    el.classList.remove("press");
+    void el.offsetWidth;
+    el.classList.add("press");
+    el.addEventListener("animationend", () => el.classList.remove("press"),
+      { once: true });
+  }
+
+  document.addEventListener("pointerdown", e => {
+    if (e.button !== 0) return;
+    const b = e.target.closest("button, [role='button'], .ui-pill, "
+      + "input[type='checkbox'], .tag-chip");
+    if (!b || b.disabled || b.closest(NO_SQUISH)) return;
+    squish(b);
+  }, true);
+
+  // A new row opens downwards like a toggle; resolves when done
+  function grow(el) {
+    if (!el || !el.isConnected || reducedMotion()) return Promise.resolve();
+    const cs = getComputedStyle(el);
+    if (cs.display === "none" || cs.display === "inline") return Promise.resolve();
+    const h = el.offsetHeight;
+    const to = { height: h + "px", opacity: 1,
+      paddingTop: cs.paddingTop, paddingBottom: cs.paddingBottom,
+      marginTop: cs.marginTop, marginBottom: cs.marginBottom };
+    const from = { height: "0px", opacity: 0, paddingTop: "0px",
+      paddingBottom: "0px", marginTop: "0px", marginBottom: "0px" };
+    const overflow = el.style.overflow;
+    el.style.overflow = "hidden";
+    const anim = el.animate([from, to], { duration: 300, easing: "ease" });
+    return anim.finished.catch(() => {}).then(() => {
+      el.style.overflow = overflow;
+    });
+  }
+
+  // A row being removed folds upwards first; resolves when it's gone
+  function collapse(el) {
+    if (!el || !el.isConnected || reducedMotion()) return Promise.resolve();
+    const cs = getComputedStyle(el);
+    if (cs.display === "none") return Promise.resolve();
+    const from = { height: el.offsetHeight + "px", opacity: 1,
+      paddingTop: cs.paddingTop, paddingBottom: cs.paddingBottom,
+      marginTop: cs.marginTop, marginBottom: cs.marginBottom };
+    const to = { height: "0px", opacity: 0, paddingTop: "0px",
+      paddingBottom: "0px", marginTop: "0px", marginBottom: "0px" };
+    el.style.overflow = "hidden";
+    el.style.pointerEvents = "none";
+    const anim = el.animate([from, to],
+      { duration: 300, easing: "ease", fill: "forwards" });
+    return anim.finished.catch(() => {});
+  }
+
+  // Pages mark a new row with .ui-grow; it grows in once it's on the page
+  new MutationObserver(records => {
+    records.forEach(r => r.addedNodes.forEach(n => {
+      if (n.nodeType !== 1) return;
+      const list = n.classList.contains("ui-grow") ? [n]
+        : n.querySelectorAll ? n.querySelectorAll(".ui-grow") : [];
+      list.forEach(el => {
+        el.classList.remove("ui-grow");
+        requestAnimationFrame(() => grow(el));
+      });
+    }));
+  }).observe(document.documentElement, { childList: true, subtree: true });
+
+  // Sliders fill teal up to their knob
+  function paintRange(el) {
+    const min = +el.min || 0, max = el.max === "" ? 100 : +el.max;
+    const p = max > min ? (el.value - min) / (max - min) * 100 : 0;
+    el.style.setProperty("--fill", p + "%");
+  }
+  document.addEventListener("input", e => {
+    if (e.target.matches && e.target.matches("input[type='range']")) {
+      paintRange(e.target);
+    }
+  }, true);
+  function paintRanges(root) {
+    (root.querySelectorAll ? root.querySelectorAll("input[type='range']")
+      : []).forEach(paintRange);
+  }
+  let rangeFrame = 0;
+  new MutationObserver(() => {
+    if (rangeFrame) return;
+    rangeFrame = requestAnimationFrame(() => {
+      rangeFrame = 0;
+      paintRanges(document);
+    });
+  }).observe(document.documentElement, { childList: true, subtree: true });
+  window.addEventListener("load", () => setTimeout(() =>
+    paintRanges(document), 60));
+
+  // ---- Tooltips ----
+  // One small tooltip for everything with a title. The title moves to
+  // data-tip so the browser's own hover text doesn't show as well.
+  let tipEl = null, tipTimer = null, tipTarget = null;
+
+  function tipText(el) {
+    if (el.hasAttribute("title")) {
+      const t = el.getAttribute("title");
+      el.removeAttribute("title");
+      if (t) {
+        el.dataset.tip = t;
+        if (!el.hasAttribute("aria-label") && !el.textContent.trim()) {
+          el.setAttribute("aria-label", t);
+        }
+      }
+    }
+    return el.dataset.tip || "";
+  }
+
+  function hideUiTip() {
+    clearTimeout(tipTimer);
+    tipTarget = null;
+    if (tipEl) tipEl.classList.remove("show");
+  }
+
+  function placeUiTip(el) {
+    if (!tipEl) {
+      tipEl = document.createElement("div");
+      tipEl.id = "ui-tip";
+      tipEl.setAttribute("role", "tooltip");
+      document.body.appendChild(tipEl);
+    }
+    tipEl.textContent = el.dataset.tip;
+    tipEl.classList.remove("show", "below");
+    const r = el.getBoundingClientRect();
+    const w = tipEl.offsetWidth, h = tipEl.offsetHeight;
+    let top = r.top - h - 6;
+    if (top < 6) {
+      top = r.bottom + 6;
+      tipEl.classList.add("below");
+    }
+    const left = Math.max(6, Math.min(innerWidth - w - 6,
+      r.left + r.width / 2 - w / 2));
+    tipEl.style.left = left + "px";
+    tipEl.style.top = top + "px";
+    tipEl.classList.add("show");
+  }
+
+  document.addEventListener("mouseover", e => {
+    const el = e.target.closest && e.target.closest("[title], [data-tip]");
+    // The sidebar's icons keep their own label to the side
+    if (!el || el.closest("#tk-sidebar")) return;
+    if (el === tipTarget) return;
+    hideUiTip();
+    if (!tipText(el)) return;
+    tipTarget = el;
+    tipTimer = setTimeout(() => {
+      if (tipTarget === el && el.isConnected) placeUiTip(el);
+    }, 450);
+  });
+  document.addEventListener("mouseout", e => {
+    if (tipTarget && !tipTarget.contains(e.relatedTarget)) hideUiTip();
+  });
+  ["pointerdown", "keydown", "scroll", "wheel"].forEach(type =>
+    document.addEventListener(type, hideUiTip, true));
+
+  // ---- Scrollbars ----
+  // Hidden until something scrolls, then fade after a moment. The space
+  // they take stays reserved (ui.css), so nothing widens as they fade.
+  const scrollTimers = new WeakMap();
+  document.addEventListener("scroll", e => {
+    const el = e.target === document ? document.documentElement : e.target;
+    if (!el || !el.classList) return;
+    el.classList.add("ui-scrolled", "ui-scrolling");
+    clearTimeout(scrollTimers.get(el));
+    scrollTimers.set(el, setTimeout(() =>
+      el.classList.remove("ui-scrolling"), 900));
+  }, true);
+
+  // The page's mode on <html>, for shared pieces placed outside #app
+  function markMode(m) {
+    document.documentElement.dataset.mode = m === "light" ? "light" : "dark";
+  }
+
+  // ---- Colour picker ----
+  // The colour menu for every page: 29 colours then "none", each a pill
+  // in its colour. letter: true shows an "a" (for text colours).
+  //   ToolkitSidebar.colourPicker({ active: "teal", letter: true,
+  //     onPick: key => ... })   // key is null for none
+  function colourPicker(opts) {
+    const wrap = document.createElement("div");
+    wrap.className = "ui-colour-picker";
+    if (opts.heading !== false) {
+      const head = document.createElement("div");
+      head.className = "menu-label ui-menu-label";
+      head.textContent = opts.heading || "colour";
+      wrap.appendChild(head);
+    }
+    const grid = document.createElement("div");
+    grid.className = "ui-colours";
+    grid.setAttribute("role", "group");
+    grid.setAttribute("aria-label", opts.heading || "colour");
+    const active = colourKey(opts.active);
+    const add = (key, name, hex) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = (key ? "" : "none")
+        + (key === "white" || key === "silver" ? " pale" : "")
+        + (key === "charcoal" || key === "black" ? " deep" : "")
+        + (opts.letter && key ? " letter" : "")
+        + ((key || null) === (active || null) ? " active" : "");
+      if (hex) b.style.setProperty("--pill", hex);
+      b.dataset.tip = name;
+      b.setAttribute("aria-label", name);
+      b.setAttribute("aria-pressed", String((key || null) === (active || null)));
+      if (opts.letter && key) b.textContent = "a";
+      b.addEventListener("click", e => {
+        e.stopPropagation();
+        opts.onPick(key || null);
+      });
+      grid.appendChild(b);
+    };
+    PALETTE.forEach(c => add(c.key, c.name, c.hex));
+    add(null, opts.noneLabel || "none");
+    wrap.appendChild(grid);
+    return wrap;
+  }
+
+  // ---- Tag colours ----
+  // A tag looks the same everywhere: its colour is kept once, by name
+  // (lowercase, without #), and synced as tags.json.
+  const TAG_KEY = "tag-colours";
+  const tagName = t => String(t || "").trim().replace(/^#+/, "").toLowerCase();
+
+  function tagColours() {
+    try {
+      const v = JSON.parse(localStorage.getItem(TAG_KEY) || "{}");
+      return v && typeof v === "object" && !Array.isArray(v) ? v : {};
+    } catch { return {}; }
+  }
+
+  function tagColour(tag) {
+    return colourKey(tagColours()[tagName(tag)]);
+  }
+
+  function setTagColour(tag, key) {
+    const all = tagColours(), name = tagName(tag);
+    if (!name) return;
+    if (key) all[name] = key;
+    else delete all[name];
+    try { localStorage.setItem(TAG_KEY, JSON.stringify(all)); } catch {}
+    document.dispatchEvent(new CustomEvent("tag-colours"));
+  }
+
+  // Move a tag's colour to its new name
+  function renameTagColour(from, to) {
+    const all = tagColours(), a = tagName(from), b = tagName(to);
+    if (!a || !b || a === b || !(a in all)) return;
+    if (!(b in all)) all[b] = all[a];
+    delete all[a];
+    try { localStorage.setItem(TAG_KEY, JSON.stringify(all)); } catch {}
+    document.dispatchEvent(new CustomEvent("tag-colours"));
+  }
+
+  // Colour a tag pill: its own colour, or teal when it has none
+  function paintTag(el, tag) {
+    const key = tagColour(tag), hex = key && colourHex(key);
+    if (hex) el.style.setProperty("--pill", hex);
+    else el.style.removeProperty("--pill");
+    el.classList.toggle("ui-ink-dark", key === "white" || key === "silver");
+    el.classList.add("ui-tag");
+  }
+
+  window.addEventListener("storage", e => {
+    if (e.key === TAG_KEY) document.dispatchEvent(new CustomEvent("tag-colours"));
+  });
+
+  // A confirm window: resolves true when the action is chosen
+  function confirmBox(opts) {
+    return modal({
+      title: opts.title,
+      body: opts.body,
+      buttons: [
+        { label: opts.cancel || "cancel", value: false },
+        { label: opts.action || "ok", value: true,
+          danger: !!opts.danger, primary: !opts.danger }
+      ],
+      focus: true
+    }).then(v => v === true);
+  }
+
+  // A message with a single ok
+  function notice(opts) {
+    return modal({ title: opts.title, body: opts.body,
+      buttons: [{ label: opts.action || "ok", value: true, primary: true }],
+      focus: true });
   }
 
   // A view's icon, for pages that link to the tools
@@ -1964,12 +2283,17 @@
 
   function icon(id) {
     if (id === "code") return CODE_ICON;
+    if (id === "dashboard") return svg(LAYERS);
     const item = ITEMS.find(x => x.id === id);
     return item ? item.icon : "";
   }
 
+  markMode(read(MODE_KEY) || "dark");
+
   window.ToolkitSidebar = {
-    colourHex, colourKey, folderIcon, folderIcons: Object.keys(FOLDER_ICONS),
+    collapse, colourHex, colourKey, colourPicker, confirm: confirmBox,
+    folderIcon, paintTag, renameTagColour, setTagColour, tagColour,
+    folderIcons: Object.keys(FOLDER_ICONS), grow, notice, squish,
     icon, init, modal, palette: PALETTE, setAmbience,
     openSwitcher, preserveRecovery, refresh, setActive, setSync, title, toast
   };

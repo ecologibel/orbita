@@ -292,7 +292,7 @@
     border-radius: 4px;
     color: var(--fg-muted);
     cursor: pointer;
-    font-size: 15px;
+    font-size: 0.9375rem;
     height: 24px;
     line-height: 1;
     width: 24px;
@@ -448,7 +448,7 @@
   .add-row { align-items: center; display: flex; gap: 8px; margin-top: 4px; }
   .add-box {
     border: 2px solid var(--accent);
-    border-radius: 3px;
+    border-radius: 50%;
     flex-shrink: 0;
     height: 16px;
     opacity: 0.5;
@@ -644,8 +644,11 @@
 
   function renderHeading() {
     const now = new Date();
-    document.getElementById("day").textContent =
-      DAY_NAMES[now.getDay()].toLowerCase();
+    // The title: the dashboard's icon, then the day
+    const day = document.getElementById("day");
+    day.innerHTML = '<span class="title-icon" aria-hidden="true">'
+      + ToolkitSidebar.icon("dashboard") + "</span>";
+    day.append(DAY_NAMES[now.getDay()].toLowerCase());
     document.getElementById("today-date").textContent = "@" + now.getDate()
       + " " + MONTH_NAMES[now.getMonth()].slice(0, 3).toLowerCase() + " "
       + now.getFullYear();
@@ -939,11 +942,15 @@
     });
   }
 
+  // A to do just typed in, which grows in when drawn
+  let growText = null;
+
   function fillList(box, items, data) {
     box.innerHTML = "";
     items.forEach(item => {
       const row = document.createElement("div");
-      row.className = "task" + (item.done ? " done" : "");
+      row.className = "task" + (item.done ? " done" : "")
+        + (growText !== null && item.text === growText ? " ui-grow" : "");
       const cb = document.createElement("input");
       cb.type = "checkbox";
       cb.checked = item.done;
@@ -1070,7 +1077,10 @@
     data.simple.push(task);
     store(TODO_KEY, JSON.stringify(data));
     addEl.value = "";
+    // The new to do grows into its list
+    growText = task.text;
     renderToday();
+    growText = null;
     addEl.focus();
   });
 
@@ -1264,6 +1274,9 @@
   renderRecent();
 
   // Keep up with other tabs, and roll over at midnight
+  // Tags wear their colours from every page
+  document.addEventListener("tag-colours", () => renderToday());
+
   window.addEventListener("storage", e => {
     if (e.key === TODO_KEY || e.key === NOTES_KEY) renderToday();
     if (e.key === NOTES_KEY) renderRecent();
